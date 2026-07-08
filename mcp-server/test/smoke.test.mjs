@@ -127,6 +127,26 @@ try {
   assert.equal(irrelevant.suggestions.length, 0, JSON.stringify(irrelevant.suggestions));
   assert.match(irrelevant.note, /relevance threshold/);
 
+  // suggest: whitespace-only description fails schema validation outright
+  const emptyDesc = await request("tools/call", {
+    name: "suggest_for_new_project",
+    arguments: { project_description: "   " },
+  });
+  assert.ok(
+    emptyDesc.error || emptyDesc.result?.isError,
+    `whitespace-only description must be rejected, got: ${JSON.stringify(emptyDesc).slice(0, 200)}`
+  );
+
+  // suggest: stopword-only description gets the explicit no-keywords note
+  const stopwordsOnly = toolJson(
+    await request("tools/call", {
+      name: "suggest_for_new_project",
+      arguments: { project_description: "build a new app" },
+    })
+  );
+  assert.equal(stopwordsOnly.suggestions.length, 0);
+  assert.match(stopwordsOnly.note, /no usable keywords/);
+
   // add_repo: duplicate and unknown-category are rejected before any network call
   const dup = toolJson(
     await request("tools/call", {
@@ -153,7 +173,7 @@ try {
   );
   assert.match(evilCat.error, /unknown category/);
 
-  console.log("✓ MCP smoke test passed — 4 tools, 10 scenarios");
+  console.log("✓ MCP smoke test passed — 4 tools, 12 scenarios");
   process.exitCode = 0;
 } catch (e) {
   console.error("✗ MCP smoke test failed:", e);

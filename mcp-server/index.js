@@ -105,7 +105,11 @@ server.registerTool(
       "by fit and return the best candidates with reasoning and concrete adoption steps. " +
       "Use this when the user asks 'what should I use for X?'.",
     inputSchema: {
-      project_description: z.string().describe("what the user wants to build"),
+      project_description: z
+        .string()
+        .trim()
+        .min(1, "describe the project — an empty description cannot be matched")
+        .describe("what the user wants to build"),
       goals: z.string().optional().describe("extra goals/constraints, e.g. 'local-first, Python'"),
       max_results: z.number().int().min(1).max(20).default(5),
     },
@@ -121,6 +125,12 @@ server.registerTool(
         goals ?? "",
         max_results ?? 5
       );
+      if (result.query_tokens.length === 0) {
+        return json({
+          ...result,
+          note: "The description contained no usable keywords (only stopwords/punctuation) — rephrase with concrete tech or domain terms, e.g. 'RAG pipeline with a vector DB in Rust'.",
+        });
+      }
       if (result.suggestions.length === 0) {
         return json({
           ...result,
