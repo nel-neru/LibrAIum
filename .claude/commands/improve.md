@@ -55,7 +55,7 @@ export PATH="/opt/homebrew/bin:$PATH"
 bash scripts/verify-all.sh
 ```
 
-All 5 stages must pass end-to-end. Fix root causes, not tests (see `/verify` rules). For non-trivial diffs, have the `libraium-reviewer` agent review before committing; address real findings.
+All 6 stages must pass end-to-end. Fix root causes, not tests (see `/verify` rules). For non-trivial diffs, have the `libraium-reviewer` agent review before committing; address real findings.
 
 If you cannot get verify-all green: **revert the change completely**, record the item under Rejected with what failed, and end the iteration honestly — a reverted iteration is a valid outcome, a red commit is not.
 

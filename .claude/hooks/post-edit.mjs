@@ -42,12 +42,16 @@ const PARITY_FILES = new Set([
   "src-tauri/src/store.rs",
   "src-tauri/src/frontmatter.rs",
   "src-tauri/src/models.rs",
+  // github.rs owns compute_status, mirrored by store.js computeStatus since
+  // 7569f6d — without it here, a Rust-side status-rule edit had no tripwire
+  // (the conformance function corpus covers only slugify/normalize).
+  "src-tauri/src/github.rs",
   "mcp-server/lib/store.js",
 ]);
 if (PARITY_FILES.has(rel)) {
   messages.push(
     `⚠ ${rel} is one half of the dual-implemented data format (Rust app ⇔ Node MCP server). ` +
-      `If parsing, serialization, slugify, URL normalization, or the EntryMeta schema changed, ` +
+      `If parsing, serialization, slugify, URL normalization, status computation, or the EntryMeta schema changed, ` +
       `mirror the change in the counterpart file and run: node scripts/conformance.mjs`
   );
 }
