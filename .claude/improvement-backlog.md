@@ -18,7 +18,7 @@ MCP/parity sweep surfaced the items below).
 ### P3 — error handling / UX / parity robustness
 
 ### P4 — dual-format hardening
-- [ ] P4 Category-master scalar strictness diverges Rust⇔Node: bare `id: 2048` coerces to "2048" in Rust (serde_yaml quirk, models.rs:12-15) but throws Node's misleading "stray '-'?" error killing add_repo/suggest; `order: "3"` rejects the whole file in Rust but sorts fine in Node — same class fixed for EntryMeta in 30e2e43; no conformance coverage for categories.yaml. — src-tauri/src/models.rs:112-124 vs mcp-server/lib/store.js:147-166
+- (all resolved — see Done)
 
 ### P5 — docs / DX / design conformance
 - [ ] P5 dev mock behavioral divergence (as one item): save_entry never recomputes id on category change (core flow unexercisable in preview), add_repo_from_url skips the dup guard (double-add crashes Library's keyed each in dev), search matches full body vs real first_summary_line, suggest_alternatives ignores cap/ranking, check_duplicate compares raw URLs. — src/lib/dev/mock.js:119-184 vs src-tauri/src/commands.rs, search.rs
@@ -36,6 +36,7 @@ MCP/parity sweep surfaced the items below).
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
 
+- [x] P4 Category-master strict scalars BOTH sides: Rust Category gains strict_string on its five String fields (no more `id: 2048` → "2048" coercion), Node loadCategories requires string id/name + typed optional scalars + numeric order with value-naming errors; four shapes pinned by paired tests. Conformance-corpus coverage for categories.yaml consciously deferred (unit tests + parity hook are the tripwire). — 6f2657c (2026-07-09) [iter-46]
 - [x] P3 Categories id-lock by row persistence: rows carry a `locked` flag (loaded=true, new=false, promoted on save; stripped from the payload) — a new row no longer self-disables when its typed value collides with an existing id; implements the documented "locks PERSISTED ids" semantics exactly. Verified live in preview. — f946482 (2026-07-09) [iter-45]
 - [x] P3 EntryCard keyboard activation: Space now activates (with scroll prevention) and chip-originated keydowns stay on the chips (target guard) — mouse/keyboard behavior unified on the library's primary surface. Verified live in preview (Space opens, chip Enter filters 7→2 without opening, card Enter opens). — ad3e362 (2026-07-08) [iter-44]
 - [x] P3 MCP add_repo tag normalization: `normalizeTags` (trim + drop empties, mirrors AddRepo.svelte) exported from lib/store.js and unit-tested — LLM-sent padded/empty tags no longer produce validator-rejected entries or unfilterable tags. — f722703 (2026-07-08) [iter-43]
