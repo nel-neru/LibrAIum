@@ -1,11 +1,12 @@
 <script>
   import { app, openLibraryWith } from "../state.svelte.js";
+  import Icon from "./Icon.svelte";
 
   const NAV = [
-    ["dashboard", "Dashboard", "🏛️"],
-    ["library", "Library", "📚"],
-    ["categories", "Categories", "🗂️"],
-    ["settings", "Settings", "⚙️"],
+    ["dashboard", "Reading Room", "reading-room"],
+    ["library", "Library", "library"],
+    ["categories", "Catalog", "catalog"],
+    ["settings", "Settings", "settings"],
   ];
 
   let counts = $derived.by(() => {
@@ -26,14 +27,15 @@
 
 <aside class="sidebar">
   <div class="brand">
+    <span class="eyebrow">Ex libris</span>
     <h1>LibrAIum</h1>
-    <span class="muted tagline">your personal library, grown with AI</span>
+    <span class="tagline muted">your personal library, grown with AI</span>
   </div>
 
   <nav>
     {#each NAV as [view, label, icon]}
       <button class="nav-item" class:current={app.view === view} onclick={() => (app.view = view)}>
-        <span>{icon}</span>{label}
+        <Icon name={icon} />{label}
       </button>
     {/each}
   </nav>
@@ -55,8 +57,8 @@
       {#if counts.byCat[cat.id]}
         <button class="cat-item" onclick={() => openLibraryWith({ category: cat.id })}>
           <span class="dot" style="background: {cat.color}"></span>
-          <span class="grow">{cat.icon} {cat.name}</span>
-          <span class="muted">{counts.byCat[cat.id]}</span>
+          <span class="grow">{cat.name}</span>
+          <span class="muted num">{counts.byCat[cat.id]}</span>
         </button>
       {/if}
     {/each}
@@ -71,58 +73,87 @@
     </div>
   </div>
 
-  <button class="primary" onclick={() => (app.showAdd = true)}>＋ Add repository</button>
+  <button class="primary" onclick={() => (app.showAdd = true)}>+ Add repository</button>
 </aside>
 
 <style>
   .sidebar {
     display: flex;
     flex-direction: column;
-    gap: 18px;
-    background: var(--bg-raised);
-    border-right: 1px solid var(--border);
-    padding: 22px 16px;
+    gap: 20px;
+    background: var(--bg);
+    border-right: 1px solid var(--ui);
+    /* top padding clears the macOS traffic lights (overlay titlebar) */
+    padding: 48px 18px 20px;
     overflow-y: auto;
   }
-  .brand h1 {
-    font-size: 26px;
-    background: linear-gradient(120deg, var(--cream), var(--accent));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+
+  /* ex-libris bookplate block */
+  .brand {
+    padding: 0 8px 14px;
+    border-bottom: 1px solid var(--ui-2);
+    position: relative;
   }
-  .tagline { font-size: 11px; display: block; margin-top: 2px; }
-  nav { display: flex; flex-direction: column; gap: 4px; }
+  .brand::after {
+    /* the second line of a classic double rule */
+    content: "";
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: -4px;
+    border-bottom: 1px solid var(--ui);
+  }
+  .eyebrow {
+    display: block;
+    font: 500 10px/1 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .brand h1 { font-size: 23px; font-weight: 500; letter-spacing: 0.01em; }
+  .tagline { font-size: 11px; display: block; margin-top: 3px; }
+
+  nav { display: flex; flex-direction: column; gap: 2px; }
   .nav-item {
     display: flex;
     gap: 10px;
     align-items: center;
     background: transparent;
     border: none;
-    padding: 8px 10px;
-    border-radius: 8px;
+    padding: 6px 10px;
+    border-radius: var(--radius-control);
     text-align: left;
+    font-weight: 400;
+    color: var(--tx-2);
   }
-  .nav-item.current { background: var(--bg-panel); color: var(--accent); }
+  .nav-item:hover { background: var(--ui); color: var(--tx); }
+  .nav-item.current { background: var(--ui); color: var(--tx); font-weight: 500; }
+  .nav-item.current :global(svg) { color: var(--accent); }
+
   .section-title {
-    font-size: 11px;
+    font-size: 10px;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-dim);
-    margin-bottom: 8px;
+    letter-spacing: 0.14em;
+    color: var(--tx-2);
+    margin: 0 8px 8px;
   }
   .cat-item {
     display: flex;
-    gap: 8px;
+    gap: 9px;
     align-items: center;
     width: 100%;
     background: transparent;
     border: none;
-    padding: 5px 8px;
-    border-radius: 7px;
+    padding: 4px 8px;
+    border-radius: var(--radius-control);
     text-align: left;
-    font-size: 13px;
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--tx);
   }
-  .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .cat-item:hover { background: var(--ui); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .grow { flex: 1; }
 </style>

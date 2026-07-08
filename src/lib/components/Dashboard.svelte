@@ -33,39 +33,39 @@
   }
 </script>
 
-<header class="row" style="margin-bottom: 22px;">
+<header class="row page-head">
   <div class="grow">
-    <h2 style="font-size: 24px;">The Reading Room</h2>
+    <h2 class="page-title">The Reading Room</h2>
     <span class="muted">curated best practices, kept fresh</span>
   </div>
   <button onclick={refreshAll} disabled={app.busy.refreshAll || app.busy.refreshOne}>
-    {app.busy.refreshAll ? "Refreshing…" : "⟳ Refresh all metadata"}
+    {app.busy.refreshAll ? "Refreshing…" : "Refresh all metadata"}
   </button>
-  <button class="primary" onclick={() => (app.showAdd = true)}>＋ Add repository</button>
+  <button class="primary" onclick={() => (app.showAdd = true)}>+ Add repository</button>
 </header>
 
 <div class="stats">
   <button class="card stat" onclick={() => openLibraryWith({})}>
-    <div class="n">{app.entries.length}</div>
-    <div class="muted">repositories</div>
+    <div class="n num">{app.entries.length}</div>
+    <div class="stat-label">repositories</div>
   </button>
   <button class="card stat" onclick={() => (app.view = "categories")}>
-    <div class="n">{stats.catsUsed}</div>
-    <div class="muted">categories in use</div>
+    <div class="n num">{stats.catsUsed}</div>
+    <div class="stat-label">categories in use</div>
   </button>
   <button class="card stat" onclick={() => openLibraryWith({ status: "stale" })}>
-    <div class="n" style="color: var(--gold);">{stats.stale.length}</div>
-    <div class="muted">stale entries</div>
+    <div class="n num" class:overdue={stats.stale.length > 0}>{stats.stale.length}</div>
+    <div class="stat-label">stale entries</div>
   </button>
   <div class="card stat">
-    <div class="n">{stats.totalStars.toLocaleString()}</div>
-    <div class="muted">combined stars</div>
+    <div class="n num">{stats.totalStars.toLocaleString()}</div>
+    <div class="stat-label">combined stars</div>
   </div>
 </div>
 
 <div class="cols">
   <section class="card">
-    <h3 style="margin-bottom: 12px;">⚠ Needs attention</h3>
+    <h3 class="section-head">Needs attention</h3>
     {#if stats.stale.length === 0}
       <p class="muted">Nothing is stale. The shelves are dusted.</p>
     {:else}
@@ -73,14 +73,14 @@
         <button class="line" onclick={() => selectEntry(e.id)}>
           <span class="dot" style="background: {categoryColor(e.meta.category)}"></span>
           <span class="grow">{e.meta.full_name}</span>
-          <span class="muted mono">last push {e.meta.last_github_push ?? "?"}</span>
+          <span class="muted mono num">last push {e.meta.last_github_push ?? "?"}</span>
         </button>
       {/each}
     {/if}
   </section>
 
   <section class="card">
-    <h3 style="margin-bottom: 12px;">🕮 Recently added</h3>
+    <h3 class="section-head">Recently added</h3>
     {#if stats.recent.length === 0}
       <p class="muted">The library is empty — add your first repository.</p>
     {:else}
@@ -88,7 +88,7 @@
         <button class="line" onclick={() => selectEntry(e.id)}>
           <span class="dot" style="background: {categoryColor(e.meta.category)}"></span>
           <span class="grow">{e.meta.full_name}</span>
-          <span class="muted mono">{e.meta.added_date}</span>
+          <span class="muted mono num">{e.meta.added_date}</span>
         </button>
       {/each}
     {/if}
@@ -96,10 +96,22 @@
 </div>
 
 <style>
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-  .stat { text-align: left; cursor: pointer; }
-  .stat .n { font-size: 30px; font-family: var(--serif); }
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .page-head { margin-bottom: 28px; }
+  .page-title { font-size: 26px; line-height: 32px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat { text-align: left; cursor: pointer; padding: 16px 18px; }
+  .stat .n { font-size: 28px; line-height: 1.2; font-family: var(--serif); font-weight: 500; }
+  .stat .n.overdue { color: var(--st-stale-tx); }
+  .stat-label {
+    margin-top: 4px;
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--tx-2);
+  }
+  .section-head { font-size: 17px; margin-bottom: 12px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .line {
     display: flex;
     gap: 9px;
@@ -107,11 +119,12 @@
     width: 100%;
     background: transparent;
     border: none;
-    padding: 7px 6px;
-    border-radius: 7px;
+    padding: 6px 8px;
+    border-radius: var(--radius-control);
     text-align: left;
+    font-weight: 400;
   }
-  .line:hover { background: var(--bg-panel); }
+  .line:hover { background: var(--bg); }
   .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .grow { flex: 1; }
 </style>

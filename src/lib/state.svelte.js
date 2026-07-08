@@ -112,5 +112,5 @@ export function categoryOf(id) {
 }
 
 export function categoryColor(id) {
-  return categoryOf(id)?.color || "#64748b";
+  return categoryOf(id)?.color || "#878580"; // Flexoki base-500 — unknown category
 }

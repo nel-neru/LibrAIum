@@ -47,6 +47,8 @@ Rust core modules (`src-tauri/src/`):
 
 Frontend (`src/`): Svelte 5 **runes** (no stores); shared state in `lib/state.svelte.js`; all IPC via `lib/api.js` wrappers. Command args are camelCase (Tauri converts to snake_case), but **struct fields inside payloads stay snake_case** (`min_stars`, `full_name`). Entry bodies are untrusted (GitHub descriptions, git-synced entries) and must render through `lib/markdown.js` (escapes raw HTML, strips unsafe link schemes) — never a bare `marked.parse` into `{@html}`.
 
+**UI styling is governed by `DESIGN.md`** (Flexoki paper-and-ink tokens in `src/styles.css`, light+dark). Before touching any UI file, read DESIGN.md and use only its tokens — do not invent colors, fonts, radii, or shadows, and never reintroduce emoji into chrome. In a plain browser, `npm run dev` auto-installs `src/lib/dev/mock.js` (Tauri IPC mock with seeded data) so the UI can be previewed and screenshotted without the Rust backend.
+
 MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` (lexical scoring in `lib/suggest.js`), `add_repo` (source: `mcp`). Data dir resolution mirrors the Rust order (plus `--data-dir` flag).
 
 ## Data Model

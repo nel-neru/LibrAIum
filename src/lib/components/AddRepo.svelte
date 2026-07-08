@@ -59,9 +59,9 @@
 
 <div class="modal-backdrop" onclick={(e) => e.target === e.currentTarget && close()} role="presentation">
   <form class="modal" onsubmit={(e) => { e.preventDefault(); submit(); }}>
-    <div class="row" style="margin-bottom: 16px;">
+    <div class="row" style="margin-bottom: 18px;">
       <h2 class="grow" style="font-size: 19px;">Add a repository</h2>
-      <button type="button" class="small" onclick={close}>✕</button>
+      <button type="button" class="small" onclick={close} aria-label="Close">✕</button>
     </div>
 
     <label for="add-url">GitHub URL</label>
@@ -74,8 +74,8 @@
       onblur={checkDup}
     />
     {#if duplicate}
-      <p style="color: var(--gold); font-size: 12px; margin: 4px 0 0;">
-        ⚠ Already in the library as <strong>{duplicate.id}</strong>
+      <p style="color: var(--st-stale-tx); font-size: 12px; margin: 4px 0 0;">
+        Already in the library as <strong class="mono">{duplicate.id}</strong>
       </p>
     {/if}
 

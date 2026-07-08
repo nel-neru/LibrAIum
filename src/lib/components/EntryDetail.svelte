@@ -128,56 +128,64 @@
 {#if entry}
   <div class="drawer-backdrop" onclick={close} role="presentation"></div>
   <aside class="drawer">
-    <div class="row" style="margin-bottom: 4px;">
-      <h2 class="grow" style="font-size: 20px; word-break: break-all;">{entry.meta.full_name}</h2>
-      <button class="small" onclick={close}>✕</button>
+    <div class="row" style="align-items: flex-start;">
+      <div class="grow">
+        <div class="call-number">{entry.id}</div>
+        <h2 class="title">{entry.meta.full_name}</h2>
+      </div>
+      <button class="small" onclick={close} aria-label="Close">✕</button>
     </div>
+    <div class="rule" style="background: {cat?.color ?? 'var(--ui-3)'};"></div>
 
-    <div class="row" style="flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+    <div class="row" style="flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
       <span class="badge {entry.meta.status}">{entry.meta.status}</span>
-      <span class="chip" style="cursor: default;">{cat?.icon} {cat?.name ?? entry.meta.category}</span>
+      <span class="chip cat-chip">
+        <span class="dot" style="background: {cat?.color ?? 'var(--ui-3)'};"></span>
+        {cat?.name ?? entry.meta.category}
+      </span>
       <a href={entry.meta.github_url} onclick={(e) => { e.preventDefault(); openUrl(entry.meta.github_url); }}>
-        open on GitHub ↗
+        Open on GitHub ↗
       </a>
     </div>
 
     {#if !editing}
-      <div class="meta-grid card" style="margin-bottom: 16px;">
-        <div><label>Stars</label>⭐ {entry.meta.stars.toLocaleString()}</div>
+      <div class="meta-grid card">
+        <div><label>Stars</label><span class="num">★ {entry.meta.stars.toLocaleString()}</span></div>
         <div><label>Language</label>{entry.meta.language ?? "—"}</div>
-        <div><label>Last push</label>{entry.meta.last_github_push ?? "—"}</div>
-        <div><label>Last checked</label>{entry.meta.last_checked ?? "never"}</div>
-        <div><label>Added</label>{entry.meta.added_date ?? "—"}</div>
+        <div><label>Last push</label><span class="num">{entry.meta.last_github_push ?? "—"}</span></div>
+        <div><label>Last checked</label><span class="num">{entry.meta.last_checked ?? "never"}</span></div>
+        <div><label>Added</label><span class="num">{entry.meta.added_date ?? "—"}</span></div>
         <div><label>Source</label>{entry.meta.source}</div>
       </div>
 
-      <div class="row" style="flex-wrap: wrap; gap: 6px; margin-bottom: 18px;">
+      <div class="row" style="flex-wrap: wrap; gap: 6px; margin-bottom: 20px;">
         {#each entry.meta.tags as tag}<span class="chip" style="cursor: default;">{tag}</span>{/each}
       </div>
 
-      <div class="row" style="gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
-        <button class="primary" onclick={startEdit}>✎ Edit</button>
+      <div class="row" style="gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
+        <button class="primary" onclick={startEdit}>Edit</button>
         <button onclick={refresh} disabled={app.busy.refreshOne || app.busy.refreshAll}>
-          {app.busy.refreshOne ? "Refreshing…" : "⟳ Refresh metadata"}
+          {app.busy.refreshOne ? "Refreshing…" : "Refresh metadata"}
         </button>
         <button onclick={loadAlternatives} disabled={loadingAlts}>
-          {loadingAlts ? "Finding…" : "✨ Suggest alternatives"}
+          {loadingAlts ? "Finding…" : "Suggest alternatives"}
         </button>
+        <span class="grow"></span>
         {#if confirmDelete}
           <button class="danger" onclick={remove}>Really delete?</button>
           <button class="small" onclick={() => (confirmDelete = false)}>Cancel</button>
         {:else}
-          <button class="danger" onclick={() => (confirmDelete = true)}>🗑 Delete</button>
+          <button class="danger" onclick={() => (confirmDelete = true)}>Delete</button>
         {/if}
       </div>
 
       {#if alternatives.length > 0}
-        <div class="card" style="margin-bottom: 18px; border-color: var(--gold);">
-          <h3 style="font-size: 14px; margin-bottom: 10px;">✨ Fresher alternatives</h3>
+        <div class="card alts">
+          <h3 class="alts-head">Fresher alternatives</h3>
           {#each alternatives as alt}
             <button class="alt-line" onclick={() => (app.selectedId = alt.id)}>
               <span class="grow">{alt.meta.full_name}</span>
-              <span class="muted mono">⭐ {alt.meta.stars.toLocaleString()} · {alt.meta.last_github_push ?? "?"}</span>
+              <span class="muted mono num">★ {alt.meta.stars.toLocaleString()} · {alt.meta.last_github_push ?? "?"}</span>
             </button>
           {/each}
         </div>
@@ -187,7 +195,7 @@
            renderMarkdown escapes raw HTML and unsafe link schemes. -->
       <article class="md">{@html renderMarkdown(entry.body)}</article>
     {:else}
-      <div class="row" style="gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+      <div class="row" style="gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
         <div>
           <label>Category</label>
           <select bind:value={editCategory}>
@@ -209,7 +217,7 @@
       </div>
       <label>Body — summary &amp; Personal Notes (Markdown)</label>
       <textarea rows="18" style="width: 100%;" bind:value={editBody}></textarea>
-      <div class="row" style="gap: 8px; margin-top: 12px;">
+      <div class="row" style="gap: 8px; margin-top: 14px;">
         <button class="primary" onclick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</button>
         <button onclick={() => (editing = false)} disabled={saving}>Cancel</button>
       </div>
@@ -218,21 +226,39 @@
 {/if}
 
 <style>
+  .call-number {
+    font: 11px/1.4 var(--mono);
+    color: var(--tx-2);
+    letter-spacing: 0.02em;
+    margin-bottom: 2px;
+  }
+  .title { font-size: 21px; line-height: 28px; word-break: break-all; }
+  .rule { height: 2px; border-radius: 1px; margin: 12px 0 16px; }
+
+  .cat-chip { cursor: default; display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+
   .meta-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    font-size: 13px;
+    gap: 14px 12px;
+    margin-bottom: 18px;
+    padding: 16px 18px;
   }
+  .meta-grid label { margin-bottom: 2px; }
+
+  .alts { margin-bottom: 22px; }
+  .alts-head { font-size: 15px; margin-bottom: 8px; }
   .alt-line {
     display: flex;
     gap: 8px;
     width: 100%;
     background: transparent;
     border: none;
-    padding: 6px 4px;
-    border-radius: 6px;
+    padding: 6px 8px;
+    border-radius: var(--radius-control);
     text-align: left;
+    font-weight: 400;
   }
-  .alt-line:hover { background: var(--bg-panel); }
+  .alt-line:hover { background: var(--bg); }
 </style>

@@ -12,6 +12,9 @@
   onMount(bootstrap);
 </script>
 
+<!-- macOS overlay titlebar: a quiet drag strip over the top edge -->
+<div class="titlebar" data-tauri-drag-region></div>
+
 <div class="layout">
   <Sidebar />
   <main class="main">
@@ -40,3 +43,14 @@
 {#if app.toast}
   <div class="toast">{app.toast}</div>
 {/if}
+
+<style>
+  .titlebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    z-index: 30;
+  }
+</style>

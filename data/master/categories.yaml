@@ -1,109 +1,109 @@
 categories:
   - id: ai-agent
     name: AI Agents
-    color: "#8b5cf6"
+    color: "#5E409D"
     icon: "🤖"
     description: "AI agent development — vector DBs, RAG, MCP servers, agent memory, multi-agent, prompt engineering, evaluation, LLM infra"
     order: 1
   - id: web-app
     name: Web Apps
-    color: "#3b82f6"
+    color: "#205EA6"
     icon: "🌐"
     description: "Web application frameworks, tooling and reference implementations"
     order: 2
   - id: mobile-app
     name: Mobile Apps
-    color: "#06b6d4"
+    color: "#3AA99F"
     icon: "📱"
     description: "iOS / Android / cross-platform mobile development"
     order: 3
   - id: desktop-app
     name: Desktop Apps
-    color: "#0ea5e9"
+    color: "#4385BE"
     icon: "🖥️"
     description: "Native and hybrid desktop application development"
     order: 4
   - id: game-dev
     name: Game Dev
-    color: "#f43f5e"
+    color: "#A02F6F"
     icon: "🎮"
     description: "Game engines, frameworks and game development tooling"
     order: 5
   - id: devops-infra
     name: DevOps & Infra
-    color: "#f97316"
+    color: "#BC5215"
     icon: "⚙️"
     description: "CI/CD, containers, IaC, observability, deployment"
     order: 6
   - id: data-science
     name: Data Science
-    color: "#eab308"
+    color: "#AD8301"
     icon: "📊"
     description: "Data analysis, ML, notebooks, pipelines"
     order: 7
   - id: security
     name: Security
-    color: "#dc2626"
+    color: "#AF3029"
     icon: "🔐"
     description: "Security tooling, scanning, hardening, secrets management"
     order: 8
   - id: blockchain-web3
     name: Blockchain / Web3
-    color: "#a855f7"
+    color: "#8B7EC8"
     icon: "⛓️"
     description: "Smart contracts, wallets, protocols"
     order: 9
   - id: audio-voice
     name: Audio & Voice
-    color: "#22c55e"
+    color: "#66800B"
     icon: "🎙️"
     description: "Speech recognition, TTS, audio processing"
     order: 10
   - id: video
     name: Video
-    color: "#10b981"
+    color: "#879A39"
     icon: "🎬"
     description: "Video editing, encoding, streaming"
     order: 11
   - id: design-ui
     name: Design & UI
-    color: "#ec4899"
+    color: "#CE5D97"
     icon: "🎨"
     description: "Design systems, UI component libraries, prototyping"
     order: 12
   - id: blog-content
     name: Blog & Content
-    color: "#14b8a6"
+    color: "#24837B"
     icon: "✍️"
     description: "Static site generators, CMS, content workflows"
     order: 13
   - id: affiliate
     name: Affiliate
-    color: "#84cc16"
+    color: "#768D21"
     icon: "💰"
     description: "Affiliate marketing tooling and automation"
     order: 14
   - id: productivity
     name: Productivity
-    color: "#6366f1"
+    color: "#735EB5"
     icon: "⚡"
     description: "Personal productivity tools and automation"
     order: 15
   - id: education-edtech
     name: Education / EdTech
-    color: "#0d9488"
+    color: "#1C6C66"
     icon: "🎓"
     description: "Learning platforms and educational tooling"
     order: 16
   - id: finance-trading
     name: Finance & Trading
-    color: "#65a30d"
+    color: "#536907"
     icon: "📈"
     description: "Fintech, trading bots, market data"
     order: 17
   - id: open-source-tooling
     name: OSS Tooling
-    color: "#64748b"
+    color: "#878580"
     icon: "🧰"
     description: "Libraries and tools for building open source software"
     order: 18

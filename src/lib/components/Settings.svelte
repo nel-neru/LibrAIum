@@ -160,16 +160,20 @@
   }
 </script>
 
-<h2 style="font-size: 24px; margin-bottom: 18px;">Settings</h2>
+<h2 style="font-size: 26px; line-height: 32px; margin-bottom: 24px;">Settings</h2>
 
 <div class="stack">
   <section class="card">
-    <h3 style="margin-bottom: 12px;">📁 Data</h3>
-    <label>Data directory (a local git repository; blank = auto: ./data in dev, ~/LibrAIum/data otherwise)</label>
+    <h3 class="section-head">Data</h3>
+    <label>Data directory</label>
     <input style="width: 100%;" class="mono" placeholder={app.dataDir} bind:value={dataDirInput} />
+    <p class="muted" style="font-size: 12px; margin: 6px 0 0;">
+      A local git repository. Leave blank for the default: <span class="mono">./data</span> in dev,
+      <span class="mono">~/LibrAIum/data</span> otherwise.
+    </p>
     <div class="row" style="margin-top: 10px; gap: 10px;">
       <div>
-        <label>Stale after (days without a push)</label>
+        <label>Stale after (days)</label>
         <input type="number" min="7" style="width: 120px;" bind:value={staleDaysInput} />
       </div>
       <div class="grow"></div>
@@ -181,14 +185,14 @@
   </section>
 
   <section class="card">
-    <h3 style="margin-bottom: 12px;">🔑 GitHub token</h3>
+    <h3 class="section-head">GitHub token</h3>
     <p class="muted" style="margin-top: 0;">
       Optional. Raises the API rate limit from 60 to 5,000 requests/hour for metadata refresh.
       Stored in the OS keychain, never in a file.
     </p>
     {#if hasToken}
       <div class="row">
-        <span style="color: var(--ok);">● token configured</span>
+        <span class="badge active">token configured</span>
         <button class="small danger" onclick={clearToken}>Remove</button>
       </div>
     {:else}
@@ -202,7 +206,7 @@
   </section>
 
   <section class="card">
-    <h3 style="margin-bottom: 12px;">🌿 Git panel</h3>
+    <h3 class="section-head">Git</h3>
     {#if !git}
       <p class="muted">Loading…</p>
     {:else if !git.is_repo}
@@ -234,7 +238,7 @@
       {/if}
       {#if git.has_remote}
         <button style="margin-top: 10px;" onclick={push} disabled={app.busy.push}>
-          {app.busy.push ? "Pushing…" : "⇧ Push"}
+          {app.busy.push ? "Pushing…" : "Push to remote"}
         </button>
       {/if}
       {#if gitLog.length > 0}
@@ -247,24 +251,24 @@
       {/if}
     {/if}
     <div class="row" style="margin-top: 12px;">
-      <button class="small" onclick={loadGit}>⟳ Refresh status</button>
+      <button class="small" onclick={loadGit}>Refresh status</button>
     </div>
   </section>
 
   <section class="card">
-    <h3 style="margin-bottom: 12px;">🤖 Claude Code (MCP)</h3>
+    <h3 class="section-head">Claude Code (MCP)</h3>
     <p class="muted" style="margin-top: 0;">
       Register LibrAIum as an MCP server, then ask Claude things like
       <em>“suggest the best repos from my library for a RAG agent.”</em>
     </p>
     <div class="row">
-      <code class="mono grow" style="overflow-x: auto; white-space: nowrap; padding: 8px; background: var(--bg); border-radius: 8px;">{mcpCommand}</code>
+      <code class="mono grow" style="overflow-x: auto; white-space: nowrap; padding: 8px 10px; background: var(--bg); border: 1px solid var(--ui); border-radius: 6px;">{mcpCommand}</code>
       <button class="small" onclick={copyMcp}>Copy</button>
     </div>
   </section>
 
   <section class="card">
-    <h3 style="margin-bottom: 12px;">📜 Export</h3>
+    <h3 class="section-head">Export</h3>
     <div class="row" style="margin-bottom: 10px;">
       <p class="muted grow" style="margin: 0;">Render the whole library as an awesome-list Markdown document.</p>
       <button onclick={doExport} disabled={exporting}>
@@ -279,7 +283,8 @@
 </div>
 
 <style>
-  .stack { display: flex; flex-direction: column; gap: 14px; max-width: 860px; }
-  .changes { font-size: 12px; max-height: 180px; overflow-y: auto; }
-  .chg { color: var(--gold); display: inline-block; width: 24px; }
+  .stack { display: flex; flex-direction: column; gap: 16px; max-width: 860px; }
+  .section-head { font-size: 17px; margin-bottom: 12px; }
+  .changes { font-size: 12px; max-height: 180px; overflow-y: auto; font-variant-numeric: tabular-nums; }
+  .chg { color: var(--st-stale-tx); display: inline-block; width: 24px; }
 </style>

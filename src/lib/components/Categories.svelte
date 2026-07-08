@@ -21,7 +21,7 @@
     rows.push({
       id: "",
       name: "",
-      color: "#8b8cf0",
+      color: "#24837B",
       icon: "📁",
       description: "",
       order: (rows.at(-1)?.order ?? 0) + 1,
@@ -69,12 +69,12 @@
   }
 </script>
 
-<header class="row" style="margin-bottom: 18px;">
+<header class="row" style="margin-bottom: 24px;">
   <div class="grow">
-    <h2 style="font-size: 24px;">Category master</h2>
-    <span class="muted">data/master/categories.yaml — ids become entry directories</span>
+    <h2 style="font-size: 26px; line-height: 32px;">Catalog</h2>
+    <span class="muted mono" style="font-size: 11px;">data/master/categories.yaml — ids become entry directories</span>
   </div>
-  <button onclick={addRow}>＋ Add category</button>
+  <button onclick={addRow}>+ Add category</button>
   <button class="primary" onclick={save} disabled={!dirty}>Save changes</button>
 </header>
 
