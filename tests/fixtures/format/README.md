@@ -40,6 +40,12 @@ Line-based splitting rules, identical in both implementations:
    **mapping**; a YAML error rejects the file even when the delimiters are
    well-formed, and so does frontmatter that parses to `null` (empty block),
    a scalar, or a sequence.
+3b. The mapping must satisfy the `EntryMeta` schema **types** (table below):
+   required fields present and strings, optionals string-or-absent, `tags` an
+   array of strings, `stars` a non-negative integer. Rust enforces this via
+   serde's typed deserialization; Node mirrors it in `validateMeta`. Emptiness,
+   enum values and date formats are data-level rules (`validate-data.mjs`),
+   not parse-level.
 4. Everything after the closing delimiter is the Markdown body; leading blank
    lines are stripped. A bare `---` in the body (Markdown horizontal rule) is
    plain body text because it comes after the close.
@@ -96,6 +102,9 @@ Derived invariants (enforced on real data by `scripts/validate-data.mjs`):
 | `malformed-yaml.md`           | delimiters fine, YAML between them does not parse |
 | `empty.md`                    | zero-byte file                                    |
 | `empty-frontmatter.md`        | delimiters fine, but the YAML between them is empty — parses to `null`, not a mapping |
+| `quoted-stars.md`             | `stars: "8750"` — a string where the schema requires a number |
+| `numeric-full-name.md`        | `full_name: 12345` — a number where the schema requires a string |
+| `missing-required.md`         | well-formed mapping lacking `github_url`/`full_name`  |
 
 ## Function corpus (`functions.json`)
 

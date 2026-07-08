@@ -47,6 +47,23 @@ test("parseEntry rejects non-mapping frontmatter (empty block, scalar, sequence)
   assert.throws(() => parseEntry("---\n- a\n- b\n---\nbody\n"), /not a YAML mapping/);
 });
 
+test("parseEntry mirrors Rust's typed schema: wrong types and missing required fields rejected", () => {
+  const base = "github_url: https://github.com/a/b\nfull_name: a/b\ncategory: web-app";
+  const doc = (yaml) => `---\n${yaml}\n---\nbody\n`;
+
+  assert.throws(() => parseEntry(doc("category: web-app")), /'github_url' must be a string/);
+  assert.throws(() => parseEntry(doc(`${base.replace("full_name: a/b", "full_name: 12345")}`)), /'full_name' must be a string/);
+  assert.throws(() => parseEntry(doc(`${base}\nstars: "123"`)), /'stars' must be a non-negative integer/);
+  assert.throws(() => parseEntry(doc(`${base}\nstars: -1`)), /'stars' must be a non-negative integer/);
+  assert.throws(() => parseEntry(doc(`${base}\ntags: nope`)), /'tags' must be an array of strings/);
+  assert.throws(() => parseEntry(doc(`${base}\nstatus: null`)), /'status' must be a string/);
+
+  // Option<String> fields accept explicit null (serde None), and empty
+  // strings are a data-level concern, not a parse error — same as Rust.
+  assert.equal(parseEntry(doc(`${base}\nlanguage: null`)).meta.language, null);
+  assert.equal(parseEntry(doc(base.replace("full_name: a/b", 'full_name: ""'))).meta.full_name, "");
+});
+
 test("CRLF input parses identically to LF (CRs never leak)", () => {
   const crlf = SAMPLE.replaceAll("\n", "\r\n");
   const { meta, body } = parseEntry(crlf);

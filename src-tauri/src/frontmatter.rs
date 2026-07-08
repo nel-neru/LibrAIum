@@ -26,7 +26,9 @@ pub fn split(content: &str) -> Result<(String, String)> {
         }
     }
     if in_yaml {
-        return Err(AppError::msg("unterminated frontmatter: closing '---' not found"));
+        return Err(AppError::msg(
+            "unterminated frontmatter: closing '---' not found",
+        ));
     }
     Ok((yaml, body.trim_start_matches('\n').to_string()))
 }
@@ -67,6 +69,23 @@ mod tests {
     fn rejects_missing_frontmatter() {
         assert!(parse("# just markdown\n").is_err());
         assert!(parse("---\nfoo: 1\n").is_err()); // unterminated
+    }
+
+    #[test]
+    fn rejects_wrong_scalar_types() {
+        // Mirrors Node's validateMeta: schema string fields must BE strings —
+        // serde_yaml's plain-scalar-to-String coercion is disabled on purpose.
+        let base = "github_url: https://github.com/a/b\nfull_name: a/b\ncategory: web-app";
+        let doc = |yaml: &str| format!("---\n{yaml}\n---\nbody\n");
+
+        assert!(parse(&doc(&base.replace("full_name: a/b", "full_name: 12345"))).is_err());
+        assert!(parse(&doc(&format!("{base}\ntags: [1]"))).is_err());
+        assert!(parse(&doc(&format!("{base}\nstatus: 2026"))).is_err());
+        assert!(parse(&doc(&format!("{base}\nstars: \"123\""))).is_err());
+
+        // Option fields accept explicit null (None), same as before.
+        let (meta, _) = parse(&doc(&format!("{base}\nlanguage: null"))).unwrap();
+        assert!(meta.language.is_none());
     }
 
     #[test]

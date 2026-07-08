@@ -32,15 +32,52 @@ export function splitFrontmatter(content) {
   };
 }
 
+// Mirror of Rust's typed serde deserialization of EntryMeta (models.rs):
+// untyped YAML.parse accepts what serde rejects (quoted numbers, numeric
+// strings, missing required keys), so validate shapes explicitly. Types only —
+// emptiness/enums/date formats are data-level rules (validate-data.mjs), and
+// Rust likewise accepts e.g. an empty full_name at parse time.
+const REQUIRED_STRING_FIELDS = ["github_url", "full_name", "category"];
+const OPTION_STRING_FIELDS = ["language", "last_github_push", "last_checked", "added_date"];
+const DEFAULTED_STRING_FIELDS = ["status", "source"]; // serde default fns — absent ok, null is NOT
+
+function validateMeta(meta) {
+  for (const key of REQUIRED_STRING_FIELDS) {
+    if (typeof meta[key] !== "string") {
+      throw new Error(`frontmatter field '${key}' must be a string (got ${meta[key] === undefined ? "nothing" : typeof meta[key]})`);
+    }
+  }
+  for (const key of OPTION_STRING_FIELDS) {
+    const v = meta[key];
+    if (v !== undefined && v !== null && typeof v !== "string") {
+      throw new Error(`frontmatter field '${key}' must be a string or absent (got ${typeof v})`);
+    }
+  }
+  for (const key of DEFAULTED_STRING_FIELDS) {
+    const v = meta[key];
+    if (v !== undefined && typeof v !== "string") {
+      throw new Error(`frontmatter field '${key}' must be a string (got ${v === null ? "null" : typeof v})`);
+    }
+  }
+  if (meta.tags !== undefined && (!Array.isArray(meta.tags) || meta.tags.some((t) => typeof t !== "string"))) {
+    throw new Error("frontmatter field 'tags' must be an array of strings");
+  }
+  const stars = meta.stars;
+  if (stars !== undefined && (typeof stars !== "number" || !Number.isInteger(stars) || stars < 0)) {
+    throw new Error(`frontmatter field 'stars' must be a non-negative integer (got ${JSON.stringify(stars)})`);
+  }
+}
+
 export function parseEntry(content) {
   const { yaml, body } = splitFrontmatter(content);
   const meta = YAML.parse(yaml);
-  // Mirror the Rust side (typed serde deserialization): frontmatter that is
-  // empty or not a YAML mapping parses to null/scalar/array here — reject it
-  // so callers (listEntries) skip the file instead of crashing on meta.stars.
+  // Frontmatter that is empty or not a YAML mapping parses to null/scalar/
+  // array here — reject it so callers (listEntries) skip the file instead of
+  // crashing on meta.stars.
   if (meta === null || typeof meta !== "object" || Array.isArray(meta)) {
     throw new Error("frontmatter is not a YAML mapping");
   }
+  validateMeta(meta);
   return { meta, body };
 }
 

@@ -88,7 +88,8 @@ const rustByPath = new Map(JSON.parse(rustRaw).map((r) => [r.path, r]));
 // The 11 EntryMeta fields (models.rs / store.js contract), normalized so that
 // serde's skip_serializing_if/defaults and YAML's absent keys compare equal:
 // undefined→null, missing tags→[], missing stars→0, missing status→'active',
-// missing source→'manual', numbers compared as Number.
+// missing source→'manual'. Deliberately NO type coercion (e.g. Number(...)):
+// both parsers enforce types now, and coercing here would mask a divergence.
 function normalizeMeta(meta) {
   const m = meta ?? {};
   const val = (k) => (m[k] === undefined || m[k] === null ? null : m[k]);
@@ -97,7 +98,7 @@ function normalizeMeta(meta) {
     full_name: val("full_name"),
     category: val("category"),
     tags: val("tags") ?? [],
-    stars: Number(val("stars") ?? 0),
+    stars: val("stars") ?? 0,
     language: val("language"),
     last_github_push: val("last_github_push"),
     last_checked: val("last_checked"),
