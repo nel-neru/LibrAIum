@@ -8,6 +8,14 @@ LibrAIum is a **local-first desktop app** for curating the best-practice public 
 
 > "Suggest the 3 best repos from my library for a RAG agent combining a vector DB and knowledge management — with setup commands."
 
+<!-- library-stats:start -->
+**43 repositories** across **18 categories** — browse them all in [CATALOG.md](CATALOG.md).
+
+- Top languages: Go (9), TypeScript (8), Python (7), C++ (6), Rust (5)
+- Freshness: 1 stale, 0 archived
+- Recently added: [dubinc/dub](CATALOG.md#affiliate), [YOURLS/YOURLS](CATALOG.md#affiliate), [langgenius/dify](CATALOG.md#ai-agents), [ollama/ollama](CATALOG.md#ai-agents), [ggml-org/whisper.cpp](CATALOG.md#audio--voice)
+<!-- library-stats:end -->
+
 ## Features (v1.0)
 
 - **Git-native storage** — one Markdown file per repo (`YAML frontmatter + body`) in a local git repository. Diff, merge, and back up your knowledge like code.
