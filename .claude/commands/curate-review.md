@@ -9,7 +9,7 @@ Audit the LibrAIum library (`data/entries/`) for curation debt. This is a review
 Run the structural validator first — a broken file invalidates the rest of the audit:
 
 ```bash
-node scripts/validate-data.mjs
+node scripts/validate-data.mjs --data-dir data
 ```
 
 Report and fix any structural failures before continuing.
@@ -46,4 +46,4 @@ Ask the user which fixes to apply. For approved fixes:
 
 - Edit the entry files directly (metadata refreshes must use real GitHub API data — never fabricate stars or dates; set `last_checked` to today only when you actually refreshed).
 - Tag renames must be applied consistently across every entry using the tag.
-- Re-run `node scripts/validate-data.mjs` after edits and show the final `git diff`. Do not commit.
+- Re-run `node scripts/validate-data.mjs --data-dir data` after edits and show the final `git diff`. Do not commit.

@@ -51,7 +51,9 @@ House-style essentials:
 ## 5. Validate and show the result
 
 ```bash
-node scripts/validate-data.mjs
+node scripts/validate-data.mjs --data-dir data
 ```
+
+(`--data-dir data` pins validation to THIS repo's library — an exported `LIBRAIUM_DATA_DIR` would otherwise silently validate a different one.)
 
 Fix anything it reports. Then show the user the new file as a diff (`git diff` / `git status` for the untracked file, plus the full file content) and ask them to confirm the Personal Notes match their actual experience — they are *their* notes, so invite edits. Do **not** commit; leave that to the user.

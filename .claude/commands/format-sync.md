@@ -37,6 +37,6 @@ A conformance failure means one side drifted — fix the *implementation* that d
 
 ## 4. Close out
 
-- If the format change affects existing entry files under `data/entries/`, migrate them and run `node scripts/validate-data.mjs`.
+- If the format change affects existing entry files under `data/entries/`, migrate them and run `node scripts/validate-data.mjs --data-dir data`.
 - Update the Data Model section of `CLAUDE.md`/`README.md` if the on-disk format visibly changed.
 - Summarize: what changed, which files on each side, which fixture covers it. For an independent double-check, the `conformance-auditor` agent can audit the result.

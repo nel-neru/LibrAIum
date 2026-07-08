@@ -38,21 +38,24 @@ if (rel.endsWith(".rs") && existsSync(abs)) {
 const messages = [];
 
 // --- 2. dual-implementation parity reminder ---
+// Every Rust file that owns a rule mirrored in mcp-server/lib/store.js:
+// store/frontmatter/models (format), github.rs (compute_status, 7569f6d),
+// settings.rs (resolve_data_dir_from ⇔ resolveDataDir, 0fab55f),
+// categories.rs+models.rs (Category schema ⇔ loadCategories, 6f2657c).
 const PARITY_FILES = new Set([
   "src-tauri/src/store.rs",
   "src-tauri/src/frontmatter.rs",
   "src-tauri/src/models.rs",
-  // github.rs owns compute_status, mirrored by store.js computeStatus since
-  // 7569f6d — without it here, a Rust-side status-rule edit had no tripwire
-  // (the conformance function corpus covers only slugify/normalize).
   "src-tauri/src/github.rs",
+  "src-tauri/src/settings.rs",
+  "src-tauri/src/categories.rs",
   "mcp-server/lib/store.js",
 ]);
 if (PARITY_FILES.has(rel)) {
   messages.push(
-    `⚠ ${rel} is one half of the dual-implemented data format (Rust app ⇔ Node MCP server). ` +
-      `If parsing, serialization, slugify, URL normalization, status computation, or the EntryMeta schema changed, ` +
-      `mirror the change in the counterpart file and run: node scripts/conformance.mjs`
+    `⚠ ${rel} is one half of the dual-implemented data layer (Rust app ⇔ Node MCP server). ` +
+      `If parsing, serialization, slugify, URL normalization, status computation, data-dir resolution, ` +
+      `or the EntryMeta/Category schemas changed, mirror the change in the counterpart file and run: node scripts/conformance.mjs`
   );
 }
 

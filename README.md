@@ -89,8 +89,9 @@ High-performance vector database…
 ```bash
 npm install && (cd mcp-server && npm install)   # once, after cloning
 bash scripts/verify-all.sh      # the full suite: data validation → cargo test →
-                                # vite build → MCP unit+smoke tests → Rust⇔Node
-                                # conformance → app binary build (CI runs this too)
+                                # vite build + frontend unit tests → MCP unit+smoke
+                                # tests → Rust⇔Node conformance → app binary build
+                                # (CI runs this too)
 ```
 
 Or piecewise — note that `npm run build` must come **before** the first
@@ -99,10 +100,17 @@ at compile time; `verify-all.sh` reorders this automatically):
 
 ```bash
 npm run build                   # frontend production build
+npm test                        # frontend unit tests (markdown-renderer hardening)
 cd src-tauri && cargo test      # Rust unit tests (data/git/search/github layers)
 cd mcp-server && npm test       # store/suggest unit tests + MCP stdio smoke test
 bash scripts/make-icons.sh      # regenerate app icons (macOS)
 ```
+
+UI work is governed by [DESIGN.md](DESIGN.md) — the Flexoki paper-and-ink
+design contract (tokens live in `src/styles.css`). For UI preview without
+compiling the Rust backend, plain `npm run dev` in a browser auto-installs
+a Tauri IPC mock (`src/lib/dev/mock.js`) with seeded sample data; the mock
+is dev-only and never reaches production builds.
 
 Architecture (see [LibrAIum_完全設計書_v1.0.md](LibrAIum_完全設計書_v1.0.md) for the full Japanese design document):
 
