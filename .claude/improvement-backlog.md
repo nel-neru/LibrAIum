@@ -12,14 +12,13 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P3 — error handling / UX / docs / DX
-- [ ] P3 clipboard copies unguarded — rejection = silent no-op, no toast (`Settings.svelte:108-120`). try/catch → `fail(e)`.
-- [ ] P3 Settings async buttons (Apply/commit/saveToken/initRepo/export) lack pending flags — double-submit possible (`Settings.svelte:31,45,66,90,100`).
 - [ ] P3 AddRepo modal: no `<form>` (Enter doesn't submit), labels not associated, no Escape/focus management (`src/lib/components/AddRepo.svelte:48-99`).
 - [ ] P3 README Development section orders `cargo test` before `npm run build` — fails on fresh clone (`README.md:90-91`); reorder or add the dist/ note.
 - [ ] P3 fresh-clone DX: verify-all stage 1 crashes with `Cannot find package 'yaml'` if `mcp-server && npm install` wasn't run; standalone conformance.mjs needs dist/ (`scripts/validate-data.mjs:16-22`). Check prerequisites with clear errors.
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P3 Settings action hygiene (2 items as one): pending flags for Apply/Store/Commit/init/Generate + clipboard try/catch→fail. — 1671f60 (2026-07-08)
 - [x] P3 Suggest-alternatives loading state: loadingAlts flag + Finding… label + disabled. — 919f6a2 (2026-07-08)
 - [x] P3 runSearch race: monotonic sequence token discards stale responses/failures. — a29453d (2026-07-08)
 - [x] P3 suggest input validation: schema trims + min(1); stopword-only descriptions get a distinct "no usable keywords" note; smoke 11+12. — de28212 (2026-07-08)
