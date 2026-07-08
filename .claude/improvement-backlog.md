@@ -22,7 +22,6 @@ MCP/parity sweep surfaced the items below).
 
 ### P5 — docs / DX / design conformance
 - [ ] P5 dev mock behavioral divergence (as one item): save_entry never recomputes id on category change (core flow unexercisable in preview), add_repo_from_url skips the dup guard (double-add crashes Library's keyed each in dev), search matches full body vs real first_summary_line, suggest_alternatives ignores cap/ranking, check_duplicate compares raw URLs. — src/lib/dev/mock.js:119-184 vs src-tauri/src/commands.rs, search.rs
-- [ ] P5 DESIGN.md conformance drift ×4: --t-drawer 300ms vs contracted 240ms (styles.css:55); ⭐ emoji in AddRepo toast vs "no emoji in chrome" (AddRepo.svelte:46); `open-source-tooling` color #878580 is base-500 (not accent 400–700) AND identical to the unknown-category fallback (categories.yaml, state.svelte.js:115); Dashboard non-interactive stat div inherits cursor:pointer (Dashboard.svelte:60-63,102).
 - (all resolved — see Done)
 
 ### P5 — docs / DX
@@ -33,6 +32,7 @@ MCP/parity sweep surfaced the items below).
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
 
+- [x] P5 DESIGN.md conformance ×4 (as one): drawer 240ms per §7, ★ glyph in the AddRepo toast, open-source-tooling → orange-400 #DA702C (was base-500 = the unknown-category fallback), cursor:pointer scoped to button.stat. Live-verified token + cursors in preview. — 04847c8 (2026-07-09) [iter-48]
 - [x] P5 docs/automation sync ×3 (as one): hook PARITY_FILES + settings.rs/categories.rs (verified firing); all command-doc validate-data calls pinned with --data-dir (incl. format-sync.md, found in flight); README gains frontend tests, npm test, DESIGN.md and the browser mock. — e3597b1 (2026-07-09) [iter-47]
 - [x] P4 Category-master strict scalars BOTH sides: Rust Category gains strict_string on its five String fields (no more `id: 2048` → "2048" coercion), Node loadCategories requires string id/name + typed optional scalars + numeric order with value-naming errors; four shapes pinned by paired tests. Conformance-corpus coverage for categories.yaml consciously deferred (unit tests + parity hook are the tripwire). — 6f2657c (2026-07-09) [iter-46]
 - [x] P3 Categories id-lock by row persistence: rows carry a `locked` flag (loaded=true, new=false, promoted on save; stripped from the payload) — a new row no longer self-disables when its typed value collides with an existing id; implements the documented "locks PERSISTED ids" semantics exactly. Verified live in preview. — f946482 (2026-07-09) [iter-45]
