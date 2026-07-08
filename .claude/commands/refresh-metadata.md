@@ -19,7 +19,7 @@ Refresh the library's GitHub metadata for: **$ARGUMENTS** (empty = the whole lib
 
    Walk the user through the digest: star drift, `STATUS` transitions (`active -> stale` = candidate for succession via suggest alternatives), upstream **renames** (manual: follow the rename rules in `/add-entry` — the file must move because slug = slugify(full_name)), and fetch errors.
 
-3. **Known trap — the demo-stale seed.** `ai-agent/openai-swarm` is deliberately stale: the MCP smoke test's status-filter scenario and the GUI's alternative-suggestion demo rely on a stale entry existing. If the digest shows it flipping to `active`, do NOT write it wholesale — either exclude it (`--category`/`--only` around it) or, if the user wants the flip, update the smoke test's stale-seed scenario in the same commit and run verify-all.
+3. **Demo-stale seed note.** `ai-agent/openai-swarm` is seeded stale to showcase the GUI's stale badge and alternative suggestions. The test suite does NOT depend on it (stale scenarios run on the checked-in fixture in `mcp-server/test/fixtures/stale-lib/`), so writing the flip is safe — just tell the user the GUI showcase loses its stale example until some entry goes stale for real.
 
 4. **Apply** only what the user approves:
 
