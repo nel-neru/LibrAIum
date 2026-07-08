@@ -19,7 +19,7 @@ import {
   today,
   computeStatus,
 } from "./lib/store.js";
-import { suggest } from "./lib/suggest.js";
+import { suggest, alternativesFor } from "./lib/suggest.js";
 import { compare, resolveSelector } from "./lib/compare.js";
 import { overview } from "./lib/overview.js";
 
@@ -79,7 +79,9 @@ server.registerTool(
     description:
       "Full details of one library entry — metadata plus the Markdown body including the user's " +
       "Personal Notes (firsthand experience, gotchas, good pairings). Accepts an entry id " +
-      "('category/owner-repo'), an 'owner/repo' name, or a GitHub URL.",
+      "('category/owner-repo'), an 'owner/repo' name, or a GitHub URL. For stale/archived " +
+      "entries the response carries alternatives: active same-category entries sharing tags " +
+      "(the shelf's suggested successors; empty array = none shelved yet).",
     inputSchema: { id_or_url: z.string() },
   },
   async ({ id_or_url }) => {
@@ -98,7 +100,19 @@ server.registerTool(
         (fullName && e.meta.full_name.toLowerCase() === fullName)
     );
     if (!entry) return jsonError(`no entry found for "${id_or_url}"`);
-    return json({ ...summarize(entry), meta: entry.meta, body: entry.body });
+    const result = { ...summarize(entry), meta: entry.meta, body: entry.body };
+    // Parity with the GUI's "what replaces this stale repo?" — attached at
+    // exactly the decision moment; an empty array means no successor shelved.
+    const status = entry.meta.status ?? "active";
+    if (status === "stale" || status === "archived") {
+      result.alternatives = alternativesFor(entries, entry, 3).map((a) => ({
+        ...summarize(a),
+        shared_tags: (a.meta.tags ?? []).filter((t) =>
+          (entry.meta.tags ?? []).some((tt) => tt.toLowerCase() === t.toLowerCase())
+        ),
+      }));
+    }
+    return json(result);
   }
 );
 

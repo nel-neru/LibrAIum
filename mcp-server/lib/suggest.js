@@ -82,6 +82,29 @@ export function scoreEntry(entry, tokens, categories) {
   return { score: Math.round(score * 10) / 10, lexical, reasons };
 }
 
+// Mirror of Rust search::suggest_alternatives (src-tauri/src/search.rs) —
+// keep the formula identical on BOTH sides: candidates share the target's
+// category, are active, and are not the target; score = sharedTagCount * 1000
+// + min(stars, 999); require >= 1000 (at least one shared tag); sort by score
+// desc (stable), take max. Tag comparison is ASCII-case-insensitive
+// (eq_ignore_ascii_case parity — tags are kebab-case ASCII by convention).
+export function alternativesFor(entries, target, max = 3) {
+  return entries
+    .filter((e) => e.id !== target.id)
+    .filter((e) => e.meta.category === target.meta.category)
+    .filter((e) => (e.meta.status ?? "active") === "active")
+    .map((e) => {
+      const overlap = (e.meta.tags ?? []).filter((t) =>
+        (target.meta.tags ?? []).some((tt) => tt.toLowerCase() === t.toLowerCase())
+      ).length;
+      return { score: overlap * 1000 + Math.min(e.meta.stars ?? 0, 999), e };
+    })
+    .filter(({ score }) => score >= 1000)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, max)
+    .map(({ e }) => e);
+}
+
 // Bullets whose wording signals a warning — surfaced ahead of neutral notes.
 const CAUTION_CUES = ["gotcha", "caveat", "avoid", "superseded", "don't", "instead", "deprecated", "watch", "⚠"];
 

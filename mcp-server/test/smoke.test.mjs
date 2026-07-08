@@ -120,6 +120,7 @@ try {
     })
   );
   assert.ok(details.body.includes("## Personal Notes"));
+  assert.ok(!("alternatives" in details), "active entries must not carry an alternatives field");
 
   // details: by id and by full_name resolve to the same entry
   const byId = toolJson(
@@ -259,7 +260,18 @@ try {
     "- Superseded in practice; use new/active for real work."
   );
 
-  console.log("✓ MCP smoke test passed — 6 tools, 19 scenarios (main + stale-fixture server)");
+  // details: a stale entry auto-carries its shelf successors (GUI parity)
+  const dormant = toolJson(
+    await staleLib.request("tools/call", {
+      name: "get_repo_details",
+      arguments: { id_or_url: "old/dormant" },
+    })
+  );
+  assert.equal(dormant.alternatives.length, 1);
+  assert.equal(dormant.alternatives[0].full_name, "new/active");
+  assert.deepEqual(dormant.alternatives[0].shared_tags, ["multi-agent"]);
+
+  console.log("✓ MCP smoke test passed — 6 tools, 20 scenarios (main + stale-fixture server)");
   process.exitCode = 0;
 } catch (e) {
   console.error("✗ MCP smoke test failed:", e);

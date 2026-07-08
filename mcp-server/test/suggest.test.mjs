@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { tokenize, scoreEntry, suggest, extractNotes } from "../lib/suggest.js";
+import { tokenize, scoreEntry, suggest, extractNotes, alternativesFor } from "../lib/suggest.js";
 
 function entry(fullName, { tags = [], stars = 0, status = "active", language, category = "ai-agent", body = "" } = {}) {
   const slug = fullName.replace("/", "-");
@@ -119,6 +119,32 @@ test("suggest: suggestions inline personal_notes from the entry body", () => {
   ];
   const res = suggest(entries, CATEGORIES, "a RAG pipeline");
   assert.deepEqual(res.suggestions[0].personal_notes, ["Watch memory on big corpora."]);
+});
+
+test("alternativesFor mirrors Rust suggest_alternatives: shared tag + active + same category", () => {
+  // Fixture mirrors search.rs alternatives_share_tags_and_are_active.
+  const entries = [
+    entry("old/thing", { tags: ["vector-db"], stars: 50, status: "stale" }),
+    entry("qdrant/qdrant", { tags: ["vector-db", "rag"], stars: 20_000 }),
+    entry("unrelated/x", { tags: ["prompt"], stars: 90_000 }),
+  ];
+  const alts = alternativesFor(entries, entries[0], 3);
+  assert.equal(alts.length, 1, "no shared tag = excluded regardless of stars");
+  assert.equal(alts[0].meta.full_name, "qdrant/qdrant");
+
+  // two shared tags outrank one, stars only break ties below the 999 cap
+  const richer = [
+    entries[0],
+    entry("one/tag", { tags: ["vector-db"], stars: 999_999 }),
+    entry("two/tags", { tags: ["vector-db", "rust"], stars: 10 }),
+  ];
+  const target = { ...entries[0], meta: { ...entries[0].meta, tags: ["vector-db", "rust"] } };
+  const ranked = alternativesFor(richer, target, 3);
+  assert.equal(ranked[0].meta.full_name, "two/tags", "tag overlap dominates stars (min 999 cap)");
+
+  // different category never qualifies
+  const otherCat = [entries[0], entry("web/kit", { tags: ["vector-db"], category: "web-app" })];
+  assert.equal(alternativesFor(otherCat, entries[0], 3).length, 0);
 });
 
 test("suggest: irrelevant query returns ZERO suggestions despite active high-star entries", () => {
