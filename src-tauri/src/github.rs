@@ -34,11 +34,6 @@ pub fn fetch_repo(full_name: &str, token: Option<&str>) -> Result<GhRepo> {
             .into_json::<GhRepo>()
             .map_err(|e| AppError::GitHub(format!("invalid response for {full_name}: {e}"))),
         Err(ureq::Error::Status(code, resp)) => {
-            let hint = match code {
-                404 => " (repository not found — renamed or private?)",
-                403 | 429 => " (rate limited — set a GitHub token in Settings)",
-                _ => "",
-            };
             let body = resp.into_string().unwrap_or_default();
             let msg = body
                 .lines()
@@ -47,9 +42,17 @@ pub fn fetch_repo(full_name: &str, token: Option<&str>) -> Result<GhRepo> {
                 .chars()
                 .take(200)
                 .collect::<String>();
-            Err(AppError::GitHub(format!(
-                "{full_name}: HTTP {code}{hint} {msg}"
-            )))
+            match code {
+                // Typed so refresh_all can abort the sweep instead of
+                // collecting one identical error per remaining entry.
+                403 | 429 => Err(AppError::RateLimited(format!(
+                    "{full_name}: HTTP {code} (set a GitHub token in Settings) {msg}"
+                ))),
+                404 => Err(AppError::GitHub(format!(
+                    "{full_name}: HTTP 404 (repository not found — renamed or private?) {msg}"
+                ))),
+                _ => Err(AppError::GitHub(format!("{full_name}: HTTP {code} {msg}"))),
+            }
         }
         Err(e) => Err(AppError::GitHub(format!("{full_name}: {e}"))),
     }

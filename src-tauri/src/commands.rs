@@ -204,6 +204,14 @@ pub async fn refresh_all(state: State<'_, AppState>) -> CmdResult<RefreshReport>
                         Err(e) => report.errors.push(format!("{}: {e}", entry.id)),
                     }
                 }
+                Err(e @ crate::error::AppError::RateLimited(_)) => {
+                    // Every remaining request would fail the same way (60/hr
+                    // unauthenticated) — stop the sweep with ONE clear error.
+                    report.errors.push(format!(
+                        "{e} — aborted the remaining refreshes; retry after setting a token."
+                    ));
+                    break;
+                }
                 Err(e) => report.errors.push(e.to_string()),
             }
             // be polite to the API; also keeps unauthenticated bursts under control

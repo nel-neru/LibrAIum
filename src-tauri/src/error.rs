@@ -14,6 +14,10 @@ pub enum AppError {
     Duplicate(String),
     #[error("github api error: {0}")]
     GitHub(String),
+    /// 403/429 from the GitHub API — callers iterating many repos should
+    /// stop instead of burning the remaining quota on identical failures.
+    #[error("github rate limit: {0}")]
+    RateLimited(String),
     #[error("git error: {0}")]
     Git(String),
 }
