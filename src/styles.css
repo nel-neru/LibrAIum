@@ -171,7 +171,10 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 textarea { font-family: var(--mono); font-size: 12.5px; line-height: 1.55; resize: vertical; }
-label {
+/* .field-label: display-only captions (e.g. the drawer meta grid) that share
+   the label look without misusing <label> where no control exists */
+label,
+.field-label {
   color: var(--tx-2);
   font-size: 11px;
   font-weight: 500;

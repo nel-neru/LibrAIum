@@ -123,11 +123,30 @@
   }
 
   let cat = $derived(entry ? categoryOf(entry.meta.category) : null);
+
+  // Focus the drawer when it opens so keyboard users aren't stranded behind
+  // the scrim (same convention as AddRepo focusing its first field).
+  let drawerEl = $state(null);
+  $effect(() => {
+    if (entry) drawerEl?.focus();
+  });
+
+  function onKeydown(e) {
+    if (e.key !== "Escape" || !entry) return;
+    if (app.showAdd) return; // the AddRepo modal is on top — let it handle Escape
+    if (editing) {
+      if (!saving) editing = false; // cancel the edit, keep the drawer
+    } else {
+      close();
+    }
+  }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 {#if entry}
   <div class="drawer-backdrop" onclick={close} role="presentation"></div>
-  <aside class="drawer">
+  <aside class="drawer" bind:this={drawerEl} tabindex="-1">
     <div class="row" style="align-items: flex-start;">
       <div class="grow">
         <div class="call-number">{entry.id}</div>
@@ -149,13 +168,15 @@
     </div>
 
     {#if !editing}
+      <!-- display-only captions, not form labels — <label> without a control
+           is an a11y violation, .field-label shares its styling -->
       <div class="meta-grid card">
-        <div><label>Stars</label><span class="num">★ {entry.meta.stars.toLocaleString()}</span></div>
-        <div><label>Language</label>{entry.meta.language ?? "—"}</div>
-        <div><label>Last push</label><span class="num">{entry.meta.last_github_push ?? "—"}</span></div>
-        <div><label>Last checked</label><span class="num">{entry.meta.last_checked ?? "never"}</span></div>
-        <div><label>Added</label><span class="num">{entry.meta.added_date ?? "—"}</span></div>
-        <div><label>Source</label>{entry.meta.source}</div>
+        <div><span class="field-label">Stars</span><span class="num">★ {entry.meta.stars.toLocaleString()}</span></div>
+        <div><span class="field-label">Language</span>{entry.meta.language ?? "—"}</div>
+        <div><span class="field-label">Last push</span><span class="num">{entry.meta.last_github_push ?? "—"}</span></div>
+        <div><span class="field-label">Last checked</span><span class="num">{entry.meta.last_checked ?? "never"}</span></div>
+        <div><span class="field-label">Added</span><span class="num">{entry.meta.added_date ?? "—"}</span></div>
+        <div><span class="field-label">Source</span>{entry.meta.source}</div>
       </div>
 
       <div class="row" style="flex-wrap: wrap; gap: 6px; margin-bottom: 20px;">
@@ -197,26 +218,26 @@
     {:else}
       <div class="row" style="gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
         <div>
-          <label>Category</label>
-          <select bind:value={editCategory}>
+          <label for="edit-category">Category</label>
+          <select id="edit-category" bind:value={editCategory}>
             {#each app.categories as c}<option value={c.id}>{c.icon} {c.name}</option>{/each}
           </select>
         </div>
         <div>
-          <label>Status</label>
-          <select bind:value={editStatus}>
+          <label for="edit-status">Status</label>
+          <select id="edit-status" bind:value={editStatus}>
             <option value="active">active</option>
             <option value="stale">stale</option>
             <option value="archived">archived</option>
           </select>
         </div>
         <div class="grow">
-          <label>Tags (comma-separated)</label>
-          <input style="width: 100%;" bind:value={editTags} />
+          <label for="edit-tags">Tags (comma-separated)</label>
+          <input id="edit-tags" style="width: 100%;" bind:value={editTags} />
         </div>
       </div>
-      <label>Body — summary &amp; Personal Notes (Markdown)</label>
-      <textarea rows="18" style="width: 100%;" bind:value={editBody}></textarea>
+      <label for="edit-body">Body — summary &amp; Personal Notes (Markdown)</label>
+      <textarea id="edit-body" rows="18" style="width: 100%;" bind:value={editBody}></textarea>
       <div class="row" style="gap: 8px; margin-top: 14px;">
         <button class="primary" onclick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</button>
         <button onclick={() => (editing = false)} disabled={saving}>Cancel</button>
@@ -245,7 +266,7 @@
     margin-bottom: 18px;
     padding: 16px 18px;
   }
-  .meta-grid label { margin-bottom: 2px; }
+  .meta-grid .field-label { margin-bottom: 2px; }
 
   .alts { margin-bottom: 22px; }
   .alts-head { font-size: 15px; margin-bottom: 8px; }
