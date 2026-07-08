@@ -11,6 +11,12 @@ export function tokenize(text) {
     (text ?? "")
       .toLowerCase()
       .split(/[^a-z0-9+#.]+/)
+      // '.' stays in the split class for names like node.js / .net, but a
+      // sentence-final period would otherwise glue onto the last word of
+      // every sentence ("…in Rust." → "rust.") and silently miss the exact
+      // language match and substring category/name matching. Strip trailing
+      // dots only; stripped tokens re-pass the length/stopword filter below.
+      .map((t) => t.replace(/\.+$/, ""))
       .filter((t) => t.length > 1 && !STOPWORDS.has(t))
   )];
 }

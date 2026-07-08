@@ -36,6 +36,16 @@ test("tokenize lowercases, drops stopwords/short tokens, dedupes, keeps + # .", 
   assert.deepEqual(tokenize(null), []);
 });
 
+test("tokenize strips sentence-final periods but keeps interior/leading dots", () => {
+  // the last word of a sentence must still hit the exact language match
+  assert.deepEqual(tokenize("A search engine in Rust."), ["search", "engine", "rust"]);
+  assert.deepEqual(tokenize("Runs on node.js. Also .NET."), ["runs", "node.js", "also", ".net"]);
+  // a dots-only fragment is noise, not a token
+  assert.deepEqual(tokenize("wait... what"), ["wait", "what"]);
+  // stripped tokens re-pass the stopword/length filter
+  assert.deepEqual(tokenize("use it."), []);
+});
+
 test("scoreEntry: lexical evidence is tracked separately from status/stars", () => {
   const e = entry("acme/vector-store", { tags: ["vector-db"], stars: 10_000, status: "active" });
 
