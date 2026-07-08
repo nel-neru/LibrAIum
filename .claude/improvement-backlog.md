@@ -12,7 +12,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P3 — error handling / UX / docs / DX
-- [ ] P3 `runSearch` results race — chip clicks bypass the debounce; stale results can overwrite fresh (`src/lib/state.svelte.js:62-75`). Monotonic query id.
 - [ ] P3 "Suggest alternatives" button: no loading state, repeat clicks fire duplicate backend calls (`EntryDetail.svelte:90-97,137`).
 - [ ] P3 clipboard copies unguarded — rejection = silent no-op, no toast (`Settings.svelte:108-120`). try/catch → `fail(e)`.
 - [ ] P3 Settings async buttons (Apply/commit/saveToken/initRepo/export) lack pending flags — double-submit possible (`Settings.svelte:31,45,66,90,100`).
@@ -22,6 +21,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P3 runSearch race: monotonic sequence token discards stale responses/failures. — a29453d (2026-07-08)
 - [x] P3 suggest input validation: schema trims + min(1); stopword-only descriptions get a distinct "no usable keywords" note; smoke 11+12. — de28212 (2026-07-08)
 - [x] P3 GitHub fetch timeouts: 10s bound on BOTH sides (Node AbortSignal.timeout — ureq also had no overall timeout, fixed too); 429 now carries the token hint; fetchImpl injectable + unit-tested mappings. — b5ea011 (2026-07-08)
 - [x] P3 corrupt categories.yaml: loadCategories wraps parse errors with path+hint, rejects non-list shape; suggest handler returns structured jsonError. — 0feab8d (2026-07-08)
