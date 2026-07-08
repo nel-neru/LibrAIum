@@ -2,10 +2,11 @@
 //
 // Bodies are not trusted input: the add flow embeds GitHub repo descriptions
 // verbatim, and a git-synced library can contain entries authored elsewhere.
-// Page scripts reach Tauri's IPC layer (tauri.conf.json ships csp: null), so
-// raw HTML passthrough would escalate to arbitrary command invocation. Raw
-// HTML tokens are therefore escaped to visible text, and link hrefs are
-// limited to http(s)/mailto/relative targets.
+// Page scripts reach Tauri's IPC layer, so raw HTML passthrough would
+// escalate to arbitrary command invocation. Raw HTML tokens are therefore
+// escaped to visible text, and link hrefs are limited to http(s)/mailto/
+// relative targets. This escaping is the PRIMARY defense — the CSP in
+// tauri.conf.json is a second layer, not a reason to relax it.
 import { Marked } from "marked";
 
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
