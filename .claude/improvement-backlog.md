@@ -9,7 +9,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 ## Pending  (ordered: highest value first)
 
 ### P1 — correctness & data-safety
-- [ ] P1 Categories id-lock bypass: `existingIds` is a non-reactive `let` (the build even warns `non_reactive_update`), so a category saved during the session keeps an editable id — renaming it afterwards orphans the entry directory the id used to name. Fix: derive from `app.categories` with `$derived`, drop the dead reassignment. — src/lib/components/Categories.svelte:7,63,108-109
 - [ ] P1 add_repo rename-redirect hole (BOTH sides): the duplicate check runs on the *input* full name before the GitHub fetch, but the entry is saved under the API's post-301 `full_name` — adding a renamed repo bypasses dedup (second entry for the same repo) and stores a `github_url` that contradicts `full_name`, violating validate-data.mjs's own invariant. Mirrored fix: re-check duplicates and derive the canonical URL from `gh.full_name` after the fetch. — src-tauri/src/commands.rs:127-138, mcp-server/index.js:165-190, scripts/validate-data.mjs:167-179
 
 ### P3 — error handling / UX / parity robustness
@@ -29,6 +28,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
 
+- [x] P1 Categories id-lock made reactive: `existingIds` was a plain `let` reassigned in save() (compiler warned `non_reactive_update`), so a category added+saved in one session kept an editable id — renaming it then orphaned the entry directory the id names. Now `$derived(app.categories)`; the lock recomputes on save. Verified by the warning disappearing + verify-all 6/6 (no frontend component test harness exists; browser preview was blocked by a parallel session holding port 1420). — 097bec1 (2026-07-08) [iter-32, found by iter-31 fresh audit]
 - [x] P1 stored-XSS in entry bodies: `EntryDetail` rendered `{@html marked.parse(body)}` with no sanitizer while the app ships `csp: null`, so injected HTML/handlers in an untrusted body (GitHub description embedded verbatim on add; git-synced entries) reached Tauri IPC. New `src/lib/markdown.js` overrides marked's html/link/**image** renderers to escape raw HTML and allowlist schemes (the image `alt` was the non-obvious vector — flagged by libraium-reviewer before commit); `tests/markdown.test.mjs` (node --test, no new deps) wired into verify-all stage 3. — fcd9068 (2026-07-08) [found by iter-31 fresh audit]
 
 - [x] P1 Rust save_entry path-traversal guard: kebab-case category enforced before fs (mirrors Node saveNewEntry 9a24e7f); a crafted `category: ../../x` in a git-synced entry could otherwise make Refresh All write outside the data dir + delete the source. Test `save_entry_rejects_traversal_category`. — 7569f6d (2026-07-08) [found by iter-30 fresh audit]
