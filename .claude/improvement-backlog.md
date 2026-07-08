@@ -12,11 +12,10 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P3 — error handling / UX / docs / DX
-- [ ] P3 README Development section orders `cargo test` before `npm run build` — fails on fresh clone (`README.md:90-91`); reorder or add the dist/ note.
-- [ ] P3 fresh-clone DX: verify-all stage 1 crashes with `Cannot find package 'yaml'` if `mcp-server && npm install` wasn't run; standalone conformance.mjs needs dist/ (`scripts/validate-data.mjs:16-22`). Check prerequisites with clear errors.
-- [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
+- (all resolved — see Done)
 
 ## Done
+- [x] P3 fresh-clone DX (3 items as one): verify-all prerequisite checks + stage 6 app-binary build + conformance dist/ guard + README order fix; CLAUDE.md and /verify synced to 6 stages. — 4c32c80 (2026-07-08)
 - [x] P3 AddRepo modal semantics: real form + Enter submit, for/id labels, Escape close (guarded while in flight), URL autofocus. — 9b2f8ba (2026-07-08)
 - [x] P3 Settings action hygiene (2 items as one): pending flags for Apply/Store/Commit/init/Generate + clipboard try/catch→fail. — 1671f60 (2026-07-08)
 - [x] P3 Suggest-alternatives loading state: loadingAlts flag + Finding… label + disabled. — 919f6a2 (2026-07-08)
