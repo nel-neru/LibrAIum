@@ -16,13 +16,25 @@
     app.filters.tag = tag;
     runSearch();
   }
+
+  function cardKeydown(e) {
+    // role="button" must activate on BOTH Enter and Space (preventDefault
+    // keeps Space from scrolling). The target guard leaves activations that
+    // originate on the tag chips to the chips themselves — their
+    // stopPropagation covers click only, so without it Enter on a focused
+    // chip both filtered AND opened the drawer.
+    if (e.key !== "Enter" && e.key !== " ") return;
+    if (e.target !== e.currentTarget) return;
+    e.preventDefault();
+    selectEntry(entry.id);
+  }
 </script>
 
 <!-- a card-catalog index card: call number, category rule, title, notes -->
 <div
   class="card entry"
   onclick={() => selectEntry(entry.id)}
-  onkeydown={(e) => e.key === "Enter" && selectEntry(entry.id)}
+  onkeydown={cardKeydown}
   role="button"
   tabindex="0"
 >
