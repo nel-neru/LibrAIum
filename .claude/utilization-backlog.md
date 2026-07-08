@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P3 — /confirm-notes — burn down the unverified Personal Notes backlog
-- **Deliverable**: `.claude/commands/confirm-notes.md` + seeded `.claude/notes-review.md` checklist.
-- **Why**: most entries carry AI-drafted doc-derived notes; converting them to firsthand ones in 15-minute sessions is the highest-value content debt.
-- **Acceptance**: one run interviews the owner over ~5 entries, rewrites notes per answers, ticks those checkboxes, reports progress (e.g. 12/36).
-- **Build notes**: checklist = all entries minus the 7 reference-corpus seeds; lives outside data/ (no format change). Interview in Japanese; keep accurate doc-derived warnings marked as such; delete fabricated-sounding claims; validate; show diff; never commit.
-
 ### [ ] P3 — CATALOG.md auto-fresh catalog + living README stats block
 - **Deliverable**: `scripts/build-catalog.mjs`, `CATALOG.md`, README marker block, verify-all drift stage, post-edit hook regeneration.
 - **Why**: the public repo shows the machinery but not the curation.
@@ -45,6 +39,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P3 /confirm-notes + seeded notes-review checklist — 634b49f (2026-07-09, iter 12). Proven: 36 AI-drafted entries enumerated (all on disk, 7 seeds excluded), curation-report reads 0/36, ticking advances the counter. Owner-facing action: run `/confirm-notes` to burn down the 36.
 - [x] P3 rename-tag.mjs — 061873e (2026-07-09, iter 11). Proven: 3-entry atomic rename on a library copy with a diff of exactly the tags lines; dry-run on real data; --merge/guard-rail fixture tests.
 - [x] P2 curation-report.mjs — 258aacb (2026-07-09, iter 10). Proven: real-library run in 0.23s, swarm stale-but-covered, surfaced the github ~ github-actions judgment pair; 5 fixture tests. P2 tier complete.
 - [x] P2 search_repos v2 (filters + zero diagnostics) — 6cc4a6a (2026-07-09, iter 9). Proven: vectordb→0件+note names vector-db exactly (short-tag containment noise guarded); OR-tags union of 5 in non-increasing push order. Logic extracted to lib/search.js with 7 unit tests.
