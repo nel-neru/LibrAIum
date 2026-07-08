@@ -97,6 +97,15 @@ Derived invariants (enforced on real data by `scripts/validate-data.mjs`):
 | `empty.md`                    | zero-byte file                                    |
 | `empty-frontmatter.md`        | delimiters fine, but the YAML between them is empty — parses to `null`, not a mapping |
 
+## Function corpus (`functions.json`)
+
+`slugify` and `normalizeGithubUrl` are dual-implemented too (they decide file
+names and duplicate detection). `functions.json` holds a shared input corpus;
+`scripts/conformance.mjs` feeds it to both sides (Rust via
+`dump_entries --slugify` / `--normalize-url`) and fails on any divergence —
+including agreement on *rejection* for invalid URLs. Add a case here whenever
+either function changes.
+
 ## Known constraint: bare `---` inside a YAML value
 
 Both splitters are **line-based** and stop at the first `---` line after the

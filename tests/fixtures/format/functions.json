@@ -1,0 +1,35 @@
+{
+  "comment": "Function-level conformance corpus: scripts/conformance.mjs feeds every input to BOTH implementations (Rust store.rs via dump_entries --slugify/--normalize-url, Node mcp-server/lib/store.js) and fails on any divergence. Confirmed historical divergences pinned here: 'github.com:a/b' (Node's old regex accepted, Rust rejects), astral emoji in slugify (Node's old split('') emitted two dashes per surrogate pair).",
+  "slugify": [
+    "Owner/Repo.js",
+    "a b/c@d",
+    "a/b😀c",
+    "日本語/リポジトリ",
+    "UPPER/CASE-1_x.y",
+    "--x/y--",
+    "a//b",
+    "café/olé",
+    "owner/repo",
+    ""
+  ],
+  "normalize_url": [
+    "https://github.com/owner/repo",
+    "https://github.com/owner/repo/",
+    "https://github.com/Owner/Repo.git",
+    "http://github.com/owner/repo",
+    "github.com/owner/repo",
+    "git@github.com:owner/repo.git",
+    "git@github.com:owner/repo/extra",
+    "github.com:a/b",
+    "https://github.com:a/b",
+    "https://github.com/owner/repo.git.git",
+    "github.com/owner/repo.git/tree/main",
+    "https://github.com/owner/repo/tree/main/sub",
+    "https://gitlab.com/a/b",
+    "owner/repo",
+    "https://github.com/owner/",
+    "https://github.com//repo",
+    "  https://github.com/owner/repo  ",
+    ""
+  ]
+}

@@ -76,20 +76,37 @@ export function loadCategories(dataDir) {
   return (parsed?.categories ?? []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
+// Verbatim port of Rust store::slugify — for..of iterates Unicode code
+// points exactly like Rust's .chars(), so an astral char maps to ONE dash.
 export function slugify(fullName) {
-  return fullName
-    .split("")
-    .map((c) => (c === "/" ? "-" : /[a-zA-Z0-9\-_.]/.test(c) ? c.toLowerCase() : "-"))
-    .join("")
-    .replace(/^-+|-+$/g, "");
+  let slug = "";
+  for (const c of fullName) {
+    if (c === "/") slug += "-";
+    else if (c.length === 1 && /[a-zA-Z0-9\-_.]/.test(c)) slug += c.toLowerCase();
+    else slug += "-";
+  }
+  return slug.replace(/^-+|-+$/g, "");
 }
 
+// Verbatim port of Rust store::normalize_github_url: same prefix list, same
+// repeated-".git" trim, same owner/repo extraction. The previous regex here
+// accepted shapes Rust rejects (e.g. "github.com:a/b") — keep in lockstep.
 export function normalizeGithubUrl(url) {
   const trimmed = url.trim().replace(/\/+$/, "");
-  const m = trimmed.match(/^(?:https?:\/\/)?github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?(?:\/.*)?$/) ??
-    trimmed.match(/^git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/);
-  if (!m) throw new Error(`not a github.com repository URL: ${url}`);
-  const fullName = `${m[1]}/${m[2]}`;
+  let rest = null;
+  for (const prefix of ["https://github.com/", "http://github.com/", "github.com/", "git@github.com:"]) {
+    if (trimmed.startsWith(prefix)) {
+      rest = trimmed.slice(prefix.length);
+      break;
+    }
+  }
+  if (rest === null) throw new Error(`not a github.com repository URL: ${url}`);
+  rest = rest.replace(/(?:\.git)+$/, "");
+  const parts = rest.split("/");
+  if (parts.length < 2 || !parts[0] || !parts[1]) {
+    throw new Error(`cannot extract owner/repo from: ${url}`);
+  }
+  const fullName = `${parts[0]}/${parts[1]}`;
   return { fullName, canonical: `https://github.com/${fullName}` };
 }
 

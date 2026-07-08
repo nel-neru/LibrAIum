@@ -1,12 +1,17 @@
-//! Conformance helper: parse entry files with the Rust frontmatter parser and
-//! dump the result as JSON so `scripts/conformance.mjs` can compare it against
-//! the Node implementation (`mcp-server/lib/store.js`).
+//! Conformance helper: run the Rust side of the dual-implemented data format
+//! and dump results as JSON so `scripts/conformance.mjs` can compare them
+//! against the Node implementation (`mcp-server/lib/store.js`).
 //!
-//! Usage: dump_entries --files <path>...
+//! Usage:
+//!   dump_entries --files <path>...          parse entry files
+//!   dump_entries --slugify <string>...      store::slugify per input
+//!   dump_entries --normalize-url <url>...   store::normalize_github_url per input
 //!
-//! Prints a JSON array with one object per input file:
+//! --files prints one object per input file:
 //!   { "path": str, "ok": true,  "id": "<parent-dir>/<stem>", "meta": EntryMeta, "body": str }
 //!   { "path": str, "ok": false, "error": str }
+//! --slugify prints an array of strings; --normalize-url prints
+//!   { "ok": true, "full_name": str, "canonical": str } | { "ok": false, "error": str }
 
 use std::path::Path;
 
@@ -14,19 +19,39 @@ use serde_json::{json, Value};
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let files = match args.split_first() {
-        Some((flag, rest)) if flag == "--files" && !rest.is_empty() => rest,
-        _ => {
-            eprintln!("usage: dump_entries --files <path>...");
-            std::process::exit(2);
-        }
+    let (flag, rest) = match args.split_first() {
+        Some((flag, rest)) if !rest.is_empty() => (flag.as_str(), rest),
+        _ => usage(),
     };
 
-    let results: Vec<Value> = files.iter().map(|p| dump_one(p)).collect();
+    let results: Vec<Value> = match flag {
+        "--files" => rest.iter().map(|p| dump_one(p)).collect(),
+        "--slugify" => rest
+            .iter()
+            .map(|s| json!(libraium_lib::store::slugify(s)))
+            .collect(),
+        "--normalize-url" => rest
+            .iter()
+            .map(|u| match libraium_lib::store::normalize_github_url(u) {
+                Ok((full_name, canonical)) => {
+                    json!({ "ok": true, "full_name": full_name, "canonical": canonical })
+                }
+                Err(e) => json!({ "ok": false, "error": e.to_string() }),
+            })
+            .collect(),
+        _ => usage(),
+    };
     println!(
         "{}",
         serde_json::to_string(&results).expect("failed to serialize results as JSON")
     );
+}
+
+fn usage() -> ! {
+    eprintln!(
+        "usage: dump_entries --files <path>... | --slugify <string>... | --normalize-url <url>..."
+    );
+    std::process::exit(2);
 }
 
 fn dump_one(path: &str) -> Value {

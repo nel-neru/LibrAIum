@@ -22,7 +22,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC_TAURI = join(ROOT, "src-tauri");
 const BIN = join(SRC_TAURI, "target", "debug", "dump_entries");
 
-const { parseEntry } = await import(join(ROOT, "mcp-server", "lib", "store.js"));
+const { parseEntry, slugify, normalizeGithubUrl } = await import(
+  join(ROOT, "mcp-server", "lib", "store.js")
+);
 
 // ---------------------------------------------------------------------------
 // 1. Collect input files
@@ -183,13 +185,67 @@ for (const path of allFiles) {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Verdict
+// 4. Function-level conformance: slugify + normalize_github_url are also
+//    dual-implemented (CLAUDE.md contract) — compare them over a shared corpus.
+// ---------------------------------------------------------------------------
+
+let fnAgreed = 0;
+const fnCorpusPath = join(fixturesRoot, "functions.json");
+if (existsSync(fnCorpusPath)) {
+  const corpus = JSON.parse(readFileSync(fnCorpusPath, "utf8"));
+
+  const rustSlugs = JSON.parse(
+    execFileSync(BIN, ["--slugify", ...corpus.slugify], { encoding: "utf8" })
+  );
+  corpus.slugify.forEach((input, i) => {
+    const node = slugify(input);
+    if (rustSlugs[i] === node) {
+      fnAgreed++;
+    } else {
+      mismatches++;
+      console.log(
+        `MISMATCH slugify(${JSON.stringify(input)})\n    rust=${JSON.stringify(rustSlugs[i])} node=${JSON.stringify(node)}`
+      );
+    }
+  });
+
+  const rustUrls = JSON.parse(
+    execFileSync(BIN, ["--normalize-url", ...corpus.normalize_url], { encoding: "utf8" })
+  );
+  corpus.normalize_url.forEach((input, i) => {
+    const rust = rustUrls[i];
+    let node = null;
+    let nodeError = null;
+    try {
+      node = normalizeGithubUrl(input);
+    } catch (e) {
+      nodeError = e.message ?? String(e);
+    }
+    const agree = rust.ok
+      ? node !== null && rust.full_name === node.fullName && rust.canonical === node.canonical
+      : node === null;
+    if (agree) {
+      fnAgreed++;
+    } else {
+      mismatches++;
+      const lines = [`MISMATCH normalize_github_url(${JSON.stringify(input)})`];
+      lines.push(rust.ok ? `    rust: accepted (${rust.full_name})` : `    rust: rejected (${rust.error})`);
+      lines.push(node !== null ? `    node: accepted (${node.fullName})` : `    node: rejected (${nodeError})`);
+      console.log(lines.join("\n"));
+    }
+  });
+} else {
+  console.log(`note: ${relative(ROOT, fnCorpusPath)} not found — skipping function-level conformance`);
+}
+
+// ---------------------------------------------------------------------------
+// 5. Verdict
 // ---------------------------------------------------------------------------
 
 if (mismatches > 0) {
-  console.error(`\n✗ conformance: ${mismatches} of ${allFiles.length} files diverge between Rust and Node`);
+  console.error(`\n✗ conformance: ${mismatches} mismatches between Rust and Node (files + function corpus)`);
   process.exit(1);
 }
 console.log(
-  `\n✓ conformance: ${allFiles.length} files agree (${validAgreed} valid, ${rejectedByBoth} rejected by both)`
+  `\n✓ conformance: ${allFiles.length} files agree (${validAgreed} valid, ${rejectedByBoth} rejected by both) + ${fnAgreed} function cases agree`
 );
