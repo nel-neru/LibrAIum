@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P3 — Owner-authored '## Setup' section drives real adoption steps
-- **Deliverable**: entry-authoring SKILL.md + add-entry.md capture step, adoptionSteps preference in suggest.js, backfill ~8 flagship entries, tests.
-- **Why**: how_to_adopt is boilerplate ("git clone…"), so first-hour friction survives every suggestion.
-- **Acceptance**: suggest for a vector-DB project returns qdrant whose how_to_adopt begins with the real `docker run` from its Setup section.
-- **Build notes**: optional `## Setup` body section (2-4 verified commands; freeform Markdown — no schema change, no parity). adoptionSteps: parse Setup bullets/fenced code; present → wins over clone/README fallback; keep tag-specific hints trailing. Backfill flagship entries in the same session.
-
 ### [ ] P3 — Expose entries as MCP resources for @-mentions
 - **Deliverable**: `mcp-server/index.js` ResourceTemplate `entry://{category}/{slug}` + smoke assertions.
 - **Why**: '@libraium' autocomplete pulls full entry Markdown into context with zero tool-call round trips.
@@ -33,6 +27,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P3 '## Setup' adoption steps — 5696d1b (2026-07-09, iter 14). Proven: qdrant how_to_adopt[0] is the real docker run; 8 flagship entries backfilled; Setup-wins/fallback-kept unit tests. Owner can add Setup to more entries via /add-entry or by hand.
 - [x] P3 CATALOG.md + README stats, drift-checked — 2082460 (2026-07-09, iter 13). Proven: entry edit → --check exit 1; regen → exit 0; verify-all now 7 stages. Post-edit hook auto-regenerates. Output timestamp-free so drift is real, not calendar noise.
 - [x] P3 /confirm-notes + seeded notes-review checklist — 634b49f (2026-07-09, iter 12). Proven: 36 AI-drafted entries enumerated (all on disk, 7 seeds excluded), curation-report reads 0/36, ticking advances the counter. Owner-facing action: run `/confirm-notes` to burn down the 36.
 - [x] P3 rename-tag.mjs — 061873e (2026-07-09, iter 11). Proven: 3-entry atomic rename on a library copy with a diff of exactly the tags lines; dry-run on real data; --merge/guard-rail fixture tests.
