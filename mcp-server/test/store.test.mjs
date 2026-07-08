@@ -20,6 +20,8 @@ import {
   loadCategories,
   resolveDataDir,
   summarize,
+  computeStatus,
+  today,
 } from "../lib/store.js";
 
 const SAMPLE =
@@ -163,6 +165,16 @@ test("saveNewEntry rejects traversal-shaped categories before touching the fs", 
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("computeStatus mirrors Rust: archived wins, exclusive stale boundary, unknown date = active", () => {
+  const daysAgo = (n) => new Date(Date.parse(`${today()}T00:00:00Z`) - n * 86_400_000).toISOString();
+  assert.equal(computeStatus(true, daysAgo(1)), "archived");
+  assert.equal(computeStatus(false, daysAgo(1)), "active");
+  assert.equal(computeStatus(false, daysAgo(180), 180), "active", "exactly staleDays stays active");
+  assert.equal(computeStatus(false, daysAgo(181), 180), "stale", "one day over flips to stale");
+  assert.equal(computeStatus(false, null), "active", "no push date => active, not stale");
+  assert.equal(computeStatus(false, "garbage"), "active", "unparseable date => active");
 });
 
 test("fetchGithubRepo: 429 gets the rate-limit hint, timeouts get a clear message", async () => {

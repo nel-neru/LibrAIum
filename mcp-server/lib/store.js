@@ -228,6 +228,21 @@ export function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Mirror of Rust github::compute_status (github.rs): archived wins; otherwise
+// a push older than staleDays whole days => stale. Both sides compare
+// date-only values with an exclusive '>' boundary, so add_repo tags an
+// initial status the same way the desktop app does (the MCP server has no
+// access to Settings, so it uses the same 180-day default).
+export function computeStatus(archived, pushedAt, staleDays = 180) {
+  if (archived) return "archived";
+  const day = typeof pushedAt === "string" ? pushedAt.slice(0, 10) : "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+    const days = (Date.parse(`${today()}T00:00:00Z`) - Date.parse(`${day}T00:00:00Z`)) / 86_400_000;
+    if (days > staleDays) return "stale";
+  }
+  return "active";
+}
+
 /** Compact projection used in tool results (keeps token cost low for the model). */
 export function summarize(entry) {
   return {

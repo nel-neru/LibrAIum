@@ -15,6 +15,7 @@ import {
   fetchGithubRepo,
   summarize,
   today,
+  computeStatus,
 } from "./lib/store.js";
 import { suggest } from "./lib/suggest.js";
 
@@ -191,7 +192,10 @@ server.registerTool(
         language: gh.language ?? null,
         last_github_push: pushDate,
         last_checked: today(),
-        status: gh.archived ? "archived" : "active",
+        // Match the desktop add path (commands.rs add_repo_from_url), which
+        // seeds status from freshness — not just archived. Otherwise a
+        // long-dormant repo added via MCP stays mislabeled 'active'.
+        status: computeStatus(gh.archived, gh.pushed_at),
         source: "mcp",
         added_date: today(),
       };

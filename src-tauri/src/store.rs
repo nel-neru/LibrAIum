@@ -161,6 +161,22 @@ pub fn save_entry(
     if slug.is_empty() {
         return Err(AppError::msg("full_name produced an empty slug"));
     }
+    // Mirror of the Node guard (saveNewEntry): category becomes a directory
+    // name below. The data dir is a git repo meant to be cloned/pulled, so a
+    // crafted entry with category '../../x' would otherwise turn the next
+    // Refresh All into an arbitrary-path write plus in-repo delete. Enforce
+    // the kebab-case category-id contract before touching the fs.
+    if meta.category.is_empty()
+        || !meta
+            .category
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    {
+        return Err(AppError::msg(format!(
+            "invalid category '{}' (must match ^[a-z0-9-]+$)",
+            meta.category
+        )));
+    }
     let dir = entries_dir(data_dir).join(&meta.category);
     fs::create_dir_all(&dir)?;
     let path = dir.join(format!("{slug}.md"));
@@ -330,6 +346,21 @@ mod tests {
 
         delete_entry(&dir, &moved.id).unwrap();
         assert!(list_entries(&dir).unwrap().is_empty());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn save_entry_rejects_traversal_category() {
+        let dir = tmp();
+        for bad in ["../../evil", "Weird Cat!", "", "a/b"] {
+            let res = save_entry(&dir, &meta("owner/repo", bad), "# x", None);
+            assert!(
+                matches!(res, Err(AppError::Message(_))),
+                "category {bad:?} must be rejected"
+            );
+        }
+        // The rejection must happen before any file/dir is created.
+        assert!(!dir.join("entries").join("..").join("evil").exists());
         let _ = fs::remove_dir_all(&dir);
     }
 
