@@ -5,6 +5,9 @@ description = "LibrAIum — a personal, local-first library of best-practice Git
 authors = ["masaoka"]
 license = "MIT"
 edition = "2021"
+# The crate has two bins (libraium + the dump_entries conformance helper);
+# `tauri dev` runs a bare `cargo run`, which needs this to stay unambiguous.
+default-run = "libraium"
 
 [lib]
 name = "libraium_lib"
