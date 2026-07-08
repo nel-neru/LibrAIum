@@ -72,6 +72,11 @@ test("CRLF input parses identically to LF (CRs never leak)", () => {
   assert.deepEqual({ meta, body }, parseEntry(SAMPLE));
 });
 
+test("leading BOMs are stripped — one or many — like Rust's trim_start_matches", () => {
+  assert.deepEqual(parseEntry(`﻿${SAMPLE}`), parseEntry(SAMPLE));
+  assert.deepEqual(parseEntry(`﻿﻿﻿${SAMPLE}`), parseEntry(SAMPLE));
+});
+
 test("body handling: leading blank lines stripped, bare --- kept as body text", () => {
   const { body } = splitFrontmatter("---\na: 1\n---\n\n\n\ntext\n---\nmore\n");
   assert.equal(body, "text\n---\nmore\n");

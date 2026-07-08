@@ -15,7 +15,8 @@ agreement and duplicate detection) and never scans `tests/`.
 
 ## The format contract
 
-An entry file is UTF-8 text (an optional leading BOM is stripped). Line
+An entry file is UTF-8 text (any leading BOMs are stripped — Rust
+`trim_start_matches('\u{feff}')`, Node `replace(/^﻿+/, "")`). Line
 endings may be LF or CRLF — the CR is stripped during line splitting (Rust
 `str::lines()`, Node `split(/\r?\n/)`) and never reaches frontmatter values
 or the body:
@@ -92,6 +93,7 @@ Derived invariants (enforced on real data by `scripts/validate-data.mjs`):
 | `mega-tags-notes.md`       | 12 tags (block style), multi-paragraph notes, code fences |
 | `hr-after-frontmatter.md`  | bare `---` horizontal rules in the body after the close |
 | `crlf.md`                  | every line ends CRLF (protected by `.gitattributes -text`) — CRs must be stripped, not leak into values/body |
+| `bom.md`                   | leading UTF-8 BOM before the opening `---`             |
 
 `invalid/` — must be rejected by both implementations:
 
