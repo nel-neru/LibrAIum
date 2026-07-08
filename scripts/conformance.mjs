@@ -49,6 +49,13 @@ function mdFilesRecursive(dir) {
   return out;
 }
 
+// dump_entries links libraium_lib, whose generate_context! embeds dist/ at
+// compile time — fail with instructions instead of a cryptic cargo error.
+if (!existsSync(join(ROOT, "dist"))) {
+  console.error("✗ dist/ not found — run `npm run build` first (Tauri's generate_context! embeds it).");
+  process.exit(1);
+}
+
 const fixturesRoot = join(ROOT, "tests", "fixtures", "format");
 if (!existsSync(fixturesRoot)) {
   console.log(`note: ${relative(ROOT, fixturesRoot)} not found — skipping fixtures, scanning data/entries only`);

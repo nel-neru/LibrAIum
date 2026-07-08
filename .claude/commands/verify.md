@@ -13,13 +13,14 @@ bash scripts/verify-all.sh
 
 Run it from the repo root. If a stage fails: read the failure output, find the root cause in the source, fix it, and re-run the whole script. Repeat until all stages pass. Do not stop at the first green re-run of a single stage — the script must complete end-to-end.
 
-## The five stages
+## The six stages
 
-1. **validate-data** — `node scripts/validate-data.mjs`. Lints every file under `data/entries/**/*.md` plus `data/master/categories.yaml`: frontmatter parses, required fields present (`github_url`, `full_name`, `category`), enums valid (`status`: active|stale|archived, `source`: manual|mcp|x-collection), `category` matches an id in the category master, and the filename matches `slugify(full_name)`.
-2. **cargo test** — `cd src-tauri && cargo test`. All core Rust logic (frontmatter, store, search, github, gitops). Note: Tauri's `generate_context!` embeds `dist/`; verify-all.sh handles this automatically by running the frontend build before cargo test when `dist/` is missing (stages 2 and 3 swap on a fresh clone). A raw `cargo test` outside the script still needs `npm run build` first.
+1. **validate-data** — `node scripts/validate-data.mjs --data-dir data`. Lints every file under `data/entries/**/*.md` plus `data/master/categories.yaml`: frontmatter parses, required fields present (`github_url`, `full_name`, `category`), enums valid (`status`: active|stale|archived, `source`: manual|mcp|x-collection), `category` matches an id in the category master, and the filename matches `slugify(full_name)`.
+2. **cargo test** — `cd src-tauri && cargo test`. All core Rust logic (frontmatter, store, search, github, gitops, settings). Note: Tauri's `generate_context!` embeds `dist/`; verify-all.sh handles this automatically by running the frontend build before cargo test when `dist/` is missing (stages 2 and 3 swap on a fresh clone). A raw `cargo test` outside the script still needs `npm run build` first.
 3. **vite build** — `npm run build`. Frontend production build; catches Svelte 5 compile errors and broken imports.
-4. **mcp smoke** — `cd mcp-server && npm test`. Spawns the stdio MCP server and exercises all four tools (`search_repos`, `get_repo_details`, `suggest_for_new_project`, `add_repo`) end to end.
-5. **conformance** — `node scripts/conformance.mjs`. Feeds shared fixtures through BOTH data-format implementations — Rust (`src-tauri/src/frontmatter.rs`, `store.rs`) and Node (`mcp-server/lib/store.js`) — and diffs the results. A failure here means the two implementations drifted apart.
+4. **mcp tests** — `cd mcp-server && npm test`. Unit tests for `lib/store.js` and `lib/suggest.js`, then the stdio smoke test exercising all four tools (`search_repos`, `get_repo_details`, `suggest_for_new_project`, `add_repo`) end to end.
+5. **conformance** — `node scripts/conformance.mjs`. Feeds shared fixtures AND a function corpus (`slugify`/`normalizeGithubUrl`) through BOTH data-format implementations — Rust (`src-tauri/src/frontmatter.rs`, `store.rs`) and Node (`mcp-server/lib/store.js`) — and diffs the results. A failure here means the two implementations drifted apart.
+6. **app binary build** — `cd src-tauri && cargo build --bin libraium`. The only stage that builds the REAL application binary; catches startup/bundle wiring regressions that tests alone miss (a broken bare `cargo run` once passed stages 1–5).
 
 ## Rules while fixing
 

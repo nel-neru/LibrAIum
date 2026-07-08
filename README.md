@@ -87,9 +87,20 @@ High-performance vector database…
 ## Development
 
 ```bash
-cd src-tauri && cargo test      # Rust unit tests (data/git/search/github layers)
+npm install && (cd mcp-server && npm install)   # once, after cloning
+bash scripts/verify-all.sh      # the full suite: data validation → cargo test →
+                                # vite build → MCP unit+smoke tests → Rust⇔Node
+                                # conformance → app binary build (CI runs this too)
+```
+
+Or piecewise — note that `npm run build` must come **before** the first
+`cargo test` on a fresh clone (Tauri's `generate_context!` embeds `dist/`
+at compile time; `verify-all.sh` reorders this automatically):
+
+```bash
 npm run build                   # frontend production build
-cd mcp-server && npm test       # MCP stdio smoke test (4 tools, 8 scenarios)
+cd src-tauri && cargo test      # Rust unit tests (data/git/search/github layers)
+cd mcp-server && npm test       # store/suggest unit tests + MCP stdio smoke test
 bash scripts/make-icons.sh      # regenerate app icons (macOS)
 ```
 

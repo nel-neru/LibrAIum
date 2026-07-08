@@ -53,7 +53,7 @@ MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` 
 
 ## Repo automation & AI infrastructure
 
-- **`bash scripts/verify-all.sh`** is the single verification entry point (also run by CI): data validation → cargo test → vite build → MCP smoke → Rust⇔Node conformance. Run it before any commit; `/verify` wraps it.
+- **`bash scripts/verify-all.sh`** is the single verification entry point (also run by CI): data validation → cargo test → vite build → MCP unit+smoke tests → Rust⇔Node conformance → app binary build (`cargo build --bin libraium` — the only stage that builds the real binary; a broken bare `cargo run` once passed everything else). Run it before any commit; `/verify` wraps it.
 - **`node scripts/validate-data.mjs`** — schema-validates every entry + the category master. A PostToolUse hook runs it automatically after any `data/` edit and feeds failures back for self-correction.
 - **`node scripts/conformance.mjs`** — proves the Rust and Node data-format implementations agree, over `tests/fixtures/format/` (valid/ must parse identically, invalid/ must be rejected by BOTH), all real entries, and a function-level corpus (`functions.json`: `slugify` + `normalizeGithubUrl`, via `dump_entries --slugify/--normalize-url`). When you change the format or these functions: update both implementations, add a fixture/corpus case, keep this green (`/format-sync` walks through it).
 - **Hooks** (`.claude/hooks/post-edit.mjs`): rustfmt on edited `.rs`; parity reminder when either half of the dual implementation is edited; data validation as above.
