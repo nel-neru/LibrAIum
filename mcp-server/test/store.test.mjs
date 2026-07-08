@@ -13,6 +13,7 @@ import {
   splitFrontmatter,
   parseEntry,
   serializeEntry,
+  fetchGithubRepo,
   findDuplicate,
   saveNewEntry,
   firstSummaryLine,
@@ -162,6 +163,25 @@ test("saveNewEntry rejects traversal-shaped categories before touching the fs", 
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("fetchGithubRepo: 429 gets the rate-limit hint, timeouts get a clear message", async () => {
+  await assert.rejects(
+    fetchGithubRepo("a/b", async () => ({ ok: false, status: 429 })),
+    /429 \(rate limited — set GITHUB_TOKEN\)/
+  );
+  await assert.rejects(
+    fetchGithubRepo("a/b", async () => ({ ok: false, status: 404 })),
+    /404 \(not found\)/
+  );
+  const timeoutErr = new Error("aborted");
+  timeoutErr.name = "TimeoutError";
+  await assert.rejects(
+    fetchGithubRepo("a/b", async () => {
+      throw timeoutErr;
+    }),
+    /timed out after 10s/
+  );
 });
 
 test("resolveDataDir precedence: --data-dir flag outranks LIBRAIUM_DATA_DIR", () => {

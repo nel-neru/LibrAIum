@@ -21,6 +21,9 @@ pub struct GhRepo {
 pub fn fetch_repo(full_name: &str, token: Option<&str>) -> Result<GhRepo> {
     let url = format!("https://api.github.com/repos/{full_name}");
     let mut req = ureq::get(&url)
+        // Same 10s bound as the Node MCP server: a stalled connection must
+        // not hang a refresh (ureq has no overall timeout by default).
+        .timeout(std::time::Duration::from_secs(10))
         .set("User-Agent", "LibrAIum/1.0")
         .set("Accept", "application/vnd.github+json")
         .set("X-GitHub-Api-Version", "2022-11-28");

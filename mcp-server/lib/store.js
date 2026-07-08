@@ -190,7 +190,8 @@ export function saveNewEntry(dataDir, meta, body) {
   return { id: `${meta.category}/${slug}`, path, meta, body };
 }
 
-export async function fetchGithubRepo(fullName) {
+// fetchImpl is injectable for tests; production callers use the global fetch.
+export async function fetchGithubRepo(fullName, fetchImpl = fetch) {
   const headers = {
     "User-Agent": "LibrAIum-MCP/1.0",
     Accept: "application/vnd.github+json",
@@ -198,9 +199,26 @@ export async function fetchGithubRepo(fullName) {
   };
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`https://api.github.com/repos/${fullName}`, { headers });
+  let res;
+  try {
+    res = await fetchImpl(`https://api.github.com/repos/${fullName}`, {
+      headers,
+      // A stalled connection must not hang the MCP tool call indefinitely.
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch (e) {
+    if (e?.name === "TimeoutError" || e?.name === "AbortError") {
+      throw new Error(`GitHub API timed out after 10s for ${fullName} — check the network and retry`);
+    }
+    throw e;
+  }
   if (!res.ok) {
-    const hint = res.status === 404 ? " (not found)" : res.status === 403 ? " (rate limited — set GITHUB_TOKEN)" : "";
+    const hint =
+      res.status === 404
+        ? " (not found)"
+        : res.status === 403 || res.status === 429
+          ? " (rate limited — set GITHUB_TOKEN)"
+          : "";
     throw new Error(`GitHub API ${res.status}${hint} for ${fullName}`);
   }
   return res.json();
