@@ -16,7 +16,10 @@ export function tokenize(text) {
 }
 
 export function scoreEntry(entry, tokens, categories) {
-  let score = 0;
+  // Relevance must come from the query: `lexical` accumulates token-derived
+  // evidence only. Status and stars adjust the final score (ranking among
+  // relevant entries) but can never make an entry relevant by themselves.
+  let lexical = 0;
   const reasons = [];
 
   const tags = (entry.meta.tags ?? []).map((t) => t.toLowerCase());
@@ -24,7 +27,7 @@ export function scoreEntry(entry, tokens, categories) {
     tokens.some((tok) => tag === tok || tag.includes(tok) || tok.includes(tag))
   );
   if (tagHits.length) {
-    score += tagHits.length * 8;
+    lexical += tagHits.length * 8;
     reasons.push(`tags match: ${tagHits.join(", ")}`);
   }
 
@@ -32,32 +35,33 @@ export function scoreEntry(entry, tokens, categories) {
   const catText = `${entry.meta.category} ${cat?.name ?? ""} ${cat?.description ?? ""}`.toLowerCase();
   const catHits = tokens.filter((tok) => catText.includes(tok));
   if (catHits.length) {
-    score += Math.min(catHits.length, 3) * 3;
+    lexical += Math.min(catHits.length, 3) * 3;
     reasons.push(`category "${entry.meta.category}" is relevant`);
   }
 
   const nameHits = tokens.filter((tok) => entry.meta.full_name.toLowerCase().includes(tok));
   if (nameHits.length) {
-    score += nameHits.length * 6;
+    lexical += nameHits.length * 6;
     reasons.push(`name matches: ${nameHits.join(", ")}`);
   }
 
   const lang = (entry.meta.language ?? "").toLowerCase();
   if (lang && tokens.includes(lang)) {
-    score += 4;
+    lexical += 4;
     reasons.push(`written in ${entry.meta.language}`);
   }
 
   const bodyLower = entry.body.toLowerCase();
   const bodyHits = tokens.filter((tok) => bodyLower.includes(tok));
-  score += Math.min(bodyHits.length, 10);
+  lexical += Math.min(bodyHits.length, 10);
 
   const notesIdx = bodyLower.indexOf("## personal notes");
   if (notesIdx !== -1 && bodyHits.some((tok) => bodyLower.indexOf(tok, notesIdx) !== -1)) {
-    score += 3;
+    lexical += 3;
     reasons.push("your Personal Notes mention related topics");
   }
 
+  let score = lexical;
   switch (entry.meta.status) {
     case "active": score += 3; break;
     case "stale": score -= 3; reasons.push("⚠ flagged stale — verify before adopting"); break;
@@ -66,7 +70,7 @@ export function scoreEntry(entry, tokens, categories) {
 
   score += Math.min(Math.log10((entry.meta.stars ?? 0) + 1) * 1.2, 6);
 
-  return { score: Math.round(score * 10) / 10, reasons };
+  return { score: Math.round(score * 10) / 10, lexical, reasons };
 }
 
 export function adoptionSteps(entry) {
@@ -88,7 +92,9 @@ export function suggest(entries, categories, projectDescription, goals = "", max
   const tokens = tokenize(`${projectDescription} ${goals}`);
   const ranked = entries
     .map((e) => ({ entry: e, ...scoreEntry(e, tokens, categories) }))
-    .filter((r) => r.score > 3)
+    // lexical > 0: an active, high-star entry must never surface on a query
+    // that matches nothing — status/stars alone used to clear the threshold.
+    .filter((r) => r.lexical > 0 && r.score > 3)
     .sort((a, b) => b.score - a.score)
     .slice(0, maxResults);
 

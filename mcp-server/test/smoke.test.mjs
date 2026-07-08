@@ -115,6 +115,18 @@ try {
   assert.ok(suggestions.suggestions[0].how_to_adopt.length > 0);
   assert.ok(suggestions.suggestions.some((s) => s.full_name === "qdrant/qdrant"));
 
+  // suggest: an irrelevant query must return ZERO suggestions — status/stars
+  // alone must never clear the relevance threshold (regression: star-ranked
+  // noise with empty `why` on garbage input).
+  const irrelevant = toolJson(
+    await request("tools/call", {
+      name: "suggest_for_new_project",
+      arguments: { project_description: "underwater basket weaving simulator in COBOL zzz9" },
+    })
+  );
+  assert.equal(irrelevant.suggestions.length, 0, JSON.stringify(irrelevant.suggestions));
+  assert.match(irrelevant.note, /relevance threshold/);
+
   // add_repo: duplicate and unknown-category are rejected before any network call
   const dup = toolJson(
     await request("tools/call", {
@@ -132,7 +144,7 @@ try {
   );
   assert.match(badCat.error, /unknown category/);
 
-  console.log("✓ MCP smoke test passed — 4 tools, 8 scenarios");
+  console.log("✓ MCP smoke test passed — 4 tools, 9 scenarios");
   process.exitCode = 0;
 } catch (e) {
   console.error("✗ MCP smoke test failed:", e);
