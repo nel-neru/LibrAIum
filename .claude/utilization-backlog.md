@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P2 — register-mcp.mjs — one-command user-scope registration + --doctor
-- **Deliverable**: `scripts/register-mcp.mjs` + README "MCP server" section rewritten; `--with-skill` installs libraium-first.
-- **Why**: the library only pays off in OTHER repos if the server is registered user-scope with correct absolute paths; today that's a hand-adjusted snippet with no diagnosis path.
-- **Acceptance**: `--yes` then `--doctor` ends with the resolved data dir + live entry count printed, and `claude mcp list` shows libraium at user scope.
-- **Build notes**: absolute paths from import.meta.url; check node/claude on PATH; print exact `claude mcp add --scope user libraium -- node <abs>/mcp-server/index.js --data-dir <abs>/data` and execute only with --yes (touches user-level config — show-then-confirm per allowlist-review rule); idempotent via remove-first. --doctor: stdio handshake + one search_repos call (reuse smoke-test client pattern), print resolved data dir + entry count. --with-skill copies integrations/claude/skills/libraium-first/ into ~/.claude/skills/ behind --yes.
-
 ### [ ] P2 — search_repos v2 — richer filters + self-diagnosing empty results
 - **Deliverable**: `mcp-server/index.js` search_repos handler + per-parameter test coverage.
 - **Why**: AND-everything substring search is the most common dead end for LLM callers.
@@ -69,6 +63,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P2 register-mcp.mjs (+ --doctor, --with-skill) — 620bae1 (2026-07-09, iter 8). Proven live: registered user-scope (claude mcp list: Connected), skill installed to ~/.claude/skills, doctor reports data dir + 43 entries. The iter-2 "user action required" is hereby closed.
 - [x] P2 Stale-alternatives on get_repo_details — 29f0200 (2026-07-09, iter 7). Proven: swarm (stale) auto-carried langgraph (3 shared tags) + llama_index on real data; fixture pins it deterministically; active entries carry no field.
 - [x] P2 get_library_overview MCP tool — 02550c5 (2026-07-09, iter 6). Proven: 18 categories summing exactly to 43 entries; all 78 vocabulary tags verified filterable (exhaustive, not sampled). Helper landed in lib/overview.js (not store.js as drafted — keeps the parity-watched file server-logic-free).
 - [x] P2 Stale smoke scenarios pinned to fixture library — 3e8be34 (2026-07-09, iter 5). Proven: flipped swarm active via the real refresh tool, full suite stayed green, restored. Suite now invariant under metadata refresh.
