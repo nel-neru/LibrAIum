@@ -9,7 +9,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P2 — missing tests / parity pinning
-- [ ] P2 conformance.mjs only exercises `parseEntry` — `slugify` and `normalizeGithubUrl` are dual-implemented and CONFIRMED divergent (`github.com:a/b`: Node accepts, Rust rejects; astral emoji: Node `a-b--c` vs Rust `a-b-c`) (`scripts/conformance.mjs:25`, `store.js:79-81` vs `store.rs:13-44`). Fix: add `--slugify`/`--normalize-url` modes to `dump_entries.rs` + a conformance stage over a string corpus, then align whichever side is wrong.
 - [ ] P2 post-edit hook validates the WRONG data dir when `LIBRAIUM_DATA_DIR` is exported — it inherits env, and `resolveDataDir` prefers the env var over `./data`, so repo-data edits go unvalidated (`.claude/hooks/post-edit.mjs:63-67`). Fix: invoke validator pinned to the repo's `data/` explicitly.
 - [ ] P2 no unit tests for `mcp-server/lib/store.js` pure functions (normalizeGithubUrl / slugify / parse-serialize roundtrip / findDuplicate) — the Rust twin has them; the JS side only has the e2e smoke. Add `test/store.test.mjs` mirroring the Rust cases.
 - [ ] P2 no unit tests for `mcp-server/lib/suggest.js` (tokenize / scoreEntry / threshold) — would have caught the P1 threshold bug. Add table-driven tests.
@@ -42,6 +41,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P2 slugify/normalizeGithubUrl divergences (Node accepted `github.com:a/b`; astral chars double-dashed) — Node now ports the Rust algorithms verbatim; conformance grew a function-level stage over `functions.json` (28 cases, both historical divergences pinned); CLAUDE.md + fixtures README updated. — ef59a51 (2026-07-08)
 - [x] P1 suggest.js: status(+3)/stars(≤+6) baseline cleared the `score > 3` relevance filter with zero query hits — garbage/empty descriptions returned star-ranked noise with empty `why`. `scoreEntry` now returns a separate `lexical` subscore; `suggest()` requires `lexical > 0 && score > 3`. Smoke scenario 9 pins irrelevant-query ⇒ 0 suggestions + threshold note. — 2ff2291 (2026-07-08)
 - [x] P1 CRLF divergence: Node splitter kept `\r` on every line (corrupting the last frontmatter value and all body lines) while Rust stripped it. `split(/\r?\n/)` now mirrors `str::lines()`; pinned by `valid/crlf.md` (real CRLF bytes, `.gitattributes -text` protected; verified the committed blob keeps `0d 0a`); all other `*.md` forced LF. — 4334771 (2026-07-08)
 - [x] P1 MCP server: an entry whose frontmatter YAML-parses to `null` (e.g. `---\n---`) crashed ALL four tools — `parseEntry` returned `{meta: null}` without throwing, so `listEntries`' catch never skipped it. Node now rejects non-mapping frontmatter (mirrors Rust's typed serde); contract pinned by `invalid/empty-frontmatter.md` (rejected by both) + fixtures README. — 8fa7a0a (2026-07-08)
