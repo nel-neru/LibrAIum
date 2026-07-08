@@ -53,7 +53,14 @@
     editing = true;
   }
 
+  // Same pattern as AddRepo's `adding`: a double-click would fire saveEntry
+  // twice with the same (now stale) previousId — after the first call moves
+  // the file, the second operates on a path that no longer exists.
+  let saving = $state(false);
+
   async function save() {
+    if (saving) return;
+    saving = true;
     const meta = {
       ...entry.meta,
       category: editCategory,
@@ -69,6 +76,8 @@
       await reloadEntries();
     } catch (e) {
       fail(e);
+    } finally {
+      saving = false;
     }
   }
 
@@ -190,8 +199,8 @@
       <label>Body — summary &amp; Personal Notes (Markdown)</label>
       <textarea rows="18" style="width: 100%;" bind:value={editBody}></textarea>
       <div class="row" style="gap: 8px; margin-top: 12px;">
-        <button class="primary" onclick={save}>Save</button>
-        <button onclick={() => (editing = false)}>Cancel</button>
+        <button class="primary" onclick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</button>
+        <button onclick={() => (editing = false)} disabled={saving}>Cancel</button>
       </div>
     {/if}
   </aside>
