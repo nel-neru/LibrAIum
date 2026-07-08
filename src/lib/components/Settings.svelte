@@ -28,7 +28,18 @@
     }
   }
 
+  // In-flight flags for every async action (same pattern as push below):
+  // double-clicks must not re-fire backend commands like a second
+  // updateSettings+bootstrap cycle or a duplicate commit.
+  let applying = $state(false);
+  let storingToken = $state(false);
+  let committing = $state(false);
+  let initializing = $state(false);
+  let exporting = $state(false);
+
   async function saveSettings() {
+    if (applying) return;
+    applying = true;
     try {
       app.settings = await api.updateSettings({
         data_dir: dataDirInput.trim(),
@@ -39,10 +50,14 @@
       await loadGit();
     } catch (e) {
       fail(e);
+    } finally {
+      applying = false;
     }
   }
 
   async function saveToken() {
+    if (storingToken) return;
+    storingToken = true;
     try {
       await api.setGithubToken(tokenInput);
       tokenInput = "";
@@ -50,6 +65,8 @@
       showToast("GitHub token stored in the OS keychain.");
     } catch (e) {
       fail(e);
+    } finally {
+      storingToken = false;
     }
   }
 
@@ -64,6 +81,8 @@
   }
 
   async function commit() {
+    if (committing) return;
+    committing = true;
     try {
       const hash = await api.gitCommit(commitMsg);
       showToast(`Committed ${hash}`);
@@ -71,6 +90,8 @@
       await loadGit();
     } catch (e) {
       fail(e);
+    } finally {
+      committing = false;
     }
   }
 
@@ -89,26 +110,40 @@
   }
 
   async function initRepo() {
+    if (initializing) return;
+    initializing = true;
     try {
       git = await api.gitInitData();
       showToast("Initialized git repository in the data directory.");
       await loadGit();
     } catch (e) {
       fail(e);
+    } finally {
+      initializing = false;
     }
   }
 
   async function doExport() {
+    if (exporting) return;
+    exporting = true;
     try {
       exported = await api.exportAwesome();
     } catch (e) {
       fail(e);
+    } finally {
+      exporting = false;
     }
   }
 
+  // clipboard.writeText rejects when the window is unfocused or permission is
+  // denied — without the catch the user got neither the copy nor any signal.
   async function copyExport() {
-    await navigator.clipboard.writeText(exported);
-    showToast("Copied to clipboard.");
+    try {
+      await navigator.clipboard.writeText(exported);
+      showToast("Copied to clipboard.");
+    } catch (e) {
+      fail(e);
+    }
   }
 
   let mcpCommand = $derived(
@@ -116,8 +151,12 @@
   );
 
   async function copyMcp() {
-    await navigator.clipboard.writeText(mcpCommand);
-    showToast("MCP command copied.");
+    try {
+      await navigator.clipboard.writeText(mcpCommand);
+      showToast("MCP command copied.");
+    } catch (e) {
+      fail(e);
+    }
   }
 </script>
 
@@ -134,7 +173,9 @@
         <input type="number" min="7" style="width: 120px;" bind:value={staleDaysInput} />
       </div>
       <div class="grow"></div>
-      <button class="primary" onclick={saveSettings}>Apply</button>
+      <button class="primary" onclick={saveSettings} disabled={applying}>
+        {applying ? "Applying…" : "Apply"}
+      </button>
     </div>
     <p class="muted mono" style="font-size: 11px; margin-bottom: 0;">resolved: {app.dataDir}</p>
   </section>
@@ -153,7 +194,9 @@
     {:else}
       <div class="row">
         <input type="password" class="grow" placeholder="ghp_… or github_pat_…" bind:value={tokenInput} />
-        <button onclick={saveToken} disabled={!tokenInput.trim()}>Store</button>
+        <button onclick={saveToken} disabled={!tokenInput.trim() || storingToken}>
+          {storingToken ? "Storing…" : "Store"}
+        </button>
       </div>
     {/if}
   </section>
@@ -165,7 +208,9 @@
     {:else if !git.is_repo}
       <div class="row">
         <p class="muted grow">The data directory is not a git repository yet.</p>
-        <button class="primary" onclick={initRepo}>git init</button>
+        <button class="primary" onclick={initRepo} disabled={initializing}>
+          {initializing ? "Initializing…" : "git init"}
+        </button>
       </div>
     {:else}
       <p class="muted" style="margin-top: 0;">
@@ -182,7 +227,9 @@
         </div>
         <div class="row" style="margin-top: 10px;">
           <input class="grow" placeholder="commit message" bind:value={commitMsg} />
-          <button class="primary" onclick={commit} disabled={!commitMsg.trim()}>Commit all</button>
+          <button class="primary" onclick={commit} disabled={!commitMsg.trim() || committing}>
+            {committing ? "Committing…" : "Commit all"}
+          </button>
         </div>
       {/if}
       {#if git.has_remote}
@@ -220,7 +267,9 @@
     <h3 style="margin-bottom: 12px;">📜 Export</h3>
     <div class="row" style="margin-bottom: 10px;">
       <p class="muted grow" style="margin: 0;">Render the whole library as an awesome-list Markdown document.</p>
-      <button onclick={doExport}>Generate</button>
+      <button onclick={doExport} disabled={exporting}>
+        {exporting ? "Generating…" : "Generate"}
+      </button>
       {#if exported}<button class="small" onclick={copyExport}>Copy</button>{/if}
     </div>
     {#if exported}
