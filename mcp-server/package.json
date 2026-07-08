@@ -1,0 +1,19 @@
+{
+  "name": "libraium-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "LibrAIum MCP server — query your personal best-practice repository library from Claude Code",
+  "bin": {
+    "libraium-mcp": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test/smoke.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "yaml": "^2.5.0",
+    "zod": "^3.23.0"
+  }
+}

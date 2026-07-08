@@ -2,79 +2,56 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Status: Design Phase — No Code Yet
-
-This repository currently contains only the design document `LibrAIum_完全設計書_v1.0.md` (Japanese, v1.0, status: design complete). **No implementation exists yet.** That document is the authoritative specification — read it before making any implementation or architectural decision, and do not deviate from its decided stack or data model without the user's approval.
-
-There are no build, lint, or test commands yet. When the project is scaffolded, add them to this file.
-
 ## What LibrAIum Is
 
-LibrAIum ("Librarium" + AI) is a **local-first, personal desktop app for curating best-practice public GitHub repositories** across genres (web apps, games, AI agents, etc.). Its key differentiator: the app itself runs as an **MCP server**, so Claude Code can query the user's curated registry directly (e.g., "suggest the best repos for a RAG agent, with setup commands").
+A local-first Tauri v2 + Svelte 5 desktop app for curating best-practice GitHub repositories, storing everything as YAML-frontmatter Markdown files in a local git repository, and exposing the library to Claude Code through an MCP server. The authoritative spec is `LibrAIum_完全設計書_v1.0.md` (Japanese). v1.0 MVP is fully implemented.
 
-Core principles (non-negotiable in the design):
-- **Fully local & private**: all data lives in a local Git repository; network access only for GitHub metadata refresh and X (Twitter) collection
-- **Git-native**: every entry is a plain file, so diff/merge/history work naturally
-- **AI-native**: MCP over stdio is a first-class interface, not an add-on
+## Commands
 
-## Decided Tech Stack
+```bash
+npm run tauri dev                # run the desktop app (Rust compiles on first run)
+npm run tauri build              # package release build
+npm run build                    # frontend-only production build (vite)
+cd src-tauri && cargo test       # Rust unit tests — all core logic lives here
+cd src-tauri && cargo test store # run one module's tests (store/search/gitops/github/…)
+cd mcp-server && npm test        # MCP stdio smoke test (spawns server, calls all 4 tools)
+bash scripts/make-icons.sh       # regenerate icons from scripts/generate-icons.mjs (macOS)
+```
 
-- **Desktop GUI**: Tauri v2 (Rust) + Svelte 5
-- **Data layer**: Rust — `serde_yaml` for parsing/validation, `git2-rs` for Git operations
-- **MCP server**: stdio transport, local process (Rust or Node.js)
-- **Future semantic search**: local embedding model via ONNX (no cloud)
-- **Secrets** (X API key, GitHub PAT): OS keychain or encrypted storage — never in the data repo
+Rust was installed via Homebrew; if `cargo` is missing from PATH: `export PATH="/opt/homebrew/bin:$PATH"`.
+
+Note: `cargo test`/`cargo build` require `dist/` to exist (Tauri's `generate_context!` embeds it) — run `npm run build` first on a fresh clone.
 
 ## Architecture
 
-```
-LibrAIum Desktop App (Tauri v2 + Svelte 5)
-├── GUI Layer          — search, editing, category master management, Git panel
-├── Data Layer         — YAML frontmatter parse/validate
-├── Git Layer          — git2-rs
-├── MCP Server         — stdio, local process
-└── Background Tasks   — GitHub metadata refresh, X auto-collection (v1.5+)
-```
+Two independent consumers share one data format:
 
-## Data Model (decided format)
+1. **Desktop app** — Svelte 5 GUI (`src/`) → Tauri commands (`src-tauri/src/commands.rs`) → Rust core modules.
+2. **MCP server** (`mcp-server/`, Node stdio) — reads/writes the same `data/` directory directly.
 
-- **One repo = one file**: `data/entries/<category>/<owner-repo>.md` — YAML frontmatter + Markdown body
-- **Category master**: `data/master/categories.yaml` — user-editable via GUI (name, color, icon, description, sort order)
-- **Future**: `data/embeddings/` for local vector search
+**The data format is duplicated on purpose**: `src-tauri/src/store.rs` (Rust) and `mcp-server/lib/store.js` (JS) each implement frontmatter parse/serialize, slugify, URL normalization, and duplicate checks. If you change the entry format or these rules, change BOTH and keep `frontmatter::tests` + the MCP smoke test green.
 
-Entry frontmatter schema:
+Rust core modules (`src-tauri/src/`):
+- `models.rs` — `EntryMeta` (the frontmatter schema), `Entry`, `Category`, `SearchQuery`
+- `store.rs` — entry CRUD; entry id = `<category-dir>/<slug>`, so a category change moves the file
+- `search.rs` — SkimMatcherV2 fuzzy search + filters; `suggest_alternatives` (same category + shared tag + active)
+- `github.rs` — metadata fetch (ureq) + stale logic: push older than `stale_days` ⇒ `stale`, GitHub `archived` ⇒ `archived`
+- `gitops.rs` — wraps the **git CLI**, not libgit2 (deliberate deviation from the design doc: push inherits the user's credential helpers/SSH agent)
+- `settings.rs` — settings.json in app config dir; data-dir resolution order: explicit setting > `LIBRAIUM_DATA_DIR` > `./data`|`../data` (dev) > `~/LibrAIum/data` (bootstrapped on first run); default categories embedded via `include_str!` from `data/master/categories.yaml`
+- `commands.rs` — Tauri command layer; network/push commands are `async` + `spawn_blocking`; GitHub PAT lives in the OS keychain (`keyring` crate, service "LibrAIum")
 
-```yaml
----
-github_url: https://github.com/owner/repo
-full_name: owner/repo
-category: ai-agent
-tags: [vector-db, rag, mcp-server, claude-code]
-stars: 8750
-language: Python
-last_github_push: 2026-07-05
-last_checked: 2026-07-08
-status: active        # active | stale
-source: manual        # manual | x-collection
-added_date: 2026-06-20
----
-```
+Frontend (`src/`): Svelte 5 **runes** (no stores); shared state in `lib/state.svelte.js`; all IPC via `lib/api.js` wrappers. Command args are camelCase (Tauri converts to snake_case), but **struct fields inside payloads stay snake_case** (`min_stars`, `full_name`).
 
-The Markdown body holds a summary plus a `## Personal Notes` section (the user's hands-on experience, gotchas, repo combinations) — this pairing of structured metadata and rich personal knowledge is central to the product.
+MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` (lexical scoring in `lib/suggest.js`), `add_repo` (source: `mcp`). Data dir resolution mirrors the Rust order (plus `--data-dir` flag).
 
-## MCP Tool Surface (MVP)
+## Data Model
 
-- `search_repos(query, category?, tags?, min_stars?, status?)`
-- `get_repo_details(id_or_url)`
-- `suggest_for_new_project(project_description, goals, max_results=5)` — the flagship tool: returns best-fit repos with reasoning and setup steps
-- `add_repo(github_url, category, tags, personal_notes?)`
+- One repo = one file: `data/entries/<category>/<owner-repo>.md` — frontmatter fields are exactly `EntryMeta` in `models.rs`; body is a summary + `## Personal Notes`
+- Category master: `data/master/categories.yaml`; category `id`s are entry directory names — renaming an id orphans its directory (the GUI locks persisted ids for this reason)
+- `status`: `active | stale | archived` (auto-managed by refresh); `source`: `manual | mcp | x-collection`
+- The repo's `data/` ships seeded sample entries (incl. one deliberately stale entry, `openai/swarm`, used to demo stale detection/alternatives)
 
-## Implementation Roadmap
+## Constraints from the design doc
 
-1. **Phase 1**: Data layer + category master + basic GUI + Git operations
-2. **Phase 2**: MCP server with the four MVP tools
-3. **Phase 3**: GitHub metadata auto-refresh + stale detection + Git panel
-4. **Phase 4**: X auto-collection pipeline + candidate review UI (candidates require user approval)
-5. **Phase 5**: Semantic search + docs + OSS release (MIT)
-
-Stale detection (Phase 3): when `last_github_push` is old, automatically set `status: stale` and suggest more active alternatives in the same category/tags.
+- Fully local & private; GitHub API only on explicit refresh/add. Secrets go in the OS keychain, never in files.
+- Unimplemented future phases (do not build unprompted): X auto-collection, semantic search/embeddings, project bootstrap generation.
