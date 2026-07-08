@@ -1,0 +1,6 @@
+# Markdown files are consumed by two parsers (Rust app + Node MCP server);
+# keep them LF in the repo so checkouts behave identically everywhere.
+*.md text eol=lf
+
+# EXCEPT the CRLF conformance fixture — its CRLF bytes ARE the test.
+tests/fixtures/format/valid/crlf.md -text

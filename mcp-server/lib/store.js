@@ -20,7 +20,9 @@ export function resolveDataDir(argv = process.argv) {
 }
 
 export function splitFrontmatter(content) {
-  const lines = content.replace(/^﻿/, "").split("\n");
+  // /\r?\n/ mirrors Rust's str::lines(): CRLF files parse identically to LF
+  // (the \r must not leak into the last frontmatter value or the body).
+  const lines = content.replace(/^﻿/, "").split(/\r?\n/);
   if (lines[0]?.trimEnd() !== "---") throw new Error("file does not start with '---' frontmatter");
   const end = lines.findIndex((l, i) => i > 0 && l.trimEnd() === "---");
   if (end === -1) throw new Error("unterminated frontmatter");
