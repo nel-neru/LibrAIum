@@ -42,8 +42,16 @@ pub fn ensure_repo(dir: &Path) -> Result<()> {
     run_git(dir, &["init", "-b", "main"])?;
     run_git(dir, &["add", "-A"])?;
     // Committing may fail if user.name is unset globally; surface that clearly.
-    run_git(dir, &["commit", "-m", "chore: initialize LibrAIum data repository", "--allow-empty"])
-        .map_err(|e| AppError::Git(format!("{e}. Hint: configure git user.name / user.email")))?;
+    run_git(
+        dir,
+        &[
+            "commit",
+            "-m",
+            "chore: initialize LibrAIum data repository",
+            "--allow-empty",
+        ],
+    )
+    .map_err(|e| AppError::Git(format!("{e}. Hint: configure git user.name / user.email")))?;
     Ok(())
 }
 
@@ -72,7 +80,9 @@ pub fn status(dir: &Path) -> Result<GitStatus> {
             ahead: 0,
         });
     }
-    let branch = run_git(dir, &["rev-parse", "--abbrev-ref", "HEAD"])?.trim().to_string();
+    let branch = run_git(dir, &["rev-parse", "--abbrev-ref", "HEAD"])?
+        .trim()
+        .to_string();
     let porcelain = run_git(dir, &["status", "--porcelain"])?;
     let changes = porcelain
         .lines()
@@ -90,7 +100,13 @@ pub fn status(dir: &Path) -> Result<GitStatus> {
     } else {
         0
     };
-    Ok(GitStatus { is_repo: true, branch, changes, has_remote, ahead })
+    Ok(GitStatus {
+        is_repo: true,
+        branch,
+        changes,
+        has_remote,
+        ahead,
+    })
 }
 
 pub fn commit_all(dir: &Path, message: &str) -> Result<String> {
@@ -100,7 +116,9 @@ pub fn commit_all(dir: &Path, message: &str) -> Result<String> {
     }
     run_git(dir, &["add", "-A"])?;
     run_git(dir, &["commit", "-m", message])?;
-    Ok(run_git(dir, &["rev-parse", "--short", "HEAD"])?.trim().to_string())
+    Ok(run_git(dir, &["rev-parse", "--short", "HEAD"])?
+        .trim()
+        .to_string())
 }
 
 pub fn push(dir: &Path) -> Result<String> {
@@ -118,7 +136,10 @@ pub fn log(dir: &Path, n: usize) -> Result<Vec<LogItem>> {
     if !is_repo(dir) {
         return Ok(Vec::new());
     }
-    let out = run_git(dir, &["log", &format!("-{n}"), "--pretty=format:%h%x09%as%x09%s"])?;
+    let out = run_git(
+        dir,
+        &["log", &format!("-{n}"), "--pretty=format:%h%x09%as%x09%s"],
+    )?;
     Ok(out
         .lines()
         .filter_map(|l| {
@@ -163,6 +184,47 @@ mod tests {
         assert_eq!(log[0].message, "add x");
 
         assert!(commit_all(&dir, "  ").is_err());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn non_repo_and_no_remote_degrade_gracefully() {
+        let dir = std::env::temp_dir().join(format!("libraium-git-nonrepo-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+
+        // Same identity isolation as init_status_commit_log (values identical,
+        // so parallel execution of the two tests is benign).
+        std::env::set_var("GIT_AUTHOR_NAME", "test");
+        std::env::set_var("GIT_AUTHOR_EMAIL", "t@t");
+        std::env::set_var("GIT_COMMITTER_NAME", "test");
+        std::env::set_var("GIT_COMMITTER_EMAIL", "t@t");
+
+        // Non-repo dir: the GUI's git panel feeds on these — status answers
+        // is_repo=false instead of erroring, log answers empty.
+        assert!(!is_repo(&dir));
+        let st = status(&dir).unwrap();
+        assert!(!st.is_repo);
+        assert!(st.branch.is_empty());
+        assert!(st.changes.is_empty());
+        assert!(!st.has_remote);
+        assert_eq!(st.ahead, 0);
+        assert!(log(&dir, 5).unwrap().is_empty());
+
+        // Mutating operations on a non-repo must error, not panic.
+        assert!(commit_all(&dir, "msg").is_err());
+        assert!(push(&dir).is_err());
+
+        // A repo with no remote: status reports has_remote=false / ahead=0,
+        // and push fails with a git error instead of hanging or panicking.
+        ensure_repo(&dir).unwrap();
+        let st = status(&dir).unwrap();
+        assert!(st.is_repo);
+        assert!(!st.has_remote);
+        assert_eq!(st.ahead, 0);
+        let err = push(&dir).unwrap_err().to_string();
+        assert!(err.contains("push"), "got: {err}");
+
         let _ = fs::remove_dir_all(&dir);
     }
 }
