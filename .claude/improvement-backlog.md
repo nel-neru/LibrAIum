@@ -15,6 +15,8 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ## Done
+- [x] P1 Rust save_entry path-traversal guard: kebab-case category enforced before fs (mirrors Node saveNewEntry 9a24e7f); a crafted `category: ../../x` in a git-synced entry could otherwise make Refresh All write outside the data dir + delete the source. Test `save_entry_rejects_traversal_category`. — 7569f6d (2026-07-08) [found by iter-30 fresh audit]
+- [x] P2 MCP add_repo status parity: `computeStatus()` mirrors Rust compute_status (archived/stale/active, 180-day default) so MCP-added dormant repos aren't mislabeled active. Unit test covers the boundary. — 7569f6d (2026-07-08) [found by iter-30 fresh audit]
 - [x] P3 fresh-clone DX (3 items as one): verify-all prerequisite checks + stage 6 app-binary build + conformance dist/ guard + README order fix; CLAUDE.md and /verify synced to 6 stages. — 4c32c80 (2026-07-08)
 - [x] P3 AddRepo modal semantics: real form + Enter submit, for/id labels, Escape close (guarded while in flight), URL autofocus. — 9b2f8ba (2026-07-08)
 - [x] P3 Settings action hygiene (2 items as one): pending flags for Apply/Store/Commit/init/Generate + clipboard try/catch→fail. — 1671f60 (2026-07-08)
