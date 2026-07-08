@@ -149,8 +149,16 @@ server.registerTool(
       const dup = findDuplicate(DATA_DIR, fullName);
       if (dup) return jsonError(`already registered as ${dup.id}`);
 
+      // Fail CLOSED when the category master is unavailable: skipping the
+      // check here would accept any string, and category becomes a directory
+      // name downstream.
       const categories = loadCategories(DATA_DIR);
-      if (categories.length && !categories.some((c) => c.id === category)) {
+      if (categories.length === 0) {
+        return jsonError(
+          `category master (master/categories.yaml) is missing or empty in ${DATA_DIR} — cannot validate category. Fix the data directory before adding repos.`
+        );
+      }
+      if (!categories.some((c) => c.id === category)) {
         return jsonError(
           `unknown category "${category}". Valid ids: ${categories.map((c) => c.id).join(", ")}`
         );

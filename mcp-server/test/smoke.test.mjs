@@ -144,7 +144,16 @@ try {
   );
   assert.match(badCat.error, /unknown category/);
 
-  console.log("✓ MCP smoke test passed — 4 tools, 9 scenarios");
+  // add_repo: a traversal-shaped category must be rejected, never reach the fs
+  const evilCat = toolJson(
+    await request("tools/call", {
+      name: "add_repo",
+      arguments: { github_url: "https://github.com/foo/bar2", category: "../evil" },
+    })
+  );
+  assert.match(evilCat.error, /unknown category/);
+
+  console.log("✓ MCP smoke test passed — 4 tools, 10 scenarios");
   process.exitCode = 0;
 } catch (e) {
   console.error("✗ MCP smoke test failed:", e);

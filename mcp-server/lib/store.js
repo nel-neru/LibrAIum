@@ -164,6 +164,12 @@ export function firstSummaryLine(body) {
 }
 
 export function saveNewEntry(dataDir, meta, body) {
+  // Defense in depth: category becomes a directory name below. Enforce the
+  // category-id contract (kebab-case) here too, so no caller — and no gap in
+  // upstream validation — can turn it into a path traversal ('../../x').
+  if (!/^[a-z0-9-]+$/.test(meta.category)) {
+    throw new Error(`invalid category '${meta.category}' (must match ^[a-z0-9-]+$)`);
+  }
   const slug = slugify(meta.full_name);
   const dir = join(dataDir, "entries", meta.category);
   mkdirSync(dir, { recursive: true });

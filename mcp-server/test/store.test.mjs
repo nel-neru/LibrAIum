@@ -121,6 +121,28 @@ test("saveNewEntry + findDuplicate: case-insensitive dup detection, duplicate cr
   }
 });
 
+test("saveNewEntry rejects traversal-shaped categories before touching the fs", () => {
+  const dir = mkdtempSync(join(tmpdir(), "libraium-cat-test-"));
+  try {
+    const meta = {
+      github_url: "https://github.com/a/b",
+      full_name: "a/b",
+      category: "../../evil",
+      tags: [],
+      stars: 0,
+      status: "active",
+      source: "mcp",
+    };
+    assert.throws(() => saveNewEntry(dir, meta, "x"), /invalid category/);
+    assert.throws(
+      () => saveNewEntry(dir, { ...meta, category: "Weird Cat!" }, "x"),
+      /invalid category/
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("resolveDataDir precedence: --data-dir flag outranks LIBRAIUM_DATA_DIR", () => {
   const prev = process.env.LIBRAIUM_DATA_DIR;
   process.env.LIBRAIUM_DATA_DIR = "/tmp/from-env";
