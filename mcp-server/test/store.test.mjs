@@ -8,6 +8,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+import { mkdirSync, writeFileSync } from "node:fs";
 import {
   splitFrontmatter,
   parseEntry,
@@ -15,6 +16,7 @@ import {
   findDuplicate,
   saveNewEntry,
   firstSummaryLine,
+  loadCategories,
   resolveDataDir,
   summarize,
 } from "../lib/store.js";
@@ -116,6 +118,25 @@ test("saveNewEntry + findDuplicate: case-insensitive dup detection, duplicate cr
     assert.ok(findDuplicate(dir, "OWNER/REPO"), "duplicate check must ignore case");
     assert.equal(findDuplicate(dir, "other/repo"), null);
     assert.throws(() => saveNewEntry(dir, meta, ""), /duplicate entry/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("loadCategories: absent => [], corrupt/malformed => actionable error naming the file", () => {
+  const dir = mkdtempSync(join(tmpdir(), "libraium-cats-test-"));
+  try {
+    assert.deepEqual(loadCategories(dir), []);
+
+    mkdirSync(join(dir, "master"), { recursive: true });
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories: [unclosed");
+    assert.throws(() => loadCategories(dir), /invalid YAML.*categories\.yaml|categories\.yaml.*invalid YAML/s);
+
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories: not-a-list\n");
+    assert.throws(() => loadCategories(dir), /'categories' must be a list/);
+
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: b\n    order: 2\n  - id: a\n    order: 1\n");
+    assert.deepEqual(loadCategories(dir).map((c) => c.id), ["a", "b"], "sorted by order");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -111,8 +111,19 @@ export function listEntries(dataDir) {
 export function loadCategories(dataDir) {
   const path = join(dataDir, "master", "categories.yaml");
   if (!existsSync(path)) return [];
-  const parsed = YAML.parse(readFileSync(path, "utf8"));
-  return (parsed?.categories ?? []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  let parsed;
+  try {
+    parsed = YAML.parse(readFileSync(path, "utf8"));
+  } catch (e) {
+    // Raw YAML parser errors are useless to the calling LLM — say which
+    // file is broken and what to do about it.
+    throw new Error(`category master ${path} is invalid YAML (fix or restore it): ${e.message}`);
+  }
+  const categories = parsed?.categories ?? [];
+  if (!Array.isArray(categories)) {
+    throw new Error(`category master ${path} is malformed: 'categories' must be a list`);
+  }
+  return categories.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
 // Verbatim port of Rust store::slugify — for..of iterates Unicode code

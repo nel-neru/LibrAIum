@@ -111,20 +111,26 @@ server.registerTool(
     },
   },
   async ({ project_description, goals, max_results }) => {
-    const result = suggest(
-      listEntries(DATA_DIR),
-      loadCategories(DATA_DIR),
-      project_description,
-      goals ?? "",
-      max_results ?? 5
-    );
-    if (result.suggestions.length === 0) {
-      return json({
-        ...result,
-        note: "No entry scored above the relevance threshold. The library may not cover this domain yet — consider add_repo after researching candidates.",
-      });
+    // Without this, a corrupt categories.yaml rejected the whole handler and
+    // the caller saw an SDK-level failure instead of the tool's {error}.
+    try {
+      const result = suggest(
+        listEntries(DATA_DIR),
+        loadCategories(DATA_DIR),
+        project_description,
+        goals ?? "",
+        max_results ?? 5
+      );
+      if (result.suggestions.length === 0) {
+        return json({
+          ...result,
+          note: "No entry scored above the relevance threshold. The library may not cover this domain yet — consider add_repo after researching candidates.",
+        });
+      }
+      return json(result);
+    } catch (e) {
+      return jsonError(e.message);
     }
-    return json(result);
   }
 );
 
