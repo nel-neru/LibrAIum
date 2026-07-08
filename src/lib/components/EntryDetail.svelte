@@ -107,12 +107,18 @@
     }
   }
 
+  let loadingAlts = $state(false);
+
   async function loadAlternatives() {
+    if (loadingAlts) return;
+    loadingAlts = true;
     try {
       alternatives = await api.suggestAlternatives(entry.id);
       if (alternatives.length === 0) showToast("No fresher alternatives found with shared tags.");
     } catch (e) {
       fail(e);
+    } finally {
+      loadingAlts = false;
     }
   }
 
@@ -154,7 +160,9 @@
         <button onclick={refresh} disabled={app.busy.refreshOne || app.busy.refreshAll}>
           {app.busy.refreshOne ? "Refreshing…" : "⟳ Refresh metadata"}
         </button>
-        <button onclick={loadAlternatives}>✨ Suggest alternatives</button>
+        <button onclick={loadAlternatives} disabled={loadingAlts}>
+          {loadingAlts ? "Finding…" : "✨ Suggest alternatives"}
+        </button>
         {#if confirmDelete}
           <button class="danger" onclick={remove}>Really delete?</button>
           <button class="small" onclick={() => (confirmDelete = false)}>Cancel</button>
