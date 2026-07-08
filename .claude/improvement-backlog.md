@@ -9,7 +9,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P2 — missing tests / parity pinning
-- [ ] P2 EntryDetail stale-load race: overlapping `getEntry` calls, last-to-resolve wins — drawer can show entry A while `selectedId` is B, then Edit/Delete hits the wrong repo (`src/lib/components/EntryDetail.svelte:18-24`). Fix: request token, discard stale responses.
 - [ ] P2 EntryDetail Save has no in-flight guard/disabled state — double-click fires `saveEntry` twice with the same stale `previousId` (`EntryDetail.svelte:46-63,183`). Mirror `AddRepo.submit`'s `adding` pattern.
 - [ ] P2 single global `app.busy` string shared by refresh-all / refresh-one / push — one action clobbers another's guard and label (`Dashboard.svelte:19`, `EntryDetail.svelte:66`, `Settings.svelte:78`). Fix: per-action flags.
 
@@ -31,6 +30,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P2 EntryDetail load race: monotonic sequence token discards stale getEntry responses/failures; wrong-entry Edit/Delete path closed (parent already unmounts on close). — f59a5ac (2026-07-08)
 - [x] P2 directory-authoritative-id test: frontmatter/directory disagreement → id from directory, raw meta preserved, only dir-derived id resolves. — 1eaadf7 (2026-07-08)
 - [x] P2 gitops degradation tests: non-repo `status`→is_repo=false / `log`→[] (no error), commit/push on non-repo error cleanly, remoteless push fails with a git message. — 85710a1 (2026-07-08)
 - [x] P2 github stale-boundary + apply_refresh transition tests: exclusive `>` at exactly stale_days, unparseable dates = active, and true ONLY on active→stale (stale→stale / recovery / archived all false). — aa345ee (2026-07-08)
