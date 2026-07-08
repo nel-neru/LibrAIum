@@ -36,7 +36,9 @@ pub fn normalize_github_url(url: &str) -> Result<(String, String)> {
     let rest = rest.trim_end_matches(".git");
     let parts: Vec<&str> = rest.splitn(3, '/').collect();
     if parts.len() < 2 || parts[0].is_empty() || parts[1].is_empty() {
-        return Err(AppError::msg(format!("cannot extract owner/repo from: {url}")));
+        return Err(AppError::msg(format!(
+            "cannot extract owner/repo from: {url}"
+        )));
     }
     let full_name = format!("{}/{}", parts[0], parts[1]);
     let canonical = format!("https://github.com/{full_name}");
@@ -97,7 +99,9 @@ pub fn get_entry(data_dir: &Path, id: &str) -> Result<Entry> {
     let (category, slug) = id
         .split_once('/')
         .ok_or_else(|| AppError::msg(format!("invalid entry id: {id}")))?;
-    let path = entries_dir(data_dir).join(category).join(format!("{slug}.md"));
+    let path = entries_dir(data_dir)
+        .join(category)
+        .join(format!("{slug}.md"));
     if !path.exists() {
         return Err(AppError::NotFound(id.to_string()));
     }
@@ -127,20 +131,28 @@ pub fn save_entry(
     fs::create_dir_all(&dir)?;
     let path = dir.join(format!("{slug}.md"));
 
-    // On create, refuse to overwrite a different repo's file silently.
-    if previous_id.is_none() && path.exists() {
+    let old = previous_id
+        .and_then(|prev| prev.split_once('/'))
+        .map(|(prev_cat, prev_slug)| {
+            entries_dir(data_dir)
+                .join(prev_cat)
+                .join(format!("{prev_slug}.md"))
+        });
+
+    // Refuse to overwrite a file that belongs to a different entry — both on
+    // create and on update, when a category change / rename targets a path
+    // already occupied by another entry. Only an in-place update (destination
+    // == the entry's own current file) may overwrite.
+    if path.exists() && old.as_deref() != Some(path.as_path()) {
         return Err(AppError::Duplicate(meta.full_name.clone()));
     }
 
     fs::write(&path, frontmatter::serialize(meta, body)?)?;
 
     // Remove the old file if the entry moved (category change or rename).
-    if let Some(prev) = previous_id {
-        if let Some((prev_cat, prev_slug)) = prev.split_once('/') {
-            let old = entries_dir(data_dir).join(prev_cat).join(format!("{prev_slug}.md"));
-            if old != path && old.exists() {
-                fs::remove_file(&old)?;
-            }
+    if let Some(old) = old {
+        if old != path && old.exists() {
+            fs::remove_file(&old)?;
         }
     }
     entry_from_file(&path)
@@ -160,7 +172,10 @@ pub fn export_awesome_list(entries: &[Entry], categories: &[Category]) -> String
 
     let mut listed: Vec<&str> = Vec::new();
     for cat in cats {
-        let mut in_cat: Vec<&Entry> = entries.iter().filter(|e| e.meta.category == cat.id).collect();
+        let mut in_cat: Vec<&Entry> = entries
+            .iter()
+            .filter(|e| e.meta.category == cat.id)
+            .collect();
         if in_cat.is_empty() {
             continue;
         }
@@ -184,7 +199,10 @@ pub fn export_awesome_list(entries: &[Entry], categories: &[Category]) -> String
     if !orphans.is_empty() {
         out.push_str("\n## Uncategorized\n\n");
         for e in orphans {
-            out.push_str(&format!("- [{}]({})\n", e.meta.full_name, e.meta.github_url));
+            out.push_str(&format!(
+                "- [{}]({})\n",
+                e.meta.full_name, e.meta.github_url
+            ));
         }
     }
     out
@@ -256,7 +274,13 @@ mod tests {
     #[test]
     fn crud_roundtrip_and_category_move() {
         let dir = tmp();
-        let e = save_entry(&dir, &meta("owner/repo", "ai-agent"), "# Repo\n\nSummary.", None).unwrap();
+        let e = save_entry(
+            &dir,
+            &meta("owner/repo", "ai-agent"),
+            "# Repo\n\nSummary.",
+            None,
+        )
+        .unwrap();
         assert_eq!(e.id, "ai-agent/owner-repo");
         assert_eq!(list_entries(&dir).unwrap().len(), 1);
 
@@ -276,13 +300,60 @@ mod tests {
     }
 
     #[test]
+    fn update_move_refuses_to_overwrite_other_entry() {
+        let dir = tmp();
+        let a = save_entry(&dir, &meta("owner/repo", "ai-agent"), "# A original", None).unwrap();
+        let b = save_entry(&dir, &meta("owner/repo", "web-app"), "# B", None).unwrap();
+
+        // Moving B into A's category targets A's file — must be refused,
+        // leaving both entries untouched.
+        let res = save_entry(
+            &dir,
+            &meta("owner/repo", "ai-agent"),
+            "# B moved",
+            Some(&b.id),
+        );
+        assert!(matches!(res, Err(AppError::Duplicate(_))), "got: {res:?}");
+        assert_eq!(
+            get_entry(&dir, &a.id).unwrap().body.trim(),
+            "# A original",
+            "occupant must not be overwritten"
+        );
+        assert!(
+            get_entry(&dir, &b.id).is_ok(),
+            "source entry must survive a refused move"
+        );
+
+        // An in-place update (same id, same category) still works.
+        let updated =
+            save_entry(&dir, &meta("owner/repo", "web-app"), "# B v2", Some(&b.id)).unwrap();
+        assert_eq!(updated.id, b.id);
+        assert_eq!(get_entry(&dir, &b.id).unwrap().body.trim(), "# B v2");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn awesome_export_groups_by_category() {
         let dir = tmp();
         save_entry(&dir, &meta("a/x", "ai-agent"), "# x\n\nAgent tool.", None).unwrap();
         save_entry(&dir, &meta("b/y", "web-app"), "# y\n\nWeb tool.", None).unwrap();
         let cats = vec![
-            Category { id: "ai-agent".into(), name: "AI Agents".into(), color: String::new(), icon: String::new(), description: String::new(), order: 1 },
-            Category { id: "web-app".into(), name: "Web Apps".into(), color: String::new(), icon: String::new(), description: String::new(), order: 2 },
+            Category {
+                id: "ai-agent".into(),
+                name: "AI Agents".into(),
+                color: String::new(),
+                icon: String::new(),
+                description: String::new(),
+                order: 1,
+            },
+            Category {
+                id: "web-app".into(),
+                name: "Web Apps".into(),
+                color: String::new(),
+                icon: String::new(),
+                description: String::new(),
+                order: 2,
+            },
         ];
         let md = export_awesome_list(&list_entries(&dir).unwrap(), &cats);
         assert!(md.contains("## AI Agents"));
