@@ -73,17 +73,26 @@ export async function reloadEntries() {
   }
 }
 
+// Chip clicks call runSearch() directly (bypassing Library's debounce), so
+// two searches can be in flight; last-to-RESOLVE must not win over
+// last-DISPATCHED. Same sequence-token pattern as EntryDetail's load().
+let searchSeq = 0;
+
 export async function runSearch() {
   const f = app.filters;
+  const seq = ++searchSeq;
   try {
-    app.results = await api.searchEntries({
+    const results = await api.searchEntries({
       query: f.query || null,
       category: f.category || null,
       tags: f.tag ? [f.tag] : [],
       min_stars: f.minStars === "" || f.minStars === null ? null : Number(f.minStars),
       status: f.status || null,
     });
+    if (seq !== searchSeq) return; // stale response
+    app.results = results;
   } catch (e) {
+    if (seq !== searchSeq) return; // stale failure
     fail(e);
   }
 }
