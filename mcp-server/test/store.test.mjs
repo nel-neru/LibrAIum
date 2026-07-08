@@ -204,6 +204,14 @@ test("loadCategories: absent => [], corrupt/malformed => actionable error naming
     writeFileSync(join(dir, "master", "categories.yaml"), "categories: not-a-list\n");
     assert.throws(() => loadCategories(dir), /'categories' must be a list/);
 
+    // A hand-edit slip inside a valid list (trailing '-' → null item, or a
+    // bare string) must fail closed naming the file — not crash the sort
+    // comparator with a raw TypeError (Rust's typed serde also rejects these).
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: a\n    order: 1\n  -\n");
+    assert.throws(() => loadCategories(dir), /item 2 is not a category mapping.*fix or remove/);
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - just-a-string\n");
+    assert.throws(() => loadCategories(dir), /item 1 is not a category mapping/);
+
     writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: b\n    order: 2\n  - id: a\n    order: 1\n");
     assert.deepEqual(loadCategories(dir).map((c) => c.id), ["a", "b"], "sorted by order");
   } finally {

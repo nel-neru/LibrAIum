@@ -141,6 +141,16 @@ export function loadCategories(dataDir) {
   if (!Array.isArray(categories)) {
     throw new Error(`category master ${path} is malformed: 'categories' must be a list`);
   }
+  // A hand-edit slip (trailing '-', bare string) parses to a null/non-mapping
+  // item and would surface downstream as a raw TypeError naming neither the
+  // file nor the fix. Fail closed here with both, like the shapes above.
+  categories.forEach((c, i) => {
+    if (c === null || typeof c !== "object" || Array.isArray(c) || typeof c.id !== "string") {
+      throw new Error(
+        `category master ${path} is malformed: item ${i + 1} is not a category mapping with a string 'id' (stray '-' or unfinished entry?) — fix or remove it`
+      );
+    }
+  });
   return categories.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
