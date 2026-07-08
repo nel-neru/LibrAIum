@@ -27,7 +27,7 @@ Review against THIS repo's rules, in priority order:
 
 Also apply general review judgment (correctness, edge cases, cross-platform paths — this app targets macOS/Linux/Windows) but keep the repo rules primary. When parity questions get deep, recommend the `conformance-auditor` agent rather than duplicating its rule-by-rule audit.
 
-You may run read-only verification to confirm a suspicion: `export PATH="/opt/homebrew/bin:$PATH"` then `cd src-tauri && cargo test`, `cd mcp-server && npm test`, `node scripts/validate-data.mjs`, `node scripts/conformance.mjs`.
+You may run read-only verification to confirm a suspicion: `export PATH="/opt/homebrew/bin:$PATH"` then `cd src-tauri && cargo test`, `cd mcp-server && npm test`, `node scripts/validate-data.mjs --data-dir data`, `node scripts/conformance.mjs`.
 
 ## Verdict format
 

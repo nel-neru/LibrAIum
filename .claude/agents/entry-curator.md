@@ -30,7 +30,7 @@ You are the entry curator for LibrAIum — a local-first library of best-practic
    - Summary: **≤ 2 sentences.** What it is + the distinguishing trait. Concrete, no marketing adjectives ("blazingly fast", "powerful").
    - `## Personal Notes` — 2–4 bullets in a firsthand practitioner voice: when to reach for it, a concrete gotcha, honest weaknesses, and pairings with *other library entries* as Markdown links (e.g. `[run-llama/llama_index](https://github.com/run-llama/llama_index)`). Grep the library for related entries and cross-link. Frame doc-derived facts as usage guidance ("watch memory beyond ~1M vectors"), never as fabricated personal history ("I ran this in production").
 
-7. **Validate.** Run `node scripts/validate-data.mjs` and fix everything it reports before returning.
+7. **Validate.** Run `node scripts/validate-data.mjs --data-dir data` and fix everything it reports before returning.
 
 ## Report back
 

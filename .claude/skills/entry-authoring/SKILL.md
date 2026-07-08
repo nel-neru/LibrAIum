@@ -109,5 +109,5 @@ Why it's good: two-sentence summary with a concrete deployment fact; notes state
 Always validate before considering the entry done:
 
 ```bash
-node scripts/validate-data.mjs
+node scripts/validate-data.mjs --data-dir data
 ```
