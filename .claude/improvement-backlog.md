@@ -6,7 +6,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 ## Pending  (ordered: highest value first)
 
 ### P1 — correctness & data-safety
-- [ ] P1 MCP server: an entry whose frontmatter YAML-parses to `null` (e.g. `---\n---`) crashes ALL four tools — `parseEntry` returns `{meta: null}` without throwing, so `listEntries`' catch never skips it and `index.js` sorts/derefs `null.stars` (`mcp-server/lib/store.js:35`, `index.js:63`). Rust skips such files gracefully. Fix: throw in `parseEntry` when meta is not a non-null map; add `tests/fixtures/format/invalid/` fixture — one bad file must not brick the server.
 - [ ] P1 CRLF divergence: Node `splitFrontmatter` splits on `\n` only, keeping `\r` — corrupts the last frontmatter value (`category: "x\r"`) and every body line; Rust `.lines()` strips it (`mcp-server/lib/store.js:23` vs `src-tauri/src/frontmatter.rs:7`). Fix: split on `/\r?\n/`, add `tests/fixtures/format/valid/crlf.md`, consider `.gitattributes` `*.md text eol=lf` — README promises Windows support.
 - [ ] P1 suggest.js: relevance threshold is defeated by the status/stars baseline — any active repo with ≥1 star clears `score > 3` with zero lexical hits, so garbage/empty queries return star-ranked "suggestions" with empty `why` (`mcp-server/lib/suggest.js:62,67,91`). Fix: require lexical subscore > 0; status/stars only break ties among relevant entries.
 
@@ -17,6 +16,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P2 no unit tests for `mcp-server/lib/suggest.js` (tokenize / scoreEntry / threshold) — would have caught the P1 threshold bug. Add table-driven tests.
 - [ ] P2 type-coercion divergence unpinned: `stars: "123"` / `full_name: 12345` — Rust (typed serde) rejects, Node (untyped YAML.parse) accepts; `conformance.mjs:98` `Number(...)` masks it. Add invalid fixtures + stop masking in the harness.
 - [ ] P2 BOM handling: documented in fixtures README but no fixture has a BOM; Rust strips all leading BOMs, Node strips one (`frontmatter.rs:6` vs `store.js:23`). Add `valid/bom.md` fixture; make Node strip `/^﻿+/`.
+- [ ] P2 missing-required-fields divergence (found during iter 2): frontmatter that is a mapping but lacks `github_url`/`full_name`/`category` — Rust (serde required fields) rejects, Node parseEntry accepts. Unpinned: no fixture covers it. Decide the contract (likely reject-by-both), add `invalid/missing-required.md`, align Node.
 - [ ] P2 `settings::resolve_data_dir` 4-level precedence (setting > env > ./data > ~/LibrAIum/data) has zero tests (`src-tauri/src/settings.rs:50`). Add precedence unit tests.
 - [ ] P2 `github.rs` stale boundary untested: `num_days == stale_days` vs `+1`, and `apply_refresh` "true only on active→stale" contract has no test (`src-tauri/src/github.rs:51,69`).
 - [ ] P2 gitops non-repo branches untested: `status(non_repo).is_repo == false`, `log(non_repo) == []`, push with no remote (`src-tauri/src/gitops.rs:66-74,118-120`).
@@ -43,6 +43,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P1 MCP server: an entry whose frontmatter YAML-parses to `null` (e.g. `---\n---`) crashed ALL four tools — `parseEntry` returned `{meta: null}` without throwing, so `listEntries`' catch never skipped it. Node now rejects non-mapping frontmatter (mirrors Rust's typed serde); contract pinned by `invalid/empty-frontmatter.md` (rejected by both) + fixtures README. — 8fa7a0a (2026-07-08)
 - [x] P1 `save_entry` silently overwrote a DIFFERENT entry when an update moved/renamed onto an occupied path (category change → destination already owned by another repo → occupant destroyed, then source deleted; reachable from EntryDetail edit). Unified the create/update guard: any write to an existing path that is not the entry's own file is refused as Duplicate. Regression test `update_move_refuses_to_overwrite_other_entry`. — 8ba3a19 (2026-07-08)
 
 ## Rejected
