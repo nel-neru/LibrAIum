@@ -9,7 +9,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P2 — missing tests / parity pinning
-- [ ] P2 single global `app.busy` string shared by refresh-all / refresh-one / push — one action clobbers another's guard and label (`Dashboard.svelte:19`, `EntryDetail.svelte:66`, `Settings.svelte:78`). Fix: per-action flags.
+- (all resolved — see Done)
 
 ### P3 — error handling / UX / docs / DX
 - [ ] P3 `settings::load` swallows corrupt settings.json → silently resets `data_dir` and next save overwrites the file (`src-tauri/src/settings.rs:30`). Distinguish absent (defaults) from unparseable (surface error).
@@ -29,6 +29,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P2 per-action busy flags: `busy: {refreshAll, refreshOne, push}` replaces the shared string; refresh actions mutually exclusive, push independent, all guard re-entry. ALL P2 ITEMS NOW RESOLVED. — 272117e (2026-07-08)
 - [x] P2 EntryDetail Save double-submit guard: `saving` in-flight flag, early return, Saving… label, both edit buttons disabled. — 51cf2d8 (2026-07-08)
 - [x] P2 EntryDetail load race: monotonic sequence token discards stale getEntry responses/failures; wrong-entry Edit/Delete path closed (parent already unmounts on close). — f59a5ac (2026-07-08)
 - [x] P2 directory-authoritative-id test: frontmatter/directory disagreement → id from directory, raw meta preserved, only dir-derived id resolves. — 1eaadf7 (2026-07-08)
