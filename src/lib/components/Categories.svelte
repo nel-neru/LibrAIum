@@ -4,7 +4,10 @@
 
   // local editable copy; ids of persisted rows are locked to keep entry dirs stable
   let rows = $state(structuredClone($state.snapshot(app.categories)));
-  let existingIds = new Set(app.categories.map((c) => c.id));
+  // Derived (not a plain let): a category saved mid-session must immediately
+  // lock its id input, otherwise renaming it later orphans the entry directory
+  // the id names. A plain `let` reassignment never re-rendered the template.
+  let existingIds = $derived(new Set(app.categories.map((c) => c.id)));
   let dirty = $state(false);
 
   let counts = $derived.by(() => {
@@ -60,7 +63,6 @@
     }
     try {
       app.categories = await api.saveCategories($state.snapshot(rows));
-      existingIds = new Set(app.categories.map((c) => c.id));
       dirty = false;
       showToast("Category master saved.");
     } catch (e) {
