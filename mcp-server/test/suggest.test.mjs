@@ -59,6 +59,19 @@ test("scoreEntry: lexical evidence is tracked separately from status/stars", () 
   assert.ok(miss.score > 3, "baseline still clears the old threshold — which is why lexical must gate");
 });
 
+test("scoreEntry: a tag embedded inside a longer token is not evidence", () => {
+  // Regression: tok.includes(tag) turned short tags into wildcards once
+  // single-word language tags (c, go) entered the taxonomy — "c" matched
+  // "cobol" and "rag" matched "dragon", surfacing entries on garbage queries.
+  const c = scoreEntry(entry("FFmpeg/FFmpeg", { tags: ["transcoding", "cli", "c"] }), ["cobol"], CATEGORIES);
+  assert.equal(c.lexical, 0, '"c" must not match inside "cobol"');
+  const rag = scoreEntry(entry("acme/rag-lib", { tags: ["rag"] }), ["dragon"], CATEGORIES);
+  assert.equal(rag.lexical, 0, '"rag" must not match inside "dragon"');
+  // exact and token-inside-compound-tag evidence still count
+  assert.ok(scoreEntry(entry("x/y", { tags: ["cli"] }), ["cli"], CATEGORIES).lexical >= 8);
+  assert.ok(scoreEntry(entry("x/z", { tags: ["vector-db"] }), ["vector"], CATEGORIES).lexical >= 8);
+});
+
 test("scoreEntry: stale/archived discount and warn even when relevant", () => {
   const stale = scoreEntry(entry("a/b", { tags: ["rag"], status: "stale" }), ["rag"], CATEGORIES);
   assert.ok(stale.reasons.some((r) => r.includes("stale")));

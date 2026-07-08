@@ -29,9 +29,12 @@ export function scoreEntry(entry, tokens, categories) {
   const reasons = [];
 
   const tags = (entry.meta.tags ?? []).map((t) => t.toLowerCase());
-  const tagHits = tags.filter((tag) =>
-    tokens.some((tok) => tag === tok || tag.includes(tok) || tok.includes(tag))
-  );
+  // Tag evidence flows one way: a query token equal to, or contained in, a
+  // (usually compound, kebab-case) tag — "vector" hits vector-db. The reverse
+  // direction (tag inside token) is never evidence: it turns short tags into
+  // wildcards ("c" ⊂ "cobol", "rag" ⊂ "dragon") the moment single-word
+  // language tags exist in the taxonomy.
+  const tagHits = tags.filter((tag) => tokens.some((tok) => tag.includes(tok)));
   if (tagHits.length) {
     lexical += tagHits.length * 8;
     reasons.push(`tags match: ${tagHits.join(", ")}`);
