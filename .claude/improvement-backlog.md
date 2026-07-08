@@ -6,7 +6,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 ## Pending  (ordered: highest value first)
 
 ### P1 — correctness & data-safety
-- [ ] P1 CRLF divergence: Node `splitFrontmatter` splits on `\n` only, keeping `\r` — corrupts the last frontmatter value (`category: "x\r"`) and every body line; Rust `.lines()` strips it (`mcp-server/lib/store.js:23` vs `src-tauri/src/frontmatter.rs:7`). Fix: split on `/\r?\n/`, add `tests/fixtures/format/valid/crlf.md`, consider `.gitattributes` `*.md text eol=lf` — README promises Windows support.
 - [ ] P1 suggest.js: relevance threshold is defeated by the status/stars baseline — any active repo with ≥1 star clears `score > 3` with zero lexical hits, so garbage/empty queries return star-ranked "suggestions" with empty `why` (`mcp-server/lib/suggest.js:62,67,91`). Fix: require lexical subscore > 0; status/stars only break ties among relevant entries.
 
 ### P2 — missing tests / parity pinning
@@ -43,6 +42,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P1 CRLF divergence: Node splitter kept `\r` on every line (corrupting the last frontmatter value and all body lines) while Rust stripped it. `split(/\r?\n/)` now mirrors `str::lines()`; pinned by `valid/crlf.md` (real CRLF bytes, `.gitattributes -text` protected; verified the committed blob keeps `0d 0a`); all other `*.md` forced LF. — 4334771 (2026-07-08)
 - [x] P1 MCP server: an entry whose frontmatter YAML-parses to `null` (e.g. `---\n---`) crashed ALL four tools — `parseEntry` returned `{meta: null}` without throwing, so `listEntries`' catch never skipped it. Node now rejects non-mapping frontmatter (mirrors Rust's typed serde); contract pinned by `invalid/empty-frontmatter.md` (rejected by both) + fixtures README. — 8fa7a0a (2026-07-08)
 - [x] P1 `save_entry` silently overwrote a DIFFERENT entry when an update moved/renamed onto an occupied path (category change → destination already owned by another repo → occupant destroyed, then source deleted; reachable from EntryDetail edit). Unified the create/update guard: any write to an existing path that is not the entry's own file is refused as Duplicate. Regression test `update_move_refuses_to_overwrite_other_entry`. — 8ba3a19 (2026-07-08)
 
