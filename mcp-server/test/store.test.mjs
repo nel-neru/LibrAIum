@@ -263,16 +263,32 @@ test("fetchGithubRepo: 429 gets the rate-limit hint, timeouts get a clear messag
 });
 
 test("resolveDataDir precedence: --data-dir flag outranks LIBRAIUM_DATA_DIR", () => {
-  const prev = process.env.LIBRAIUM_DATA_DIR;
-  process.env.LIBRAIUM_DATA_DIR = "/tmp/from-env";
-  try {
-    assert.equal(
-      resolveDataDir(["node", "x", "--data-dir", "/tmp/from-flag"]),
-      resolve("/tmp/from-flag")
-    );
-    assert.equal(resolveDataDir(["node", "x"]), resolve("/tmp/from-env"));
-  } finally {
-    if (prev === undefined) delete process.env.LIBRAIUM_DATA_DIR;
-    else process.env.LIBRAIUM_DATA_DIR = prev;
-  }
+  // env is injected (like the Rust testable core) — no process.env mutation.
+  const env = { LIBRAIUM_DATA_DIR: "/tmp/from-env" };
+  assert.equal(
+    resolveDataDir(["node", "x", "--data-dir", "/tmp/from-flag"], env),
+    resolve("/tmp/from-flag")
+  );
+  assert.equal(resolveDataDir(["node", "x"], env), resolve("/tmp/from-env"));
+});
+
+test("resolveDataDir trims values and falls through on whitespace-only (mirrors Rust)", () => {
+  // padded values are trimmed, never resolved verbatim into garbage paths
+  assert.equal(
+    resolveDataDir(["node", "x", "--data-dir", "  /tmp/flagged "], {}),
+    resolve("/tmp/flagged")
+  );
+  assert.equal(
+    resolveDataDir(["node", "x"], { LIBRAIUM_DATA_DIR: " /tmp/enved  " }),
+    resolve("/tmp/enved")
+  );
+  // whitespace-only values fall through to the next tier
+  assert.equal(
+    resolveDataDir(["node", "x", "--data-dir", "   "], { LIBRAIUM_DATA_DIR: "/tmp/enved" }),
+    resolve("/tmp/enved")
+  );
+  assert.equal(
+    resolveDataDir(["node", "x"], { LIBRAIUM_DATA_DIR: "   " }),
+    resolveDataDir(["node", "x"], {})
+  );
 });

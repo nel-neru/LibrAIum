@@ -8,11 +8,18 @@ import YAML from "yaml";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-/** Resolution order: --data-dir flag > env > ./data (cwd) > repo-relative ../data > ~/LibrAIum/data */
-export function resolveDataDir(argv = process.argv) {
+/** Resolution order: --data-dir flag > env > ./data (cwd) > repo-relative ../data > ~/LibrAIum/data.
+ * Values are trimmed, and whitespace-only values fall through to the next
+ * tier — mirroring Rust resolve_data_dir_from (settings.rs), so a padded
+ * LIBRAIUM_DATA_DIR can never point the MCP server and the desktop app at
+ * different directories. argv/env are injectable so tests don't mutate
+ * process globals (same design as the Rust testable core). */
+export function resolveDataDir(argv = process.argv, env = process.env) {
   const flagIdx = argv.indexOf("--data-dir");
-  if (flagIdx !== -1 && argv[flagIdx + 1]) return resolve(argv[flagIdx + 1]);
-  if (process.env.LIBRAIUM_DATA_DIR) return resolve(process.env.LIBRAIUM_DATA_DIR);
+  const flagVal = flagIdx !== -1 ? argv[flagIdx + 1]?.trim() : undefined;
+  if (flagVal) return resolve(flagVal);
+  const envVal = env.LIBRAIUM_DATA_DIR?.trim();
+  if (envVal) return resolve(envVal);
   for (const candidate of [resolve("data"), resolve(HERE, "..", "..", "data")]) {
     if (existsSync(join(candidate, "master", "categories.yaml"))) return candidate;
   }
