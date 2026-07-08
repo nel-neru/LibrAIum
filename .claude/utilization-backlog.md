@@ -13,12 +13,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 - **Acceptance**: after simulating swarm flipping to active in a temp copy of data/, the full MCP test suite still passes; the stale-filter scenario still meaningfully exercises the status filter.
 - **Build notes**: either point the smoke test's stale scenario at a fixture data dir (spawn a second server over a 3-entry fixture library containing a guaranteed-stale entry), or make the scenario data-driven (find any stale entry; skip-with-failure-note when none). Prefer the fixture — deterministic and keeps the real library free to reflect reality.
 
-### [ ] P1 — compare_repos MCP tool — side-by-side decision matrix
-- **Deliverable**: `mcp-server/lib/compare.js`, registration in `mcp-server/index.js`, `mcp-server/test/compare.test.mjs` + smoke scenario.
-- **Why**: "LangGraph vs Dify vs llama_index?" is the most common decision moment; today it costs N get_repo_details calls and the notes get flattened out.
-- **Acceptance**: compare_repos(["openai/swarm","langchain-ai/langgraph"]) returns one matrix carrying both entries' Personal Notes verbatim and a decision_hints line flagging swarm as stale.
-- **Build notes**: input `entries` (2-5 ids/owner-repo/URLs, resolved like get_repo_details) XOR `category` (whole shelf, cap 8 by stars). Output per entry: id, full_name, stars, language, status, last_github_push, added_date, summary, personal_notes (full section verbatim); plus shared_tags / unique_tags and decision_hints (plain strings: stale flags, oldest push, most-starred, only-X-language). Pure local reads; no network, no deps, no parity work.
-
 ### [ ] P2 — get_library_overview MCP tool — shelf map, tag vocabulary, health counts
 - **Deliverable**: registration in `mcp-server/index.js` + helper in store.js, smoke scenario.
 - **Why**: agents in other repos guess category ids and tags, get zero results or add_repo errors, and give up.
@@ -93,6 +87,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P1 compare_repos MCP tool — 1b36618 (2026-07-09, iter 4). Proven: swarm-vs-langgraph on real data returned the stale hint, 3 shared tags, and swarm's verbatim succession bullet in one call; 4 unit tests + 3 smoke scenarios (5 tools now).
 - [x] P1 Headless metadata refresh with change digest — 4b52592 (2026-07-09, iter 3). Proven: 43-entry dry-run digest (36 deltas incl. swarm stale→active warning, just +8.5k stars) with zero writes; --write on qdrant updated scalars only, tags line byte-identical, validate green. Acceptance target switched from swarm to qdrant to preserve the demo-stale seed; follow-up filed (P2 smoke-test decoupling).
 - [x] P1 libraium-first skill + library-first setup page — 9385016 (2026-07-09, iter 2). Proven: from a different cwd, the documented stdio invocation answered "a RAG pipeline" with shelved entries quoting caution bullets. User action still required once: run the registration one-liner + skill cp (documented in docs/library-first-setup.md).
 - [x] P1 Personal Notes excerpts inline in suggest_for_new_project — 21b8323 (2026-07-09, iter 1). Proven: real-library suggest for "RAG agent with a vector DB" returns qdrant with its memory-caution bullet first; smoke test pins the field over stdio.
