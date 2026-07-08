@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P2 — get_library_overview MCP tool — shelf map, tag vocabulary, health counts
-- **Deliverable**: registration in `mcp-server/index.js` + helper in store.js, smoke scenario.
-- **Why**: agents in other repos guess category ids and tags, get zero results or add_repo errors, and give up.
-- **Acceptance**: overview returns 18 categories whose entry counts sum to the library total, a tag vocabulary where every tag hits ≥1 search_repos result, and the resolved data dir.
-- **Build notes**: read-only: categories (id, name, description, entry_count, stale/archived counts, top 5 tags), totals, full tag vocabulary {tag: count}, data_dir. Mention it in add_repo/search_repos descriptions ("call get_library_overview first").
-
 ### [ ] P2 — Stale-alternatives parity over MCP (auto-attached to get_repo_details)
 - **Deliverable**: alternativesFor in `mcp-server/lib/suggest.js`, get_repo_details wiring, tests + smoke assertion.
 - **Why**: the GUI answers "what replaces this stale repo?" but the MCP consumer dead-ends at status: stale.
@@ -81,6 +75,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P2 get_library_overview MCP tool — 02550c5 (2026-07-09, iter 6). Proven: 18 categories summing exactly to 43 entries; all 78 vocabulary tags verified filterable (exhaustive, not sampled). Helper landed in lib/overview.js (not store.js as drafted — keeps the parity-watched file server-logic-free).
 - [x] P2 Stale smoke scenarios pinned to fixture library — 3e8be34 (2026-07-09, iter 5). Proven: flipped swarm active via the real refresh tool, full suite stayed green, restored. Suite now invariant under metadata refresh.
 - [x] P1 compare_repos MCP tool — 1b36618 (2026-07-09, iter 4). Proven: swarm-vs-langgraph on real data returned the stale hint, 3 shared tags, and swarm's verbatim succession bullet in one call; 4 unit tests + 3 smoke scenarios (5 tools now).
 - [x] P1 Headless metadata refresh with change digest — 4b52592 (2026-07-09, iter 3). Proven: 43-entry dry-run digest (36 deltas incl. swarm stale→active warning, just +8.5k stars) with zero writes; --write on qdrant updated scalars only, tags line byte-identical, validate green. Acceptance target switched from swarm to qdrant to preserve the demo-stale seed; follow-up filed (P2 smoke-test decoupling).
