@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Language
+
+**Always converse with the user in Japanese** — replies, explanations, plans, questions, and progress reports. Keep repository artifacts in English: code, comments, commit messages, README/docs, and identifiers (the repo is published publicly in English; the owner reads both).
+
 ## What LibrAIum Is
 
 A local-first Tauri v2 + Svelte 5 desktop app for curating best-practice GitHub repositories, storing everything as YAML-frontmatter Markdown files in a local git repository, and exposing the library to Claude Code through an MCP server. The authoritative spec is `LibrAIum_完全設計書_v1.0.md` (Japanese). v1.0 MVP is fully implemented.
