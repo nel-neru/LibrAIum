@@ -169,8 +169,10 @@ export function loadCategories(dataDir) {
         bad(`field '${key}' must be a string (got ${JSON.stringify(c[key])})`);
       }
     }
-    if (c.order !== undefined && typeof c.order !== "number") {
-      bad(`field 'order' must be a number (got ${JSON.stringify(c.order)})`);
+    // Integer, not just number: Rust's i64 rejects `order: 3.5` file-wide, so
+    // accepting floats here would let the two sides serve different libraries.
+    if (c.order !== undefined && !Number.isInteger(c.order)) {
+      bad(`field 'order' must be an integer (got ${JSON.stringify(c.order)})`);
     }
   });
   return categories.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));

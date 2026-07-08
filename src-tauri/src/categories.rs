@@ -99,6 +99,10 @@ mod tests {
         write("categories:\n  - id: x\n    name: X\n    order: \"3\"\n");
         assert!(load(&dir).is_err());
 
+        // float order must be rejected too (i64 — Node mirrors with isInteger)
+        write("categories:\n  - id: x\n    name: X\n    order: 3.5\n");
+        assert!(load(&dir).is_err());
+
         // present-but-non-string optional scalar must be rejected
         write("categories:\n  - id: x\n    name: X\n    color: 123\n");
         assert!(load(&dir).is_err());

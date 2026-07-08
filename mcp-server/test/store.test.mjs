@@ -236,7 +236,9 @@ test("loadCategories: absent => [], corrupt/malformed => actionable error naming
     writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: 2048\n    name: X\n");
     assert.throws(() => loadCategories(dir), /needs a string 'id' \(got 2048\)/);
     writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: x\n    name: X\n    order: \"3\"\n");
-    assert.throws(() => loadCategories(dir), /'order' must be a number \(got "3"\)/);
+    assert.throws(() => loadCategories(dir), /'order' must be an integer \(got "3"\)/);
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: x\n    name: X\n    order: 3.5\n");
+    assert.throws(() => loadCategories(dir), /'order' must be an integer \(got 3\.5\)/);
     writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: x\n    name: X\n    color: 123\n");
     assert.throws(() => loadCategories(dir), /'color' must be a string/);
     writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: x\n");
