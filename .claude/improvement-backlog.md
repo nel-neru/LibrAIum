@@ -1,39 +1,33 @@
 # Improvement Backlog
 
-Re-seeded 2026-07-08 by a fresh 4-agent audit after the loop restarted the same day the
-first convergence closed (that history — 30 iterations, 37 findings — is preserved under
-Done below). The Rust-core auditor came back CONVERGED; the MCP-server, frontend, and
-parity/docs auditors surfaced the items now in Pending.
-Worked by the `/improve` loop — one item per iteration, verified via `scripts/verify-all.sh`, committed.
+## LOOP COMPLETE (2nd convergence)
+
+Closed 2026-07-09 after 50 iterations total — 20 in the restarted loop (31–50), 26
+findings fixed, all 6 verify-all stages green throughout. The final two-auditor
+convergence check (iter-50) returned exactly two narrow findings — category `order`
+integer parity and three unpinned validate-data doc invocations — both fixed and
+verified in the closing iteration; everything else CONVERGED on both fronts: the
+loop's own iter-43..49 fixes survived adversarial re-audit, and a completeness sweep
+of never-audited corners found nothing new (and refuted the old "export_awesome
+untested" concern). Pending is empty; the loop stopped rather than invent work.
+Restart anytime with `/improve` (it re-audits and seeds a new backlog if it finds anything).
+
+History: first convergence closed 2026-07-08 after 30 iterations / 37 findings (3f771cb).
+The loop restarted the same day; a 4-agent audit seeded 9 items (Rust core CONVERGED),
+and the iter-42 mid-loop audit re-seeded 8 more after the 4dccdd6 UI redesign landed.
+
+---
 
 ## Pending  (ordered: highest value first)
-
-Re-seeded 2026-07-08 by the iter-42 convergence audit (4 agents; the loop's own recent
-fixes came back CONVERGED, but the never-audited 4dccdd6 UI redesign and a fresh
-MCP/parity sweep surfaced the items below).
-
-### P1 — correctness & data-safety
-- (all resolved — see Done)
-
-### P3 — error handling / UX / parity robustness
-
-### P4 — dual-format hardening
-- (all resolved — see Done)
-
-### P5 — docs / DX / design conformance
-- (all resolved — see Done)
-
-**Pending is EMPTY (2nd time since restart) — next iteration runs the convergence check.**
-- (all resolved — see Done)
-
-### P5 — docs / DX
-- (all resolved — see Done)
+- (EMPTY — loop closed at the 2nd convergence, see above)
 
 ## Done
 
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
 
+- [x] P4 category `order` integer parity: Node accepted `order: 3.5` (typeof number) while Rust's i64 rejects the file — Number.isInteger now gates it, validate-data/hook become the tripwire via the shared loader; float shape pinned on both sides. — 0a874a3 (2026-07-09) [iter-50 convergence audit]
+- [x] P5 last three unpinned validate-data invocations pinned (entry-curator, libraium-reviewer, entry-authoring SKILL) — .claude/ is grep-clean of the bf849d8 false-pass class. — 307b994 (2026-07-09) [iter-50 convergence audit]
 - [x] P5 dev mock semantic parity (5 sub-items as one): save_entry recomputes <category>/<slug> + refuses occupied paths, add dup guard (+canonical URL from full_name), check_duplicate normalizes to full_name, search haystack = name/tags/language/first-summary-line, suggest_alternatives ranked+capped(3). All five live-verified in preview. — 46e99e5 (2026-07-09) [iter-49]
 - [x] P5 DESIGN.md conformance ×4 (as one): drawer 240ms per §7, ★ glyph in the AddRepo toast, open-source-tooling → orange-400 #DA702C (was base-500 = the unknown-category fallback), cursor:pointer scoped to button.stat. Live-verified token + cursors in preview. — 04847c8 (2026-07-09) [iter-48]
 - [x] P5 docs/automation sync ×3 (as one): hook PARITY_FILES + settings.rs/categories.rs (verified firing); all command-doc validate-data calls pinned with --data-dir (incl. format-sync.md, found in flight); README gains frontend tests, npm test, DESIGN.md and the browser mock. — e3597b1 (2026-07-09) [iter-47]
