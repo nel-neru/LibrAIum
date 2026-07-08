@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P1 — Personal Notes excerpts inline in suggest_for_new_project
-- **Deliverable**: `mcp-server/lib/suggest.js` (extractNotes + `personal_notes` field), `mcp-server/test/suggest.test.mjs`, one smoke assertion.
-- **Why**: every consultation currently drops the owner's firsthand gotchas — suggestions only carry firstSummaryLine; this makes the library's core value land in the one call Claude actually makes.
-- **Acceptance**: suggest_for_new_project over the seeded library returns suggestions whose `personal_notes` contains real bullets (≤3, query-token bullets first, then caution-cue bullets), and `null` when an entry has no real bullets.
-- **Build notes**: extractNotes(entry, tokens): find `## Personal Notes` case-insensitively, collect `- ` bullet lines until the next heading, drop bare `- ` stubs; select ≤3 prioritizing (1) bullets containing a query token, (2) caution cues (gotcha, caveat, avoid, superseded, don't, instead, deprecated, watch, ⚠), (3) original order; return null when empty. Wire into suggest()'s payload. Body parsing only — no format change, no Rust parity.
-
 ### [ ] P1 — libraium-first global skill + paste-in CLAUDE.md snippet
 - **Deliverable**: `integrations/claude/skills/libraium-first/SKILL.md`, `docs/library-first-setup.md`, README section linking both.
 - **Why**: the MCP server only pays off if Claude actually consults it in other repos — this is the behavior layer.
@@ -105,7 +99,8 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
-- [x] Loop scaffolding: `/utilize` command + this backlog — (bootstrap commit)
+- [x] P1 Personal Notes excerpts inline in suggest_for_new_project — 21b8323 (2026-07-09, iter 1). Proven: real-library suggest for "RAG agent with a vector DB" returns qdrant with its memory-caution bullet first; smoke test pins the field over stdio.
+- [x] Loop scaffolding: `/utilize` command + this backlog — a3ed675 (2026-07-09)
 
 ## Rejected
 

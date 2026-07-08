@@ -32,8 +32,8 @@ If you cannot get both gates green: revert completely, record the item under Rej
 
 ## A — Act
 
-- One commit, conventional message (`feat:`/`fix:`/`docs:`/`test:`/`ci:`), body explaining the usage scenario it serves. **Push only when the user has asked for pushes.**
-- Update `.claude/utilization-backlog.md`: move the item to Done with the commit hash and a one-line "proven by" note; add follow-up ideas discovered while building (with priority); include the backlog update in the same commit.
+- One feature commit, conventional message (`feat:`/`fix:`/`docs:`/`test:`/`ci:`), body explaining the usage scenario it serves. **Push only when the user has asked for pushes.**
+- Then update `.claude/utilization-backlog.md` — move the item to Done with the feature commit's hash and a one-line "proven by" note; add follow-up ideas discovered while building (with priority) — and record it in a `chore: utilization backlog — iter N` commit (same two-commit pattern as `/improve`).
 - Report: what was built, the acceptance-check evidence, verify-all result, commit hash, backlog delta, next candidate.
 
 **Stop condition:** Pending empty AND a fresh ideation pass surfaces nothing above the value bar → write `## LOOP COMPLETE` at the top of the backlog, report it, and if running under `/loop`, end the loop.
