@@ -87,6 +87,14 @@ export function parseEntry(content) {
     throw new Error("frontmatter is not a YAML mapping");
   }
   validateMeta(meta);
+  // Serde-default parity (models.rs default fns): Rust materializes these on
+  // parse, so every Node consumer must see the same values — an absent status
+  // left undefined made search_repos' status filter silently drop entries the
+  // desktop app includes, while summarize reported them "active".
+  meta.tags ??= [];
+  meta.stars ??= 0;
+  meta.status ??= "active";
+  meta.source ??= "manual";
   return { meta, body };
 }
 

@@ -94,6 +94,18 @@ test("firstSummaryLine skips headings, blanks and horizontal rules", () => {
   assert.equal(firstSummaryLine("\n\n# only headings\n"), "");
 });
 
+test("parseEntry materializes the serde defaults like Rust (minimal entry)", () => {
+  const { meta } = parseEntry(
+    "---\ngithub_url: https://github.com/a/b\nfull_name: a/b\ncategory: web-app\n---\nbody\n"
+  );
+  // Absent fields must come back as VALUES, not undefined — the status filter
+  // in search_repos and suggest's active bonus read them directly.
+  assert.deepEqual(meta.tags, []);
+  assert.equal(meta.stars, 0);
+  assert.equal(meta.status, "active");
+  assert.equal(meta.source, "manual");
+});
+
 test("summarize applies the schema defaults for absent optional fields", () => {
   const { meta, body } = parseEntry(
     "---\ngithub_url: https://github.com/a/b\nfull_name: a/b\ncategory: web-app\n---\nbody\n"
