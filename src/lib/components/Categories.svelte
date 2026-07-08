@@ -2,12 +2,13 @@
   import { api } from "../api.js";
   import { app, showToast, fail } from "../state.svelte.js";
 
-  // local editable copy; ids of persisted rows are locked to keep entry dirs stable
-  let rows = $state(structuredClone($state.snapshot(app.categories)));
-  // Derived (not a plain let): a category saved mid-session must immediately
-  // lock its id input, otherwise renaming it later orphans the entry directory
-  // the id names. A plain `let` reassignment never re-rendered the template.
-  let existingIds = $derived(new Set(app.categories.map((c) => c.id)));
+  // Local editable copy. The id lock must be per ROW PERSISTENCE, not by
+  // value: matching row.id against the persisted-id set disabled a NEW row's
+  // input the instant its typed value collided with any existing id, trapping
+  // the row uneditable. `locked` rides on the row and is promoted on save.
+  let rows = $state(
+    structuredClone($state.snapshot(app.categories)).map((r) => ({ ...r, locked: true }))
+  );
   let dirty = $state(false);
 
   let counts = $derived.by(() => {
@@ -28,6 +29,7 @@
       icon: "📁",
       description: "",
       order: (rows.at(-1)?.order ?? 0) + 1,
+      locked: false,
     });
     touch();
   }
@@ -62,7 +64,11 @@
       }
     }
     try {
-      app.categories = await api.saveCategories($state.snapshot(rows));
+      // `locked` is UI state, not part of the Category payload.
+      const payload = $state.snapshot(rows).map(({ locked, ...r }) => r);
+      app.categories = await api.saveCategories(payload);
+      // Every row is persisted now — its id names a real entry directory.
+      rows.forEach((r) => (r.locked = true));
       dirty = false;
       showToast("Category master saved.");
     } catch (e) {
@@ -107,8 +113,8 @@
             class="mono"
             bind:value={row.id}
             oninput={touch}
-            disabled={existingIds.has(row.id) && row.id !== ""}
-            title={existingIds.has(row.id) ? "id locked — entries live in this directory" : ""}
+            disabled={row.locked}
+            title={row.locked ? "id locked — entries live in this directory" : ""}
           />
         </td>
         <td><input style="width: 150px;" bind:value={row.name} oninput={touch} /></td>
