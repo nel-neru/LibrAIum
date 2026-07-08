@@ -26,7 +26,7 @@ Interpret its sections, don't just paste them:
 
 **a) Freshness** — entries in the `30d+`/`90d+`/`missing` buckets have unrefreshed stars/push dates. Fix via `/refresh-metadata` (dry-run first) or `node scripts/refresh-metadata.mjs --only <entry-id> --write`.
 
-**c) Tag taxonomy drift** — `singleton tags` are rename candidates ONLY when a `near-synonym candidates` pair names the same concept (`vector-db` ~ `vectordb`); genuinely new singletons are fine — judge each one, don't mass-delete.
+**c) Tag taxonomy drift** — `singleton tags` are rename candidates ONLY when a `near-synonym candidates` pair names the same concept (`vector-db` ~ `vectordb`); genuinely new singletons are fine — judge each one, don't mass-delete. Apply approved renames atomically with `node scripts/rename-tag.mjs <old> <new> [--merge]` (dry-run first) — never by hand-editing N files.
 
 **d) Succession** — `UNCOVERED` stale/archived entries are shelf holes: no active same-category entry shares a tag (the `suggest_alternatives` rule in `src-tauri/src/search.rs` / `alternativesFor` in `mcp-server/lib/suggest.js`). Research a replacement or add the succession note. Also flag stale entries whose notes don't name what superseded them.
 
@@ -43,5 +43,5 @@ Present a severity-ordered table: entry id (`<category>/<slug>`), check, finding
 Ask the user which fixes to apply. For approved fixes:
 
 - Edit the entry files directly (metadata refreshes must use real GitHub API data — never fabricate stars or dates; set `last_checked` to today only when you actually refreshed).
-- Tag renames must be applied consistently across every entry using the tag.
+- Tag renames go through `node scripts/rename-tag.mjs <old> <new> [--merge]` so every carrier updates in one atomic run.
 - Re-run `node scripts/validate-data.mjs --data-dir data` after edits and show the final `git diff`. Do not commit.
