@@ -33,6 +33,12 @@ export function splitFrontmatter(content) {
 export function parseEntry(content) {
   const { yaml, body } = splitFrontmatter(content);
   const meta = YAML.parse(yaml);
+  // Mirror the Rust side (typed serde deserialization): frontmatter that is
+  // empty or not a YAML mapping parses to null/scalar/array here — reject it
+  // so callers (listEntries) skip the file instead of crashing on meta.stars.
+  if (meta === null || typeof meta !== "object" || Array.isArray(meta)) {
+    throw new Error("frontmatter is not a YAML mapping");
+  }
   return { meta, body };
 }
 

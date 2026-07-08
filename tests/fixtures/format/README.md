@@ -33,8 +33,10 @@ Line-based splitting rules, identical in both implementations:
 2. The frontmatter ends at the **first** subsequent line that is exactly
    `---` (trailing whitespace tolerated). If no such line exists the file is
    rejected ("unterminated frontmatter").
-3. Everything between the delimiters is parsed as YAML; a YAML error rejects
-   the file even when the delimiters are well-formed.
+3. Everything between the delimiters is parsed as YAML and must yield a
+   **mapping**; a YAML error rejects the file even when the delimiters are
+   well-formed, and so does frontmatter that parses to `null` (empty block),
+   a scalar, or a sequence.
 4. Everything after the closing delimiter is the Markdown body; leading blank
    lines are stripped. A bare `---` in the body (Markdown horizontal rule) is
    plain body text because it comes after the close.
@@ -89,6 +91,7 @@ Derived invariants (enforced on real data by `scripts/validate-data.mjs`):
 | `unterminated-frontmatter.md` | opening `---` but no closing delimiter            |
 | `malformed-yaml.md`           | delimiters fine, YAML between them does not parse |
 | `empty.md`                    | zero-byte file                                    |
+| `empty-frontmatter.md`        | delimiters fine, but the YAML between them is empty — parses to `null`, not a mapping |
 
 ## Known constraint: bare `---` inside a YAML value
 
