@@ -29,6 +29,8 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
 
+- [x] P1 stored-XSS in entry bodies: `EntryDetail` rendered `{@html marked.parse(body)}` with no sanitizer while the app ships `csp: null`, so injected HTML/handlers in an untrusted body (GitHub description embedded verbatim on add; git-synced entries) reached Tauri IPC. New `src/lib/markdown.js` overrides marked's html/link/**image** renderers to escape raw HTML and allowlist schemes (the image `alt` was the non-obvious vector — flagged by libraium-reviewer before commit); `tests/markdown.test.mjs` (node --test, no new deps) wired into verify-all stage 3. — fcd9068 (2026-07-08) [found by iter-31 fresh audit]
+
 - [x] P1 Rust save_entry path-traversal guard: kebab-case category enforced before fs (mirrors Node saveNewEntry 9a24e7f); a crafted `category: ../../x` in a git-synced entry could otherwise make Refresh All write outside the data dir + delete the source. Test `save_entry_rejects_traversal_category`. — 7569f6d (2026-07-08) [found by iter-30 fresh audit]
 - [x] P2 MCP add_repo status parity: `computeStatus()` mirrors Rust compute_status (archived/stale/active, 180-day default) so MCP-added dormant repos aren't mislabeled active. Unit test covers the boundary. — 7569f6d (2026-07-08) [found by iter-30 fresh audit]
 - [x] P3 fresh-clone DX (3 items as one): verify-all prerequisite checks + stage 6 app-binary build + conformance dist/ guard + README order fix; CLAUDE.md and /verify synced to 6 stages. — 4c32c80 (2026-07-08)
