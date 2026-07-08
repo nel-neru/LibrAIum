@@ -20,6 +20,7 @@ import {
   computeStatus,
 } from "./lib/store.js";
 import { suggest } from "./lib/suggest.js";
+import { compare, resolveSelector } from "./lib/compare.js";
 
 const DATA_DIR = resolveDataDir();
 
@@ -142,6 +143,68 @@ server.registerTool(
         });
       }
       return json(result);
+    } catch (e) {
+      return jsonError(e.message);
+    }
+  }
+);
+
+server.registerTool(
+  "compare_repos",
+  {
+    title: "Compare library entries side by side",
+    description:
+      "Decision matrix over 2-5 library entries (or a whole category shelf): aligned metadata, " +
+      "each entry's full Personal Notes verbatim, shared vs unique tags, and computed decision " +
+      "hints (stale/archived flags, star leader, push freshness). Use when the user weighs " +
+      "options — 'LangGraph vs Dify?'. Pass exactly one of entries or category.",
+    inputSchema: {
+      entries: z
+        .array(z.string())
+        .min(2)
+        .max(5)
+        .optional()
+        .describe("2-5 selectors: entry id ('category/owner-repo'), 'owner/repo', or GitHub URL"),
+      category: z.string().optional().describe("compare a whole shelf instead (top 8 by stars)"),
+    },
+  },
+  async ({ entries: selectors, category }) => {
+    try {
+      if (!!selectors?.length === !!category) {
+        return jsonError("pass exactly one of: entries (2-5 selectors) or category");
+      }
+      const all = listEntries(DATA_DIR);
+      let selected;
+      if (category) {
+        selected = all
+          .filter((e) => e.meta.category === category)
+          .sort((a, b) => (b.meta.stars ?? 0) - (a.meta.stars ?? 0))
+          .slice(0, 8);
+        if (selected.length < 2) {
+          const ids = loadCategories(DATA_DIR).map((c) => c.id).join(", ");
+          return jsonError(
+            `category "${category}" has ${selected.length} entrie(s) — need at least 2 to compare. Valid ids: ${ids}`
+          );
+        }
+      } else {
+        const missing = [];
+        const found = [];
+        for (const s of selectors) {
+          const e = resolveSelector(all, s);
+          if (e) found.push(e);
+          else missing.push(s);
+        }
+        if (missing.length) {
+          return jsonError(
+            `no entry found for: ${missing.join(", ")} — try search_repos to locate the right id`
+          );
+        }
+        selected = [...new Map(found.map((e) => [e.id, e])).values()];
+        if (selected.length < 2) {
+          return jsonError("selectors resolved to fewer than 2 distinct entries");
+        }
+      }
+      return json(compare(selected));
     } catch (e) {
       return jsonError(e.message);
     }

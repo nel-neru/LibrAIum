@@ -14,7 +14,7 @@ LibrAIum is a **local-first desktop app** for curating the best-practice public 
 - **Personal Notes** — every entry pairs structured metadata (stars, language, freshness) with your hands-on experience, gotchas, and pairings.
 - **Desktop GUI** (Tauri v2 + Svelte 5) — dashboard, instant fuzzy search with filters, entry editing, category master management, and a Git panel (status / commit / push).
 - **GitHub metadata refresh** — single or bulk refresh via the GitHub API; entries automatically flagged `stale` when a repo stops moving, with fresher alternatives suggested from your own shelves.
-- **MCP server for Claude Code** — four tools: `search_repos`, `get_repo_details`, `suggest_for_new_project`, `add_repo`.
+- **MCP server for Claude Code** — five tools: `search_repos`, `get_repo_details`, `suggest_for_new_project`, `compare_repos`, `add_repo`.
 - **Awesome-list export** — publish your curation as a standard awesome-list Markdown document.
 - **Private by design** — everything stays on your machine; the GitHub token lives in the OS keychain.
 
@@ -48,7 +48,8 @@ claude mcp add libraium -e LIBRAIUM_DATA_DIR="$PWD/../data" -- node "$PWD/index.
 | --- | --- |
 | `search_repos` | Filtered search: query, category, tags, min stars, status |
 | `get_repo_details` | Full entry incl. your Personal Notes, by id / name / URL |
-| `suggest_for_new_project` | Rank the library against a project description, with reasons + adoption steps |
+| `suggest_for_new_project` | Rank the library against a project description, with reasons, adoption steps + your Personal Notes |
+| `compare_repos` | Side-by-side decision matrix (2-5 entries or a whole shelf) with notes + decision hints |
 | `add_repo` | Register a repo (fetches GitHub metadata; duplicate-safe) |
 
 The server resolves its data directory from `--data-dir`, `$LIBRAIUM_DATA_DIR`, `./data`, the repo checkout, or `~/LibrAIum/data` — in that order.

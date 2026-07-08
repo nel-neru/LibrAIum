@@ -58,11 +58,11 @@ try {
   assert.equal(init.result.serverInfo.name, "libraium");
   notify("notifications/initialized", {});
 
-  // all four tools registered
+  // all five tools registered
   const tools = await request("tools/list", {});
   assert.deepEqual(
     tools.result.tools.map((t) => t.name).sort(),
-    ["add_repo", "get_repo_details", "search_repos", "suggest_for_new_project"]
+    ["add_repo", "compare_repos", "get_repo_details", "search_repos", "suggest_for_new_project"]
   );
 
   // search: free text
@@ -152,6 +152,31 @@ try {
   assert.equal(stopwordsOnly.suggestions.length, 0);
   assert.match(stopwordsOnly.note, /no usable keywords/);
 
+  // compare: the acceptance pair — matrix with verbatim notes + stale hint
+  const matrix = toolJson(
+    await request("tools/call", {
+      name: "compare_repos",
+      arguments: { entries: ["openai/swarm", "langchain-ai/langgraph"] },
+    })
+  );
+  assert.equal(matrix.entries.length, 2);
+  assert.ok(matrix.entries.every((e) => typeof e.personal_notes === "string" && e.personal_notes.includes("- ")));
+  assert.ok(matrix.decision_hints.some((h) => h.includes("openai/swarm is stale")));
+  assert.ok(matrix.shared_tags.length >= 1, "swarm and langgraph share the multi-agent tag");
+
+  // compare: whole-shelf mode and the entries-XOR-category contract
+  const shelf = toolJson(
+    await request("tools/call", { name: "compare_repos", arguments: { category: "ai-agent" } })
+  );
+  assert.ok(shelf.entries.length >= 2);
+  const both = toolJson(
+    await request("tools/call", {
+      name: "compare_repos",
+      arguments: { entries: ["a/b", "c/d"], category: "ai-agent" },
+    })
+  );
+  assert.match(both.error, /exactly one of/);
+
   // add_repo: duplicate and unknown-category are rejected before any network call
   const dup = toolJson(
     await request("tools/call", {
@@ -178,7 +203,7 @@ try {
   );
   assert.match(evilCat.error, /unknown category/);
 
-  console.log("✓ MCP smoke test passed — 4 tools, 12 scenarios");
+  console.log("✓ MCP smoke test passed — 5 tools, 15 scenarios");
   process.exitCode = 0;
 } catch (e) {
   console.error("✗ MCP smoke test failed:", e);
