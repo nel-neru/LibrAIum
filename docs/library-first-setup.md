@@ -7,24 +7,33 @@ Two pieces make Claude Code consult your library at every dependency decision, i
 
 ## 1. Register the MCP server (user scope)
 
-From your LibrAIum checkout:
+From your LibrAIum checkout — one command does both steps below:
 
 ```bash
-cd mcp-server && npm install    # once
-claude mcp add --scope user libraium -- node "$PWD/index.js" --data-dir "$PWD/../data"
+(cd mcp-server && npm install)                     # once
+node scripts/register-mcp.mjs --yes --with-skill   # register + install the skill
 ```
 
-`--scope user` puts the server in `~/.claude.json`, so it is available in every project, not just this checkout. Absolute paths matter: the command above bakes them in via `$PWD`; if you move the checkout, re-run it.
+The script prints its plan first when run without `--yes`, bakes in absolute paths from its own location, and is idempotent (re-run after moving the checkout). Manual equivalent:
+
+```bash
+claude mcp add --scope user libraium -- node "$PWD/mcp-server/index.js" --data-dir "$PWD/data"
+```
+
+`--scope user` puts the server in `~/.claude.json`, so it is available in every project, not just this checkout.
 
 Verify:
 
 ```bash
-claude mcp list          # shows: libraium … node <abs>/mcp-server/index.js
+node scripts/register-mcp.mjs --doctor   # registration state, resolved data dir, live entry count
+claude mcp list                          # shows: libraium … node <abs>/mcp-server/index.js
 ```
 
 On startup the server logs `[libraium-mcp] serving data from <dir>` to stderr — if that path is wrong, check the resolution order: `--data-dir` flag > `$LIBRAIUM_DATA_DIR` > `./data` / repo checkout > `~/LibrAIum/data`.
 
 ## 2. Install the libraium-first skill (user scope)
+
+Already done if you used `--with-skill` above. Manual equivalent:
 
 ```bash
 cp -r integrations/claude/skills/libraium-first ~/.claude/skills/

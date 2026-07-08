@@ -37,12 +37,16 @@ On first launch the app uses the repository's `data/` directory when present (de
 
 ## The MCP server
 
-Register LibrAIum with Claude Code (adjust paths):
+Register LibrAIum with Claude Code (user scope — available in every repo):
 
 ```bash
-cd mcp-server && npm install    # once
-claude mcp add libraium -e LIBRAIUM_DATA_DIR="$PWD/../data" -- node "$PWD/index.js"
+(cd mcp-server && npm install)              # once
+node scripts/register-mcp.mjs               # show the plan (executes nothing)
+node scripts/register-mcp.mjs --yes --with-skill   # register + install the libraium-first skill
+node scripts/register-mcp.mjs --doctor      # diagnose: registration, data dir, live entry count
 ```
+
+The script bakes in absolute paths from its own location and is idempotent — re-run it after moving the checkout. Manual registration (project scope, env-var form) still works: `claude mcp add libraium -e LIBRAIUM_DATA_DIR="$PWD/data" -- node "$PWD/mcp-server/index.js"`.
 
 | Tool | Purpose |
 | --- | --- |

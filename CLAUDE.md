@@ -21,6 +21,7 @@ cd src-tauri && cargo test       # Rust unit tests — all core logic lives here
 cd src-tauri && cargo test store # run one module's tests (store/search/gitops/github/…)
 cd mcp-server && npm test        # store.js unit tests + MCP stdio smoke test (all 4 tools)
 bash scripts/make-icons.sh       # regenerate icons from scripts/generate-icons.mjs (macOS)
+node scripts/register-mcp.mjs    # user-scope MCP registration plan (--yes to apply, --doctor to diagnose)
 ```
 
 Rust was installed via Homebrew; if `cargo` is missing from PATH: `export PATH="/opt/homebrew/bin:$PATH"`.
