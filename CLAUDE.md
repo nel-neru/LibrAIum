@@ -14,7 +14,7 @@ npm run tauri build              # package release build
 npm run build                    # frontend-only production build (vite)
 cd src-tauri && cargo test       # Rust unit tests — all core logic lives here
 cd src-tauri && cargo test store # run one module's tests (store/search/gitops/github/…)
-cd mcp-server && npm test        # MCP stdio smoke test (spawns server, calls all 4 tools)
+cd mcp-server && npm test        # store.js unit tests + MCP stdio smoke test (all 4 tools)
 bash scripts/make-icons.sh       # regenerate icons from scripts/generate-icons.mjs (macOS)
 ```
 

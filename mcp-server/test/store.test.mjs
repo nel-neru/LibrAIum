@@ -1,0 +1,115 @@
+// Unit tests for the pure data-layer functions in lib/store.js — the Node
+// half of the dual-implemented format. Mirrors the Rust inline tests
+// (frontmatter::tests, store::tests); slugify/normalizeGithubUrl are
+// additionally corpus-checked against Rust by scripts/conformance.mjs.
+import test from "node:test";
+import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+
+import {
+  splitFrontmatter,
+  parseEntry,
+  serializeEntry,
+  findDuplicate,
+  saveNewEntry,
+  firstSummaryLine,
+  resolveDataDir,
+  summarize,
+} from "../lib/store.js";
+
+const SAMPLE =
+  "---\ngithub_url: https://github.com/owner/repo\nfull_name: owner/repo\ncategory: ai-agent\ntags:\n  - vector-db\n  - rag\nstars: 8750\nlanguage: Python\nstatus: active\nsource: manual\n---\n\n# Repo\n\nSummary here.\n\n## Personal Notes\n- note\n";
+
+test("parseEntry/serializeEntry roundtrip preserves meta and body", () => {
+  const { meta, body } = parseEntry(SAMPLE);
+  assert.equal(meta.full_name, "owner/repo");
+  assert.equal(meta.stars, 8750);
+  assert.deepEqual(meta.tags, ["vector-db", "rag"]);
+  assert.ok(body.startsWith("# Repo"));
+
+  const out = serializeEntry(meta, body);
+  const again = parseEntry(out);
+  assert.deepEqual(again.meta, meta);
+  assert.equal(again.body.trimEnd(), body.trimEnd());
+});
+
+test("splitFrontmatter rejects malformed files like the Rust side", () => {
+  assert.throws(() => splitFrontmatter("# just markdown\n"), /does not start with/);
+  assert.throws(() => splitFrontmatter("---\nfoo: 1\n"), /unterminated/);
+  assert.throws(() => splitFrontmatter(""), /does not start with/);
+});
+
+test("parseEntry rejects non-mapping frontmatter (empty block, scalar, sequence)", () => {
+  assert.throws(() => parseEntry("---\n---\nbody\n"), /not a YAML mapping/);
+  assert.throws(() => parseEntry("---\njust a string\n---\nbody\n"), /not a YAML mapping/);
+  assert.throws(() => parseEntry("---\n- a\n- b\n---\nbody\n"), /not a YAML mapping/);
+});
+
+test("CRLF input parses identically to LF (CRs never leak)", () => {
+  const crlf = SAMPLE.replaceAll("\n", "\r\n");
+  const { meta, body } = parseEntry(crlf);
+  assert.equal(meta.source, "manual", "last frontmatter value must not keep \\r");
+  assert.ok(!body.includes("\r"), "body must not contain CR");
+  assert.deepEqual({ meta, body }, parseEntry(SAMPLE));
+});
+
+test("body handling: leading blank lines stripped, bare --- kept as body text", () => {
+  const { body } = splitFrontmatter("---\na: 1\n---\n\n\n\ntext\n---\nmore\n");
+  assert.equal(body, "text\n---\nmore\n");
+});
+
+test("firstSummaryLine skips headings, blanks and horizontal rules", () => {
+  assert.equal(firstSummaryLine("# H1\n\n---\n\nThe summary.\nSecond."), "The summary.");
+  assert.equal(firstSummaryLine("\n\n# only headings\n"), "");
+});
+
+test("summarize applies the schema defaults for absent optional fields", () => {
+  const { meta, body } = parseEntry(
+    "---\ngithub_url: https://github.com/a/b\nfull_name: a/b\ncategory: web-app\n---\nbody\n"
+  );
+  const s = summarize({ id: "web-app/a-b", meta, body });
+  assert.deepEqual(s.tags, []);
+  assert.equal(s.stars, 0);
+  assert.equal(s.status, "active");
+  assert.equal(s.language, null);
+});
+
+test("saveNewEntry + findDuplicate: case-insensitive dup detection, duplicate create refused", () => {
+  const dir = mkdtempSync(join(tmpdir(), "libraium-store-test-"));
+  try {
+    const meta = {
+      github_url: "https://github.com/owner/repo",
+      full_name: "owner/repo",
+      category: "ai-agent",
+      tags: ["rag"],
+      stars: 1,
+      status: "active",
+      source: "mcp",
+    };
+    const saved = saveNewEntry(dir, meta, "# Repo\n\nSummary.");
+    assert.equal(saved.id, "ai-agent/owner-repo");
+
+    assert.ok(findDuplicate(dir, "OWNER/REPO"), "duplicate check must ignore case");
+    assert.equal(findDuplicate(dir, "other/repo"), null);
+    assert.throws(() => saveNewEntry(dir, meta, ""), /duplicate entry/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("resolveDataDir precedence: --data-dir flag outranks LIBRAIUM_DATA_DIR", () => {
+  const prev = process.env.LIBRAIUM_DATA_DIR;
+  process.env.LIBRAIUM_DATA_DIR = "/tmp/from-env";
+  try {
+    assert.equal(
+      resolveDataDir(["node", "x", "--data-dir", "/tmp/from-flag"]),
+      resolve("/tmp/from-flag")
+    );
+    assert.equal(resolveDataDir(["node", "x"]), resolve("/tmp/from-env"));
+  } finally {
+    if (prev === undefined) delete process.env.LIBRAIUM_DATA_DIR;
+    else process.env.LIBRAIUM_DATA_DIR = prev;
+  }
+});
