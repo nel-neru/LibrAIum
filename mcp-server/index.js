@@ -10,6 +10,7 @@ import {
   listEntries,
   loadCategories,
   findDuplicate,
+  guardRedirectedDuplicate,
   normalizeGithubUrl,
   saveNewEntry,
   fetchGithubRepo,
@@ -162,7 +163,7 @@ server.registerTool(
   },
   async ({ github_url, category, tags, personal_notes }) => {
     try {
-      const { fullName, canonical } = normalizeGithubUrl(github_url);
+      const { fullName } = normalizeGithubUrl(github_url);
       const dup = findDuplicate(DATA_DIR, fullName);
       if (dup) return jsonError(`already registered as ${dup.id}`);
 
@@ -182,9 +183,14 @@ server.registerTool(
       }
 
       const gh = await fetchGithubRepo(fullName);
+      // A renamed repo 301-redirects and the API returns the NEW full_name —
+      // re-check duplicates under it, or a rename bypasses the check above.
+      guardRedirectedDuplicate(DATA_DIR, fullName, gh.full_name);
       const pushDate = gh.pushed_at?.slice(0, 10) ?? null;
       const meta = {
-        github_url: canonical,
+        // Derived from the API's post-redirect name, not the typed URL, so
+        // github_url can never contradict full_name (validate-data invariant).
+        github_url: `https://github.com/${gh.full_name}`,
         full_name: gh.full_name,
         category,
         tags: tags ?? [],

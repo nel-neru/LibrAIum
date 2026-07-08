@@ -28,6 +28,7 @@ Follow this workflow in order. If the `entry-authoring` skill is available, load
   curl -s https://api.github.com/repos/<owner>/<repo>
   ```
   Take `stargazers_count` → `stars`, `language` → `language`, `pushed_at` (date part, YYYY-MM-DD) → `last_github_push`, and `archived` (true ⇒ `status: archived`).
+- **The response's `full_name` is authoritative** — a renamed repo 301-redirects and the API returns the NEW name. If it differs from what you derived in step 1: use it for `full_name`, rebuild `github_url` as `https://github.com/<full_name>`, and re-run the step-1 duplicate check under the new name (an entry may already be shelved there). This mirrors `guard_redirected_duplicate` in both code add paths.
 - WebFetch the repository's README (`https://github.com/<owner>/<repo>`) to understand what it actually does, how mature it is, and what it pairs with. Look for gotchas in the docs (limits, platform caveats, migration notes).
 - If the network is unavailable: ask the user for stars/language, or omit the optional fields — **never invent numbers or dates**.
 

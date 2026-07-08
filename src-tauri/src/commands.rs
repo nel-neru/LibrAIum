@@ -124,17 +124,22 @@ pub async fn add_repo_from_url(
     let data_dir = state.data_dir();
     let stale_days = state.snapshot().stale_days;
     tauri::async_runtime::spawn_blocking(move || {
-        let (full_name, canonical) = store::normalize_github_url(&github_url).map_err(err)?;
+        let (full_name, _) = store::normalize_github_url(&github_url).map_err(err)?;
         if let Some(existing) = store::find_duplicate(&data_dir, &full_name).map_err(err)? {
             return Err(format!("already registered as {}", existing.id));
         }
         let gh = github::fetch_repo(&full_name, read_github_token().as_deref()).map_err(err)?;
+        // A renamed repo 301-redirects and the API returns the NEW full_name —
+        // re-check duplicates under it, or a rename bypasses the check above.
+        store::guard_redirected_duplicate(&data_dir, &full_name, &gh.full_name).map_err(err)?;
         let push_date: Option<String> = gh
             .pushed_at
             .as_deref()
             .map(|s| s.chars().take(10).collect());
         let meta = EntryMeta {
-            github_url: canonical,
+            // Derived from the API's post-redirect name, not the typed URL, so
+            // github_url can never contradict full_name (validate-data invariant).
+            github_url: format!("https://github.com/{}", gh.full_name),
             full_name: gh.full_name.clone(),
             category,
             tags,

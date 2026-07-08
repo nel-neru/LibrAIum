@@ -150,6 +150,30 @@ pub fn find_duplicate(data_dir: &Path, full_name: &str) -> Result<Option<Entry>>
         .find(|e| e.meta.full_name.to_ascii_lowercase() == needle))
 }
 
+/// Post-fetch guard for the add path (mirrors Node `guardRedirectedDuplicate`):
+/// GitHub 301-redirects a renamed repo and returns the NEW full_name, so the
+/// pre-fetch duplicate check (on the typed name) can miss an entry already
+/// shelved under the new name. Same reason the canonical URL must be rebuilt
+/// from the API's full_name, never the input. The reverse direction (entry
+/// shelved under the OLD name, user types the NEW one) is undetectable without
+/// storing the numeric GitHub repo id — a format change, deliberately not done.
+pub fn guard_redirected_duplicate(
+    data_dir: &Path,
+    input_full_name: &str,
+    gh_full_name: &str,
+) -> Result<()> {
+    if gh_full_name.eq_ignore_ascii_case(input_full_name) {
+        return Ok(());
+    }
+    if let Some(existing) = find_duplicate(data_dir, gh_full_name)? {
+        return Err(AppError::msg(format!(
+            "already registered as {} — GitHub redirected {} to {} (repository was renamed)",
+            existing.id, input_full_name, gh_full_name
+        )));
+    }
+    Ok(())
+}
+
 /// Create or update. `previous_id` is Some when updating; handles category moves.
 pub fn save_entry(
     data_dir: &Path,
@@ -319,6 +343,34 @@ mod tests {
             assert_eq!(canon, "https://github.com/owner/repo");
         }
         assert!(normalize_github_url("https://gitlab.com/a/b").is_err());
+    }
+
+    #[test]
+    fn redirected_duplicate_guard() {
+        let dir = tmp();
+        save_entry(
+            &dir,
+            &meta("new-owner/repo", "ai-agent"),
+            "# Repo\n\nS.",
+            None,
+        )
+        .unwrap();
+
+        // no redirect (same name in any casing): nothing to re-check
+        assert!(guard_redirected_duplicate(&dir, "new-owner/repo", "new-owner/repo").is_ok());
+        assert!(guard_redirected_duplicate(&dir, "New-Owner/Repo", "new-owner/repo").is_ok());
+
+        // redirected onto an already-shelved repo: refuse, naming the entry
+        let e = guard_redirected_duplicate(&dir, "old-owner/repo", "new-owner/repo").unwrap_err();
+        let msg = e.to_string();
+        assert!(
+            msg.contains("already registered as ai-agent/new-owner-repo"),
+            "{msg}"
+        );
+        assert!(msg.contains("renamed"), "{msg}");
+
+        // redirected to a name not in the library: fine
+        assert!(guard_redirected_duplicate(&dir, "old-owner/repo", "fresh-owner/repo").is_ok());
     }
 
     #[test]

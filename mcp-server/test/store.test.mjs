@@ -15,6 +15,7 @@ import {
   serializeEntry,
   fetchGithubRepo,
   findDuplicate,
+  guardRedirectedDuplicate,
   saveNewEntry,
   firstSummaryLine,
   loadCategories,
@@ -121,6 +122,40 @@ test("saveNewEntry + findDuplicate: case-insensitive dup detection, duplicate cr
     assert.ok(findDuplicate(dir, "OWNER/REPO"), "duplicate check must ignore case");
     assert.equal(findDuplicate(dir, "other/repo"), null);
     assert.throws(() => saveNewEntry(dir, meta, ""), /duplicate entry/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("guardRedirectedDuplicate refuses a rename onto a shelved repo (mirrors Rust)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "libraium-redirect-test-"));
+  try {
+    saveNewEntry(
+      dir,
+      {
+        github_url: "https://github.com/new-owner/repo",
+        full_name: "new-owner/repo",
+        category: "ai-agent",
+        tags: [],
+        stars: 1,
+        status: "active",
+        source: "mcp",
+      },
+      "# Repo\n\nSummary."
+    );
+
+    // no redirect (same name in any casing): nothing to re-check
+    guardRedirectedDuplicate(dir, "new-owner/repo", "new-owner/repo");
+    guardRedirectedDuplicate(dir, "New-Owner/Repo", "new-owner/repo");
+
+    // redirected onto an already-shelved repo: refuse, naming the entry
+    assert.throws(
+      () => guardRedirectedDuplicate(dir, "old-owner/repo", "new-owner/repo"),
+      /already registered as ai-agent\/new-owner-repo.*renamed/
+    );
+
+    // redirected to a name not in the library: fine
+    guardRedirectedDuplicate(dir, "old-owner/repo", "fresh-owner/repo");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

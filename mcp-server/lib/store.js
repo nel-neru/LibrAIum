@@ -165,6 +165,23 @@ export function findDuplicate(dataDir, fullName) {
   return listEntries(dataDir).find((e) => e.meta.full_name?.toLowerCase() === needle) ?? null;
 }
 
+// Post-fetch guard for the add path (mirrors Rust store::guard_redirected_duplicate):
+// GitHub 301-redirects a renamed repo and returns the NEW full_name, so the
+// pre-fetch duplicate check (on the typed name) can miss an entry already
+// shelved under the new name. Same reason the canonical URL must be rebuilt
+// from the API's full_name, never the input. The reverse direction (entry
+// shelved under the OLD name, user types the NEW one) is undetectable without
+// storing the numeric GitHub repo id — a format change, deliberately not done.
+export function guardRedirectedDuplicate(dataDir, inputFullName, ghFullName) {
+  if (ghFullName.toLowerCase() === inputFullName.toLowerCase()) return;
+  const dup = findDuplicate(dataDir, ghFullName);
+  if (dup) {
+    throw new Error(
+      `already registered as ${dup.id} — GitHub redirected ${inputFullName} to ${ghFullName} (repository was renamed)`
+    );
+  }
+}
+
 export function firstSummaryLine(body) {
   return (
     body
