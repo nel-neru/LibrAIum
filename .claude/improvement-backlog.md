@@ -16,7 +16,6 @@ MCP/parity sweep surfaced the items below).
 - (all resolved — see Done)
 
 ### P3 — error handling / UX / parity robustness
-- [ ] P3 Categories new-row id input self-disables mid-typing when the value matches ANY existing id (lock is by value, not row persistence) — the row becomes permanently uneditable and must be deleted; the Rust save guard would reject the dup anyway, so the lock only traps. — src/lib/components/Categories.svelte:110-111
 
 ### P4 — dual-format hardening
 - [ ] P4 Category-master scalar strictness diverges Rust⇔Node: bare `id: 2048` coerces to "2048" in Rust (serde_yaml quirk, models.rs:12-15) but throws Node's misleading "stray '-'?" error killing add_repo/suggest; `order: "3"` rejects the whole file in Rust but sorts fine in Node — same class fixed for EntryMeta in 30e2e43; no conformance coverage for categories.yaml. — src-tauri/src/models.rs:112-124 vs mcp-server/lib/store.js:147-166
@@ -37,6 +36,7 @@ MCP/parity sweep surfaced the items below).
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
 
+- [x] P3 Categories id-lock by row persistence: rows carry a `locked` flag (loaded=true, new=false, promoted on save; stripped from the payload) — a new row no longer self-disables when its typed value collides with an existing id; implements the documented "locks PERSISTED ids" semantics exactly. Verified live in preview. — f946482 (2026-07-09) [iter-45]
 - [x] P3 EntryCard keyboard activation: Space now activates (with scroll prevention) and chip-originated keydowns stay on the chips (target guard) — mouse/keyboard behavior unified on the library's primary surface. Verified live in preview (Space opens, chip Enter filters 7→2 without opening, card Enter opens). — ad3e362 (2026-07-08) [iter-44]
 - [x] P3 MCP add_repo tag normalization: `normalizeTags` (trim + drop empties, mirrors AddRepo.svelte) exported from lib/store.js and unit-tested — LLM-sent padded/empty tags no longer produce validator-rejected entries or unfilterable tags. — f722703 (2026-07-08) [iter-43]
 - [x] P1 Node parseEntry serde-default parity: minimal entries (status/source/tags/stars absent) were silently EXCLUDED from status-filtered search_repos while summarize labeled them "active"; parseEntry now materializes the four defaults like models.rs, and conformance's normalizeMeta stopped re-filling them (it was masking exactly this drift against its own comment) — example-minimal.md now pins the contract live. Found independently by two iter-42 auditors. — a6ccef8 (2026-07-08) [iter-42]
