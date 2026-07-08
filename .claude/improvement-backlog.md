@@ -1,31 +1,34 @@
 # Improvement Backlog
 
-## LOOP COMPLETE
-
-Closed 2026-07-08 after 30 iterations (37 findings fixed, one focused commit each, all
-6 verify-all stages green throughout). A final full-repo adversarial audit — including
-the previously-unaudited `src-tauri/src/search.rs` — returned **CONVERGED: nothing
-clears the bar**. Pending is empty; the loop stopped rather than invent low-value work.
-Restart anytime with `/improve` (it re-audits and seeds a new backlog if it finds anything).
-
----
-
-Seeded 2026-07-08 by a 4-agent audit (Rust core / MCP server / Svelte frontend / format-parity+docs+CI).
+Re-seeded 2026-07-08 by a fresh 4-agent audit after the loop restarted the same day the
+first convergence closed (that history — 30 iterations, 37 findings — is preserved under
+Done below). The Rust-core auditor came back CONVERGED; the MCP-server, frontend, and
+parity/docs auditors surfaced the items now in Pending.
 Worked by the `/improve` loop — one item per iteration, verified via `scripts/verify-all.sh`, committed.
 
 ## Pending  (ordered: highest value first)
-- (empty — LOOP COMPLETE)
 
 ### P1 — correctness & data-safety
-- (all resolved — see Done)
+- [ ] P1 Categories id-lock bypass: `existingIds` is a non-reactive `let` (the build even warns `non_reactive_update`), so a category saved during the session keeps an editable id — renaming it afterwards orphans the entry directory the id used to name. Fix: derive from `app.categories` with `$derived`, drop the dead reassignment. — src/lib/components/Categories.svelte:7,63,108-109
+- [ ] P1 add_repo rename-redirect hole (BOTH sides): the duplicate check runs on the *input* full name before the GitHub fetch, but the entry is saved under the API's post-301 `full_name` — adding a renamed repo bypasses dedup (second entry for the same repo) and stores a `github_url` that contradicts `full_name`, violating validate-data.mjs's own invariant. Mirrored fix: re-check duplicates and derive the canonical URL from `gh.full_name` after the fetch. — src-tauri/src/commands.rs:127-138, mcp-server/index.js:165-190, scripts/validate-data.mjs:167-179
 
-### P2 — missing tests / parity pinning
-- (all resolved — see Done)
+### P3 — error handling / UX / parity robustness
+- [ ] P3 CSP defense-in-depth: replace `"csp": null` with a real policy (second layer behind the markdown-renderer hardening; `img-src` would also stop remote-image tracking pixels in synced bodies). — src-tauri/tauri.conf.json:23
+- [ ] P3 Node `listEntries` per-category-dir degradation: one unreadable category dir (EACCES) fails ALL four MCP tools with a raw scandir error instead of skip-with-warning like the per-file path and Rust `scan_entries` (db2a72a). — mcp-server/lib/store.js:94-107 vs src-tauri/src/store.rs:94-103
+- [ ] P3 Node `resolveDataDir` env parity: `LIBRAIUM_DATA_DIR` is used untrimmed and whitespace-only doesn't fall through (Rust trims + falls through, tested) — a padded value silently points the MCP server and the desktop app at different data dirs. Mirror the Rust treatment + tests. — mcp-server/lib/store.js:12-20 vs src-tauri/src/settings.rs:83-99
+- [ ] P3 `loadCategories` null list item: a trailing `-` in a hand-edited categories.yaml parses to `null` and the sort comparator throws a raw TypeError naming neither file nor fix (same failure class 0feab8d closed for invalid-YAML/non-list shapes). — mcp-server/lib/store.js:122-126, mcp-server/index.js:142-144
+- [ ] P3 suggest `tokenize` keeps sentence-final periods: the last keyword of every sentence ("…in Rust.") loses the language/category/name scoring; strip trailing dots while keeping interior ones (`node.js` is pinned by suggest.test.mjs:33-34). — mcp-server/lib/suggest.js:9-16,36,42,49,55
+- [ ] P3 EntryDetail drawer keyboard access: no Escape-to-close, no focus-into-drawer, and 3 edit-form labels are unassociated — the app's primary modal surface is mouse-only while AddRepo already does all three. — src/lib/components/EntryDetail.svelte (backdrop/labels; build a11y warnings)
 
-### P3 — error handling / UX / docs / DX
-- (all resolved — see Done)
+### P5 — docs / DX
+- [ ] P5 post-edit hook parity set omits `github.rs`: `store.js computeStatus` mirrors `github::compute_status` (7569f6d) but editing the Rust side triggers no parity reminder, and the function corpus doesn't cover status — the one dual-implemented rule with zero tripwire. — .claude/hooks/post-edit.mjs:41-53
+- [ ] P5 `/improve` doc still says "All 5 stages" but verify-all has 6 (4c32c80 synced CLAUDE.md and /verify, missed /improve). — .claude/commands/improve.md:58
 
 ## Done
+
+First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
+throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
+
 - [x] P1 Rust save_entry path-traversal guard: kebab-case category enforced before fs (mirrors Node saveNewEntry 9a24e7f); a crafted `category: ../../x` in a git-synced entry could otherwise make Refresh All write outside the data dir + delete the source. Test `save_entry_rejects_traversal_category`. — 7569f6d (2026-07-08) [found by iter-30 fresh audit]
 - [x] P2 MCP add_repo status parity: `computeStatus()` mirrors Rust compute_status (archived/stale/active, 180-day default) so MCP-added dormant repos aren't mislabeled active. Unit test covers the boundary. — 7569f6d (2026-07-08) [found by iter-30 fresh audit]
 - [x] P3 fresh-clone DX (3 items as one): verify-all prerequisite checks + stage 6 app-binary build + conformance dist/ guard + README order fix; CLAUDE.md and /verify synced to 6 stages. — 4c32c80 (2026-07-08)

@@ -4,7 +4,7 @@
 # Stages:
 #   [1/6] data validation      node scripts/validate-data.mjs --data-dir data
 #   [2/6] Rust unit tests      (cd src-tauri && cargo test --quiet)
-#   [3/6] frontend build       npm run build
+#   [3/6] frontend build+tests npm run build && npm test  (vite + node --test)
 #   [4/6] MCP tests            (cd mcp-server && npm test)  unit + stdio smoke
 #   [5/6] conformance          node scripts/conformance.mjs
 #   [6/6] app binary build     (cd src-tauri && cargo build --bin libraium)
@@ -49,7 +49,7 @@ stage() {
 # at the user's live library (the MCP setup in README tells devs to export it).
 validate_data()  { node scripts/validate-data.mjs --data-dir data; }
 cargo_tests()    { (cd src-tauri && cargo test --quiet --locked); }
-frontend_build() { npm run build; }
+frontend_build() { npm run build && npm test; }
 mcp_smoke()      { (cd mcp-server && npm test); }
 conformance()    { node scripts/conformance.mjs; }
 app_build()      { (cd src-tauri && cargo build --quiet --locked --bin libraium); }
@@ -60,11 +60,11 @@ stage 1 "data validation (validate-data.mjs)" validate_data
 
 if [ ! -d dist ]; then
   echo "dist/ not found — running the frontend build before cargo test (generate_context! embeds dist/)"
-  stage 2 "frontend build (vite)" frontend_build
+  stage 2 "frontend build + unit tests (vite, node --test)" frontend_build
   stage 3 "Rust unit tests (cargo test)" cargo_tests
 else
   stage 2 "Rust unit tests (cargo test)" cargo_tests
-  stage 3 "frontend build (vite)" frontend_build
+  stage 3 "frontend build + unit tests (vite, node --test)" frontend_build
 fi
 
 stage 4 "MCP server tests (npm test)" mcp_smoke

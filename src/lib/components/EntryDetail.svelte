@@ -1,6 +1,6 @@
 <script>
-  import { marked } from "marked";
   import { openUrl } from "@tauri-apps/plugin-opener";
+  import { renderMarkdown } from "../markdown.js";
   import { api } from "../api.js";
   import { app, showToast, fail, reloadEntries, categoryOf } from "../state.svelte.js";
 
@@ -183,7 +183,9 @@
         </div>
       {/if}
 
-      <article class="md">{@html marked.parse(entry.body)}</article>
+      <!-- Bodies are untrusted (GitHub descriptions, git-synced entries);
+           renderMarkdown escapes raw HTML and unsafe link schemes. -->
+      <article class="md">{@html renderMarkdown(entry.body)}</article>
     {:else}
       <div class="row" style="gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
         <div>

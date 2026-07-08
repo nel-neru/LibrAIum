@@ -16,6 +16,7 @@ A local-first Tauri v2 + Svelte 5 desktop app for curating best-practice GitHub 
 npm run tauri dev                # run the desktop app (Rust compiles on first run)
 npm run tauri build              # package release build
 npm run build                    # frontend-only production build (vite)
+npm test                         # frontend unit tests (markdown-renderer hardening, node --test)
 cd src-tauri && cargo test       # Rust unit tests — all core logic lives here
 cd src-tauri && cargo test store # run one module's tests (store/search/gitops/github/…)
 cd mcp-server && npm test        # store.js unit tests + MCP stdio smoke test (all 4 tools)
@@ -44,7 +45,7 @@ Rust core modules (`src-tauri/src/`):
 - `settings.rs` — settings.json in app config dir; data-dir resolution order: explicit setting > `LIBRAIUM_DATA_DIR` > `./data`|`../data` (dev) > `~/LibrAIum/data` (bootstrapped on first run); default categories embedded via `include_str!` from `data/master/categories.yaml`
 - `commands.rs` — Tauri command layer; network/push commands are `async` + `spawn_blocking`; GitHub PAT lives in the OS keychain (`keyring` crate, service "LibrAIum")
 
-Frontend (`src/`): Svelte 5 **runes** (no stores); shared state in `lib/state.svelte.js`; all IPC via `lib/api.js` wrappers. Command args are camelCase (Tauri converts to snake_case), but **struct fields inside payloads stay snake_case** (`min_stars`, `full_name`).
+Frontend (`src/`): Svelte 5 **runes** (no stores); shared state in `lib/state.svelte.js`; all IPC via `lib/api.js` wrappers. Command args are camelCase (Tauri converts to snake_case), but **struct fields inside payloads stay snake_case** (`min_stars`, `full_name`). Entry bodies are untrusted (GitHub descriptions, git-synced entries) and must render through `lib/markdown.js` (escapes raw HTML, strips unsafe link schemes) — never a bare `marked.parse` into `{@html}`.
 
 MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` (lexical scoring in `lib/suggest.js`), `add_repo` (source: `mcp`). Data dir resolution mirrors the Rust order (plus `--data-dir` flag).
 
@@ -57,7 +58,7 @@ MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` 
 
 ## Repo automation & AI infrastructure
 
-- **`bash scripts/verify-all.sh`** is the single verification entry point (also run by CI): data validation → cargo test → vite build → MCP unit+smoke tests → Rust⇔Node conformance → app binary build (`cargo build --bin libraium` — the only stage that builds the real binary; a broken bare `cargo run` once passed everything else). Run it before any commit; `/verify` wraps it.
+- **`bash scripts/verify-all.sh`** is the single verification entry point (also run by CI): data validation → cargo test → vite build + frontend unit tests → MCP unit+smoke tests → Rust⇔Node conformance → app binary build (`cargo build --bin libraium` — the only stage that builds the real binary; a broken bare `cargo run` once passed everything else). Run it before any commit; `/verify` wraps it.
 - **`node scripts/validate-data.mjs`** — schema-validates every entry + the category master. A PostToolUse hook runs it automatically after any `data/` edit and feeds failures back for self-correction.
 - **`node scripts/conformance.mjs`** — proves the Rust and Node data-format implementations agree, over `tests/fixtures/format/` (valid/ must parse identically, invalid/ must be rejected by BOTH), all real entries, and a function-level corpus (`functions.json`: `slugify` + `normalizeGithubUrl`, via `dump_entries --slugify/--normalize-url`). When you change the format or these functions: update both implementations, add a fixture/corpus case, keep this green (`/format-sync` walks through it).
 - **Hooks** (`.claude/hooks/post-edit.mjs`): rustfmt on edited `.rs`; parity reminder when either half of the dual implementation is edited; data validation as above.
