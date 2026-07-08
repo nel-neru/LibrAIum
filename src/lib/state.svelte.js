@@ -11,7 +11,10 @@ export const app = $state({
   selectedId: null,
   showAdd: false,
   loading: false,
-  busy: "", // label of a long-running action
+  // Per-action in-flight flags. Deliberately not one shared string: three
+  // independent long-running actions must not clobber each other's guard
+  // and button label (starting refresh-one used to "finish" refresh-all).
+  busy: { refreshAll: false, refreshOne: false, push: false },
   error: "",
   toast: "",
 });

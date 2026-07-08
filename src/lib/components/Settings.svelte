@@ -75,7 +75,8 @@
   }
 
   async function push() {
-    app.busy = "push";
+    if (app.busy.push) return;
+    app.busy.push = true;
     try {
       await api.gitPush();
       showToast("Pushed to remote.");
@@ -83,7 +84,7 @@
     } catch (e) {
       fail(e);
     } finally {
-      app.busy = "";
+      app.busy.push = false;
     }
   }
 
@@ -185,8 +186,8 @@
         </div>
       {/if}
       {#if git.has_remote}
-        <button style="margin-top: 10px;" onclick={push} disabled={app.busy === "push"}>
-          {app.busy === "push" ? "Pushing…" : "⇧ Push"}
+        <button style="margin-top: 10px;" onclick={push} disabled={app.busy.push}>
+          {app.busy.push ? "Pushing…" : "⇧ Push"}
         </button>
       {/if}
       {#if gitLog.length > 0}

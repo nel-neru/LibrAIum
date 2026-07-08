@@ -82,7 +82,8 @@
   }
 
   async function refresh() {
-    app.busy = "refresh-one";
+    if (app.busy.refreshOne || app.busy.refreshAll) return;
+    app.busy.refreshOne = true;
     try {
       entry = await api.refreshEntry(entry.id);
       app.selectedId = entry.id;
@@ -91,7 +92,7 @@
     } catch (e) {
       fail(e);
     } finally {
-      app.busy = "";
+      app.busy.refreshOne = false;
     }
   }
 
@@ -150,8 +151,8 @@
 
       <div class="row" style="gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
         <button class="primary" onclick={startEdit}>✎ Edit</button>
-        <button onclick={refresh} disabled={app.busy === "refresh-one"}>
-          {app.busy === "refresh-one" ? "Refreshing…" : "⟳ Refresh metadata"}
+        <button onclick={refresh} disabled={app.busy.refreshOne || app.busy.refreshAll}>
+          {app.busy.refreshOne ? "Refreshing…" : "⟳ Refresh metadata"}
         </button>
         <button onclick={loadAlternatives}>✨ Suggest alternatives</button>
         {#if confirmDelete}

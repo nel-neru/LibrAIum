@@ -14,8 +14,10 @@
   });
 
   async function refreshAll() {
-    if (app.busy) return;
-    app.busy = "refresh";
+    // Both refresh actions hit GitHub and rewrite entry files — keep them
+    // mutually exclusive with each other (but independent of push).
+    if (app.busy.refreshAll || app.busy.refreshOne) return;
+    app.busy.refreshAll = true;
     showToast("Refreshing GitHub metadata for all entries…");
     try {
       const report = await api.refreshAll();
@@ -26,7 +28,7 @@
     } catch (e) {
       fail(e);
     } finally {
-      app.busy = "";
+      app.busy.refreshAll = false;
     }
   }
 </script>
@@ -36,8 +38,8 @@
     <h2 style="font-size: 24px;">The Reading Room</h2>
     <span class="muted">curated best practices, kept fresh</span>
   </div>
-  <button onclick={refreshAll} disabled={app.busy === "refresh"}>
-    {app.busy === "refresh" ? "Refreshing…" : "⟳ Refresh all metadata"}
+  <button onclick={refreshAll} disabled={app.busy.refreshAll || app.busy.refreshOne}>
+    {app.busy.refreshAll ? "Refreshing…" : "⟳ Refresh all metadata"}
   </button>
   <button class="primary" onclick={() => (app.showAdd = true)}>＋ Add repository</button>
 </header>
