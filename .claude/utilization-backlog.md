@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P1 — libraium-first global skill + paste-in CLAUDE.md snippet
-- **Deliverable**: `integrations/claude/skills/libraium-first/SKILL.md`, `docs/library-first-setup.md`, README section linking both.
-- **Why**: the MCP server only pays off if Claude actually consults it in other repos — this is the behavior layer.
-- **Acceptance**: with the skill copied to `~/.claude/skills/` and the MCP registered, a dependency question in a DIFFERENT repo yields a recommendation citing shelved entries and quoting Personal Notes.
-- **Build notes**: skill triggers on dependency/framework selection + new-project planning: consult suggest_for_new_project/search_repos BEFORE proposing deps; quote personal_notes as firsthand evidence; treat stale/archived as warnings (use alternatives when present); offer add_repo (honest house-style notes) when a session adopts an unshelved repo; if MCP not connected, say so and point at docs/library-first-setup.md. The doc carries the `claude mcp add --scope user` one-liner + a paste-in CLAUDE.md block with the same rules.
-
 ### [ ] P1 — Headless metadata refresh with change digest
 - **Deliverable**: `scripts/refresh-metadata.mjs` + `.claude/commands/refresh-metadata.md`, README line.
 - **Why**: the weekly "is my library still true?" sweep currently requires launching the desktop app.
@@ -99,6 +93,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P1 libraium-first skill + library-first setup page — 9385016 (2026-07-09, iter 2). Proven: from a different cwd, the documented stdio invocation answered "a RAG pipeline" with shelved entries quoting caution bullets. User action still required once: run the registration one-liner + skill cp (documented in docs/library-first-setup.md).
 - [x] P1 Personal Notes excerpts inline in suggest_for_new_project — 21b8323 (2026-07-09, iter 1). Proven: real-library suggest for "RAG agent with a vector DB" returns qdrant with its memory-caution bullet first; smoke test pins the field over stdio.
 - [x] Loop scaffolding: `/utilize` command + this backlog — a3ed675 (2026-07-09)
 
