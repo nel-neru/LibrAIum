@@ -112,6 +112,27 @@ try {
   assert.ok(active.count >= 1);
   assert.ok(active.results.some((r) => r.full_name === "qdrant/qdrant"));
 
+  // search v2: OR-tags with freshness sort returns the union, newest push first
+  const union = toolJson(
+    await main.request("tools/call", {
+      name: "search_repos",
+      arguments: { any_tags: ["rag", "mcp-server"], sort: "freshness" },
+    })
+  );
+  assert.ok(union.count >= 2);
+  const pushes = union.results.map((r) => r.last_github_push ?? "0000-00-00");
+  assert.ok(
+    pushes.every((p, i) => i === 0 || p <= pushes[i - 1]),
+    `freshness sort must be non-increasing: ${pushes.join(", ")}`
+  );
+
+  // search v2: zero results self-diagnose (closest real tag named)
+  const zero = toolJson(
+    await main.request("tools/call", { name: "search_repos", arguments: { tags: ["vectordb"] } })
+  );
+  assert.equal(zero.count, 0);
+  assert.match(zero.note, /vector-db/);
+
   // details: by URL, includes Personal Notes body
   const details = toolJson(
     await main.request("tools/call", {
@@ -271,7 +292,7 @@ try {
   assert.equal(dormant.alternatives[0].full_name, "new/active");
   assert.deepEqual(dormant.alternatives[0].shared_tags, ["multi-agent"]);
 
-  console.log("✓ MCP smoke test passed — 6 tools, 20 scenarios (main + stale-fixture server)");
+  console.log("✓ MCP smoke test passed — 6 tools, 22 scenarios (main + stale-fixture server)");
   process.exitCode = 0;
 } catch (e) {
   console.error("✗ MCP smoke test failed:", e);

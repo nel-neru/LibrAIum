@@ -22,6 +22,7 @@ import {
 import { suggest, alternativesFor } from "./lib/suggest.js";
 import { compare, resolveSelector } from "./lib/compare.js";
 import { overview } from "./lib/overview.js";
+import { searchRepos } from "./lib/search.js";
 
 const DATA_DIR = resolveDataDir();
 
@@ -41,34 +42,29 @@ server.registerTool(
     title: "Search repositories",
     description:
       "Search the user's personally curated LibrAIum library of best-practice GitHub repositories. " +
-      "All filters are optional; text query matches name, tags, language and summary. Category " +
-      "ids and tags must match exactly — call get_library_overview first when unsure.",
+      "All filters are optional; the text query matches name, tags, language and body ('-token' " +
+      "excludes). tags = AND, any_tags = OR; language is exact (case-insensitive); " +
+      "updated_within_days filters on push freshness; sort: stars | freshness | added. " +
+      "Zero results come back with diagnostics (closest real tags, dead query tokens, valid " +
+      "category ids) — use them to retry. Call get_library_overview first when unsure of ids/tags.",
     inputSchema: {
-      query: z.string().optional().describe("free-text query"),
+      query: z.string().optional().describe("free-text query; prefix a token with '-' to exclude it"),
       category: z.string().optional().describe("category id, e.g. 'ai-agent'"),
-      tags: z.array(z.string()).optional().describe("all listed tags must be present"),
+      tags: z.array(z.string()).optional().describe("all listed tags must be present (AND)"),
+      any_tags: z.array(z.string()).optional().describe("at least one listed tag present (OR)"),
+      language: z.string().optional().describe("exact primary language, case-insensitive, e.g. 'Rust'"),
       min_stars: z.number().optional(),
       status: z.enum(["active", "stale", "archived"]).optional(),
+      updated_within_days: z.number().int().min(1).optional().describe("last GitHub push within N days"),
+      sort: z.enum(["stars", "freshness", "added"]).default("stars"),
     },
   },
-  async ({ query, category, tags, min_stars, status }) => {
-    const q = (query ?? "").toLowerCase();
-    const results = listEntries(DATA_DIR)
-      .filter((e) => !category || e.meta.category === category)
-      .filter((e) => !status || e.meta.status === status)
-      .filter((e) => min_stars == null || (e.meta.stars ?? 0) >= min_stars)
-      .filter((e) =>
-        !tags?.length ||
-        tags.every((t) => (e.meta.tags ?? []).some((et) => et.toLowerCase() === t.toLowerCase()))
-      )
-      .filter((e) => {
-        if (!q) return true;
-        const hay = `${e.meta.full_name} ${(e.meta.tags ?? []).join(" ")} ${e.meta.language ?? ""} ${e.body}`.toLowerCase();
-        return q.split(/\s+/).every((tok) => hay.includes(tok));
-      })
-      .sort((a, b) => (b.meta.stars ?? 0) - (a.meta.stars ?? 0))
-      .map(summarize);
-    return json({ count: results.length, results });
+  async (params) => {
+    try {
+      return json(searchRepos(listEntries(DATA_DIR), loadCategories(DATA_DIR), params));
+    } catch (e) {
+      return jsonError(e.message);
+    }
   }
 );
 
