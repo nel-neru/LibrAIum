@@ -7,6 +7,7 @@ parity/docs auditors surfaced the items now in Pending.
 Worked by the `/improve` loop — one item per iteration, verified via `scripts/verify-all.sh`, committed.
 
 ## Pending  (ordered: highest value first)
+- (EMPTY — all 12 restart-audit items + 2 discovered-in-flight items resolved; next iteration runs a fresh convergence audit, which must cover the 4dccdd6 UI redesign that landed mid-loop)
 
 ### P1 — correctness & data-safety
 - (all resolved — see Done)
@@ -15,14 +16,14 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P5 — docs / DX
-- [ ] P5 post-edit hook parity set omits `github.rs`: `store.js computeStatus` mirrors `github::compute_status` (7569f6d) but editing the Rust side triggers no parity reminder, and the function corpus doesn't cover status — the one dual-implemented rule with zero tripwire. — .claude/hooks/post-edit.mjs:41-53
-- [ ] P5 `/improve` doc still says "All 5 stages" but verify-all has 6 (4c32c80 synced CLAUDE.md and /verify, missed /improve). — .claude/commands/improve.md:58
+- (all resolved — see Done)
 
 ## Done
 
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
 
+- [x] P5 automation drift ×2 (as one): post-edit hook parity set gains `github.rs` (+ "status computation" in the message) — the one dual-implemented rule with zero tripwire; `/improve` doc "5 stages" → 6. Hook verified with fake payloads. — 94e7edf (2026-07-08) [iter-41]
 - [x] P3 Settings labels associated (settings-data-dir / settings-stale-days for/id pairs): the production build is now WARNING-CLEAN — any future build warning is a regression signal. — 7a6357f (2026-07-08) [iter-40]
 - [x] P3 CSP defense-in-depth: `csp: null` → self-pinned policy (style-src 'unsafe-inline' for style attrs, img-src data: for the grain texture — remote tracking pixels blocked, connect-src ipc:/http://ipc.localhost for Tauri IPC, object/frame 'none'). Verified via meta-tag injection in browser preview: zero violations, grain + all views + drawer work. One manual `npm run tauri dev` sanity check of the ipc: directives recommended. markdown.js comment updated (escaping stays primary). — 601d6b5 (2026-07-08) [iter-39]
 - [x] P3 EntryDetail drawer keyboard access: Escape cancels-edit-then-closes (guarded while saving, defers to AddRepo on top), drawer receives focus on open (tabindex=-1), 4 edit labels for/id-associated, meta-grid captions → .field-label spans (styled from the same rule as label). All 10 EntryDetail a11y warnings gone; behavior verified live in browser preview. — 696aac5 (2026-07-08) [iter-38]
