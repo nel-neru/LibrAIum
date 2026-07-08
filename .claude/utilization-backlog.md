@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P2 — Stale-alternatives parity over MCP (auto-attached to get_repo_details)
-- **Deliverable**: alternativesFor in `mcp-server/lib/suggest.js`, get_repo_details wiring, tests + smoke assertion.
-- **Why**: the GUI answers "what replaces this stale repo?" but the MCP consumer dead-ends at status: stale.
-- **Acceptance**: get_repo_details("openai/swarm") returns alternatives containing langchain-ai/langgraph with shared tags as the reason; an active entry's response has no alternatives field.
-- **Build notes**: port search.rs suggest_alternatives verbatim (same category + active + different id; score = sharedTags*1000 + min(stars,999); require ≥1000; top 3), cross-reference comments on BOTH sides (logic parity, not data-format parity — no conformance fixture; add a search.rs comment pointing at the JS twin).
-
 ### [ ] P2 — register-mcp.mjs — one-command user-scope registration + --doctor
 - **Deliverable**: `scripts/register-mcp.mjs` + README "MCP server" section rewritten; `--with-skill` installs libraium-first.
 - **Why**: the library only pays off in OTHER repos if the server is registered user-scope with correct absolute paths; today that's a hand-adjusted snippet with no diagnosis path.
@@ -75,6 +69,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P2 Stale-alternatives on get_repo_details — 29f0200 (2026-07-09, iter 7). Proven: swarm (stale) auto-carried langgraph (3 shared tags) + llama_index on real data; fixture pins it deterministically; active entries carry no field.
 - [x] P2 get_library_overview MCP tool — 02550c5 (2026-07-09, iter 6). Proven: 18 categories summing exactly to 43 entries; all 78 vocabulary tags verified filterable (exhaustive, not sampled). Helper landed in lib/overview.js (not store.js as drafted — keeps the parity-watched file server-logic-free).
 - [x] P2 Stale smoke scenarios pinned to fixture library — 3e8be34 (2026-07-09, iter 5). Proven: flipped swarm active via the real refresh tool, full suite stayed green, restored. Suite now invariant under metadata refresh.
 - [x] P1 compare_repos MCP tool — 1b36618 (2026-07-09, iter 4). Proven: swarm-vs-langgraph on real data returned the stale hint, 3 shared tags, and swarm's verbatim succession bullet in one call; 4 unit tests + 3 smoke scenarios (5 tools now).
