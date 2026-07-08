@@ -165,16 +165,16 @@
 <div class="stack">
   <section class="card">
     <h3 class="section-head">Data</h3>
-    <label>Data directory</label>
-    <input style="width: 100%;" class="mono" placeholder={app.dataDir} bind:value={dataDirInput} />
+    <label for="settings-data-dir">Data directory</label>
+    <input id="settings-data-dir" style="width: 100%;" class="mono" placeholder={app.dataDir} bind:value={dataDirInput} />
     <p class="muted" style="font-size: 12px; margin: 6px 0 0;">
       A local git repository. Leave blank for the default: <span class="mono">./data</span> in dev,
       <span class="mono">~/LibrAIum/data</span> otherwise.
     </p>
     <div class="row" style="margin-top: 10px; gap: 10px;">
       <div>
-        <label>Stale after (days)</label>
-        <input type="number" min="7" style="width: 120px;" bind:value={staleDaysInput} />
+        <label for="settings-stale-days">Stale after (days)</label>
+        <input id="settings-stale-days" type="number" min="7" style="width: 120px;" bind:value={staleDaysInput} />
       </div>
       <div class="grow"></div>
       <button class="primary" onclick={saveSettings} disabled={applying}>
