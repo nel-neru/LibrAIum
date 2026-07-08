@@ -8,7 +8,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
 import {
   splitFrontmatter,
   parseEntry,
@@ -16,6 +16,7 @@ import {
   fetchGithubRepo,
   findDuplicate,
   guardRedirectedDuplicate,
+  listEntries,
   saveNewEntry,
   firstSummaryLine,
   loadCategories,
@@ -123,6 +124,36 @@ test("saveNewEntry + findDuplicate: case-insensitive dup detection, duplicate cr
     assert.equal(findDuplicate(dir, "other/repo"), null);
     assert.throws(() => saveNewEntry(dir, meta, ""), /duplicate entry/);
   } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("listEntries skips an unreadable category dir instead of failing the whole library", (t) => {
+  // chmod 000 is a no-op for root, so the EACCES this test relies on never fires.
+  if (process.getuid?.() === 0) return t.skip("running as root");
+  const dir = mkdtempSync(join(tmpdir(), "libraium-eacces-test-"));
+  const lockedDir = join(dir, "entries", "web-app");
+  try {
+    const meta = (fullName, category) => ({
+      github_url: `https://github.com/${fullName}`,
+      full_name: fullName,
+      category,
+      tags: [],
+      stars: 1,
+      status: "active",
+      source: "mcp",
+    });
+    saveNewEntry(dir, meta("a/b", "ai-agent"), "# A\n\nS.");
+    saveNewEntry(dir, meta("c/d", "web-app"), "# C\n\nS.");
+    chmodSync(lockedDir, 0o000);
+
+    // Mirrors Rust scan_entries: degrade to the readable rest, never throw.
+    const got = listEntries(dir);
+    assert.deepEqual(got.map((e) => e.id), ["ai-agent/a-b"]);
+  } finally {
+    try {
+      chmodSync(lockedDir, 0o755);
+    } catch {}
     rmSync(dir, { recursive: true, force: true });
   }
 });

@@ -94,7 +94,18 @@ export function listEntries(dataDir) {
   for (const cat of readdirSync(root, { withFileTypes: true })) {
     if (!cat.isDirectory()) continue;
     const catDir = join(root, cat.name);
-    for (const f of readdirSync(catDir)) {
+    let files;
+    try {
+      files = readdirSync(catDir);
+    } catch (e) {
+      // Mirrors Rust scan_entries: one unreadable category dir must not take
+      // down the whole library — skip it with a warning, like the per-file
+      // path below. (An unreadable entries/ ROOT stays a hard error on both
+      // sides on purpose.)
+      console.error(`[libraium-mcp] skipping unreadable category dir ${catDir}: ${e.message}`);
+      continue;
+    }
+    for (const f of files) {
       if (!f.endsWith(".md")) continue;
       const path = join(catDir, f);
       try {
