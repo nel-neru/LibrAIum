@@ -7,11 +7,11 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P1 — Headless metadata refresh with change digest
-- **Deliverable**: `scripts/refresh-metadata.mjs` + `.claude/commands/refresh-metadata.md`, README line.
-- **Why**: the weekly "is my library still true?" sweep currently requires launching the desktop app.
-- **Acceptance**: `--only ai-agent/openai-swarm --write` updates stars/last_checked/status from real API data and validate-data passes; default `--dry-run` changes nothing and prints the same delta table.
-- **Build notes**: user-invoked only. Reuse store.js listEntries → fetchGithubRepo (honors GITHUB_TOKEN; command wrapper exports `GITHUB_TOKEN=$(gh auth token)`) → computeStatus (--stale-days default 180). CRITICAL: do NOT round-trip parseEntry→serializeEntry (YAML.stringify converts flow-style `tags: [a, b]` to block style, churning all files) — regex-replace only scalar frontmatter lines inside the `---` block. Digest: old→new stars, status transitions, 301-renames flagged as manual actions (file move left to user). Flags: --dry-run (default), --write, --category, --only, --stale-days. Run validate-data explicitly after --write (script writes bypass the hook).
+### [ ] P2 — Decouple the MCP smoke test's stale scenario from live-refreshable seed data
+- **Deliverable**: `mcp-server/test/smoke.test.mjs` (stale-filter + alternatives scenarios), possibly a tiny fixture library under `mcp-server/test/`.
+- **Why**: discovered in iter 3 — openai/swarm resumed pushing upstream (2026-04), so a wholesale `refresh-metadata --write` would flip the deliberately-stale seed to active and break the smoke test's status-filter scenario; the trap is documented in /refresh-metadata but should not exist at all.
+- **Acceptance**: after simulating swarm flipping to active in a temp copy of data/, the full MCP test suite still passes; the stale-filter scenario still meaningfully exercises the status filter.
+- **Build notes**: either point the smoke test's stale scenario at a fixture data dir (spawn a second server over a 3-entry fixture library containing a guaranteed-stale entry), or make the scenario data-driven (find any stale entry; skip-with-failure-note when none). Prefer the fixture — deterministic and keeps the real library free to reflect reality.
 
 ### [ ] P1 — compare_repos MCP tool — side-by-side decision matrix
 - **Deliverable**: `mcp-server/lib/compare.js`, registration in `mcp-server/index.js`, `mcp-server/test/compare.test.mjs` + smoke scenario.
@@ -93,6 +93,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P1 Headless metadata refresh with change digest — 4b52592 (2026-07-09, iter 3). Proven: 43-entry dry-run digest (36 deltas incl. swarm stale→active warning, just +8.5k stars) with zero writes; --write on qdrant updated scalars only, tags line byte-identical, validate green. Acceptance target switched from swarm to qdrant to preserve the demo-stale seed; follow-up filed (P2 smoke-test decoupling).
 - [x] P1 libraium-first skill + library-first setup page — 9385016 (2026-07-09, iter 2). Proven: from a different cwd, the documented stdio invocation answered "a RAG pipeline" with shelved entries quoting caution bullets. User action still required once: run the registration one-liner + skill cp (documented in docs/library-first-setup.md).
 - [x] P1 Personal Notes excerpts inline in suggest_for_new_project — 21b8323 (2026-07-09, iter 1). Proven: real-library suggest for "RAG agent with a vector DB" returns qdrant with its memory-caution bullet first; smoke test pins the field over stdio.
 - [x] Loop scaffolding: `/utilize` command + this backlog — a3ed675 (2026-07-09)
