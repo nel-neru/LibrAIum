@@ -231,6 +231,25 @@ try {
   );
   assert.match(both.error, /exactly one of/);
 
+  // resources: every entry is listable and readable as raw Markdown
+  const resList = await main.request("resources/list", {});
+  const resources = resList.result.resources;
+  assert.ok(resources.length >= 43, `all entries exposed as resources (got ${resources.length})`);
+  const qres = resources.find((r) => r.uri === "entry://ai-agent/qdrant-qdrant");
+  assert.ok(qres, "qdrant is listed as a resource");
+  assert.equal(qres.name, "qdrant/qdrant — ai-agent");
+  assert.equal(qres.mimeType, "text/markdown");
+
+  const read = await main.request("resources/read", { uri: "entry://ai-agent/qdrant-qdrant" });
+  const doc = read.result.contents[0];
+  assert.equal(doc.uri, "entry://ai-agent/qdrant-qdrant");
+  assert.match(doc.text, /^---\n/, "raw file incl. frontmatter");
+  assert.match(doc.text, /## Personal Notes/);
+
+  // resources: a traversal-shaped URI resolves to no entry, never a file read
+  const evil = await main.request("resources/read", { uri: "entry://../../etc/passwd" });
+  assert.ok(evil.error, "traversal URI must 404, not read a file");
+
   // add_repo: duplicate and unknown-category are rejected before any network call
   const dup = toolJson(
     await main.request("tools/call", {
@@ -292,7 +311,7 @@ try {
   assert.equal(dormant.alternatives[0].full_name, "new/active");
   assert.deepEqual(dormant.alternatives[0].shared_tags, ["multi-agent"]);
 
-  console.log("✓ MCP smoke test passed — 6 tools, 22 scenarios (main + stale-fixture server)");
+  console.log("✓ MCP smoke test passed — 6 tools + entry resources, 25 scenarios (main + stale-fixture server)");
   process.exitCode = 0;
 } catch (e) {
   console.error("✗ MCP smoke test failed:", e);

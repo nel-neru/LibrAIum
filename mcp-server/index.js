@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // LibrAIum MCP server (stdio) — lets Claude Code search, inspect, get
 // suggestions from, and add to your personal best-practice repo library.
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { readFileSync } from "node:fs";
 
 import {
   resolveDataDir,
@@ -309,6 +310,36 @@ server.registerTool(
     } catch (e) {
       return jsonError(e.message);
     }
+  }
+);
+
+// Entries as MCP resources: Claude Code surfaces these in @-mention
+// autocomplete, so typing '@libraium' and picking one pulls the full entry
+// Markdown (notes, gotchas, pairings) into context with zero tool round-trips.
+server.registerResource(
+  "entry",
+  new ResourceTemplate("entry://{category}/{slug}", {
+    list: () => ({
+      resources: listEntries(DATA_DIR).map((e) => ({
+        uri: `entry://${e.id}`,
+        name: `${e.meta.full_name} — ${e.meta.category}`,
+        mimeType: "text/markdown",
+      })),
+    }),
+  }),
+  {
+    title: "LibrAIum entry",
+    description: "A curated repository entry (frontmatter + summary + your Personal Notes) as raw Markdown.",
+    mimeType: "text/markdown",
+  },
+  (uri, { category, slug }) => {
+    // Resolve by entry id, never by joining the URI segments into a path —
+    // a crafted entry://../../x yields an id that matches no real entry and
+    // 404s here, so the read can never escape data/entries.
+    const id = `${category}/${slug}`;
+    const entry = listEntries(DATA_DIR).find((e) => e.id === id);
+    if (!entry) throw new Error(`no entry for ${uri.href}`);
+    return { contents: [{ uri: uri.href, mimeType: "text/markdown", text: readFileSync(entry.path, "utf8") }] };
   }
 );
 

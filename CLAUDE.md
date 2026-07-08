@@ -50,7 +50,7 @@ Frontend (`src/`): Svelte 5 **runes** (no stores); shared state in `lib/state.sv
 
 **UI styling is governed by `DESIGN.md`** (Flexoki paper-and-ink tokens in `src/styles.css`, light+dark). Before touching any UI file, read DESIGN.md and use only its tokens — do not invent colors, fonts, radii, or shadows, and never reintroduce emoji into chrome. In a plain browser, `npm run dev` auto-installs `src/lib/dev/mock.js` (Tauri IPC mock with seeded data) so the UI can be previewed and screenshotted without the Rust backend.
 
-MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` (lexical scoring in `lib/suggest.js`, inlines `personal_notes`), `compare_repos` (decision matrix in `lib/compare.js`), `get_library_overview` (shelf map/tag vocabulary in `lib/overview.js`), `add_repo` (source: `mcp`). Data dir resolution mirrors the Rust order (plus `--data-dir` flag).
+MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` (lexical scoring in `lib/suggest.js`, inlines `personal_notes`), `compare_repos` (decision matrix in `lib/compare.js`), `get_library_overview` (shelf map/tag vocabulary in `lib/overview.js`), `add_repo` (source: `mcp`). Entries are also MCP **resources** (`entry://{category}/{slug}` template) for `@libraium` @-mention autocomplete — the read callback resolves by entry id, never by joining URI segments into a path (traversal guard). Data dir resolution mirrors the Rust order (plus `--data-dir` flag).
 
 ## Data Model
 

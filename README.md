@@ -65,6 +65,8 @@ The script bakes in absolute paths from its own location and is idempotent — r
 | `get_library_overview` | Shelf map: category ids + health counts, tag vocabulary with usage, resolved data dir |
 | `add_repo` | Register a repo (fetches GitHub metadata; duplicate-safe) |
 
+Every entry is also exposed as an MCP **resource** (`entry://<category>/<slug>`), so `@libraium` autocomplete in Claude Code pulls a full entry — frontmatter, summary, and your Personal Notes — into context with no tool call.
+
 The server resolves its data directory from `--data-dir`, `$LIBRAIUM_DATA_DIR`, `./data`, the repo checkout, or `~/LibrAIum/data` — in that order.
 
 ### Use it from every project
