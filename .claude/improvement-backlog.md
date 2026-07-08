@@ -9,7 +9,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P2 — missing tests / parity pinning
-- [ ] P2 BOM handling: documented in fixtures README but no fixture has a BOM; Rust strips all leading BOMs, Node strips one (`frontmatter.rs:6` vs `store.js:23`). Add `valid/bom.md` fixture; make Node strip `/^﻿+/`.
 - [ ] P2 `settings::resolve_data_dir` 4-level precedence (setting > env > ./data > ~/LibrAIum/data) has zero tests (`src-tauri/src/settings.rs:50`). Add precedence unit tests.
 - [ ] P2 `github.rs` stale boundary untested: `num_days == stale_days` vs `+1`, and `apply_refresh` "true only on active→stale" contract has no test (`src-tauri/src/github.rs:51,69`).
 - [ ] P2 gitops non-repo branches untested: `status(non_repo).is_repo == false`, `log(non_repo) == []`, push with no remote (`src-tauri/src/gitops.rs:66-74,118-120`).
@@ -36,6 +35,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P2 BOM parity: Node stripped one leading BOM, Rust all — Node now `/^﻿+/`; pinned by `valid/bom.md` (real EF BB BF bytes) + one-or-many unit test. — 976ee5a (2026-07-08)
 - [x] P2 schema-strict parsing on BOTH sides (also resolves the iter-2 missing-required item): Node gained `validateMeta`; investigation revealed the reverse divergence too — serde_yaml coerced plain numeric scalars into String (`full_name: 12345` ACCEPTED by Rust; audit assumption was wrong, harness caught it) — fixed with strict `deserialize_with`. 3 reject-by-both fixtures, tests on both sides, harness `Number()` mask removed. — 30e2e43 (2026-07-08)
 - [x] P2 suggest.js unit tests: 5 node:test cases (tokenize, lexical-vs-baseline separation, stale/archived discounts, irrelevant⇒0 / relevant⇒ranked+reasoned+capped); npm test runs both unit files before smoke. — 2402652 (2026-07-08)
 - [x] P2 store.js unit tests: 9 node:test cases mirroring the Rust inline tests + regressions for iter-2/3 fixes (non-mapping frontmatter, CRLF==LF); `npm test` now runs unit tests before the smoke test. — 9b99863 (2026-07-08)
