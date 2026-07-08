@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P3 — rename-tag.mjs — atomic tag rename across the library
-- **Deliverable**: `scripts/rename-tag.mjs` + curate-review.md check (c) references it.
-- **Why**: tag drift fixes must touch every affected entry consistently; today that's N hand-edits.
-- **Acceptance**: renaming a shared tag updates every occurrence in one run, leaves each `tags: [...]` line byte-identical except the renamed tag, validate-data passes.
-- **Build notes**: `<old> <new> [--merge] [--dry-run]`; targeted regex rewrite of ONLY the tags line (no serializeEntry round-trip — flow style must survive); refuse no-op/invalid charset; --merge dedupes when new already exists; run validate-data at the end.
-
 ### [ ] P3 — /confirm-notes — burn down the unverified Personal Notes backlog
 - **Deliverable**: `.claude/commands/confirm-notes.md` + seeded `.claude/notes-review.md` checklist.
 - **Why**: most entries carry AI-drafted doc-derived notes; converting them to firsthand ones in 15-minute sessions is the highest-value content debt.
@@ -51,6 +45,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P3 rename-tag.mjs — 061873e (2026-07-09, iter 11). Proven: 3-entry atomic rename on a library copy with a diff of exactly the tags lines; dry-run on real data; --merge/guard-rail fixture tests.
 - [x] P2 curation-report.mjs — 258aacb (2026-07-09, iter 10). Proven: real-library run in 0.23s, swarm stale-but-covered, surfaced the github ~ github-actions judgment pair; 5 fixture tests. P2 tier complete.
 - [x] P2 search_repos v2 (filters + zero diagnostics) — 6cc4a6a (2026-07-09, iter 9). Proven: vectordb→0件+note names vector-db exactly (short-tag containment noise guarded); OR-tags union of 5 in non-increasing push order. Logic extracted to lib/search.js with 7 unit tests.
 - [x] P2 register-mcp.mjs (+ --doctor, --with-skill) — 620bae1 (2026-07-09, iter 8). Proven live: registered user-scope (claude mcp list: Connected), skill installed to ~/.claude/skills, doctor reports data dir + 43 entries. The iter-2 "user action required" is hereby closed.
