@@ -33,7 +33,9 @@ stage() {
   printf '<== [%s/%s] %s passed (%ss)\n' "$num" "$STAGE_TOTAL" "$name" "$((end - start))"
 }
 
-validate_data()  { node scripts/validate-data.mjs; }
+# --data-dir data: verify THIS repo's data even when LIBRAIUM_DATA_DIR points
+# at the user's live library (the MCP setup in README tells devs to export it).
+validate_data()  { node scripts/validate-data.mjs --data-dir data; }
 cargo_tests()    { (cd src-tauri && cargo test --quiet --locked); }
 frontend_build() { npm run build; }
 mcp_smoke()      { (cd mcp-server && npm test); }

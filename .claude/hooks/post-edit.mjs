@@ -60,7 +60,10 @@ if (touchesData) {
   const validator = resolve(projectDir, "scripts/validate-data.mjs");
   if (existsSync(validator)) {
     try {
-      execFileSync(process.execPath, [validator], {
+      // Pin the validator to the repo's data/ — the edit that triggered this
+      // hook is in there. Without the flag, an exported LIBRAIUM_DATA_DIR
+      // would redirect validation to a different library entirely.
+      execFileSync(process.execPath, [validator, "--data-dir", resolve(projectDir, "data")], {
         stdio: ["ignore", "pipe", "pipe"],
         cwd: projectDir,
         env,
