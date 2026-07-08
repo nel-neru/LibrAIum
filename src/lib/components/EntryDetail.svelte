@@ -15,17 +15,27 @@
   let editStatus = $state("active");
   let editBody = $state("");
 
+  // Guards against overlapping loads: rapid selection changes (alternatives
+  // links, dashboard rows) fire concurrent getEntry calls, and without this
+  // the LAST response to arrive would win — the drawer could show entry A
+  // while selectedId is B, sending a later Edit/Delete to the wrong repo.
+  let loadSeq = 0;
+
   $effect(() => {
     if (app.selectedId) load(app.selectedId);
   });
 
   async function load(id) {
+    const seq = ++loadSeq;
     try {
-      entry = await api.getEntry(id);
+      const fetched = await api.getEntry(id);
+      if (seq !== loadSeq || app.selectedId !== id) return; // stale response
+      entry = fetched;
       editing = false;
       confirmDelete = false;
       alternatives = [];
     } catch (e) {
+      if (seq !== loadSeq || app.selectedId !== id) return; // stale failure
       fail(e);
       close();
     }
