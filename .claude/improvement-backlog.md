@@ -9,7 +9,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P2 — missing tests / parity pinning
-- [ ] P2 EntryDetail Save has no in-flight guard/disabled state — double-click fires `saveEntry` twice with the same stale `previousId` (`EntryDetail.svelte:46-63,183`). Mirror `AddRepo.submit`'s `adding` pattern.
 - [ ] P2 single global `app.busy` string shared by refresh-all / refresh-one / push — one action clobbers another's guard and label (`Dashboard.svelte:19`, `EntryDetail.svelte:66`, `Settings.svelte:78`). Fix: per-action flags.
 
 ### P3 — error handling / UX / docs / DX
@@ -30,6 +29,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P2 EntryDetail Save double-submit guard: `saving` in-flight flag, early return, Saving… label, both edit buttons disabled. — 51cf2d8 (2026-07-08)
 - [x] P2 EntryDetail load race: monotonic sequence token discards stale getEntry responses/failures; wrong-entry Edit/Delete path closed (parent already unmounts on close). — f59a5ac (2026-07-08)
 - [x] P2 directory-authoritative-id test: frontmatter/directory disagreement → id from directory, raw meta preserved, only dir-derived id resolves. — 1eaadf7 (2026-07-08)
 - [x] P2 gitops degradation tests: non-repo `status`→is_repo=false / `log`→[] (no error), commit/push on non-repo error cleanly, remoteless push fails with a git message. — 85710a1 (2026-07-08)
