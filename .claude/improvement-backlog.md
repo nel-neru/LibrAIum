@@ -9,7 +9,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P2 — missing tests / parity pinning
-- [ ] P2 `settings::resolve_data_dir` 4-level precedence (setting > env > ./data > ~/LibrAIum/data) has zero tests (`src-tauri/src/settings.rs:50`). Add precedence unit tests.
 - [ ] P2 `github.rs` stale boundary untested: `num_days == stale_days` vs `+1`, and `apply_refresh` "true only on active→stale" contract has no test (`src-tauri/src/github.rs:51,69`).
 - [ ] P2 gitops non-repo branches untested: `status(non_repo).is_repo == false`, `log(non_repo) == []`, push with no remote (`src-tauri/src/gitops.rs:66-74,118-120`).
 - [ ] P2 store.rs "directory is authoritative for id" behavior untested — file whose frontmatter category disagrees with its dir (`src-tauri/src/store.rs:55-61`).
@@ -35,6 +34,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P2 `resolve_data_dir` precedence tests: extracted injectable `resolve_data_dir_from(settings, env, cwd)` (no process-global mutation in parallel tests); covers trimming, blank fallthrough, ./data + ../data candidates, home fallback. — 2d94f7c (2026-07-08)
 - [x] P2 BOM parity: Node stripped one leading BOM, Rust all — Node now `/^﻿+/`; pinned by `valid/bom.md` (real EF BB BF bytes) + one-or-many unit test. — 976ee5a (2026-07-08)
 - [x] P2 schema-strict parsing on BOTH sides (also resolves the iter-2 missing-required item): Node gained `validateMeta`; investigation revealed the reverse divergence too — serde_yaml coerced plain numeric scalars into String (`full_name: 12345` ACCEPTED by Rust; audit assumption was wrong, harness caught it) — fixed with strict `deserialize_with`. 3 reject-by-both fixtures, tests on both sides, harness `Number()` mask removed. — 30e2e43 (2026-07-08)
 - [x] P2 suggest.js unit tests: 5 node:test cases (tokenize, lexical-vs-baseline separation, stale/archived discounts, irrelevant⇒0 / relevant⇒ranked+reasoned+capped); npm test runs both unit files before smoke. — 2402652 (2026-07-08)
