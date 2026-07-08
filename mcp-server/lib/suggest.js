@@ -82,6 +82,40 @@ export function scoreEntry(entry, tokens, categories) {
   return { score: Math.round(score * 10) / 10, lexical, reasons };
 }
 
+// Bullets whose wording signals a warning — surfaced ahead of neutral notes.
+const CAUTION_CUES = ["gotcha", "caveat", "avoid", "superseded", "don't", "instead", "deprecated", "watch", "⚠"];
+
+// The owner's firsthand notes are the library's core value; inline up to 3
+// bullets so the single suggest call carries them without a get_repo_details
+// follow-up. Query-token bullets first, then caution cues, then body order.
+// Returns null when the entry has no real bullets (bare "- " stubs excluded)
+// so callers can tell "no experience recorded" from "nothing matched".
+export function extractNotes(entry, tokens = []) {
+  const body = entry.body ?? "";
+  const idx = body.toLowerCase().indexOf("## personal notes");
+  if (idx === -1) return null;
+  const bullets = [];
+  for (const line of body.slice(idx).split("\n").slice(1)) {
+    if (/^#{1,6}\s/.test(line)) break; // next heading ends the section
+    const m = line.match(/^-\s+(.*\S)\s*$/);
+    if (m) bullets.push(m[1]);
+  }
+  if (!bullets.length) return null;
+  return bullets
+    .map((text, i) => {
+      const lower = text.toLowerCase();
+      return {
+        text,
+        i,
+        tokenHit: tokens.some((tok) => lower.includes(tok)) ? 1 : 0,
+        cueHit: CAUTION_CUES.some((cue) => lower.includes(cue)) ? 1 : 0,
+      };
+    })
+    .sort((a, b) => b.tokenHit - a.tokenHit || b.cueHit - a.cueHit || a.i - b.i)
+    .slice(0, 3)
+    .map((b) => b.text);
+}
+
 export function adoptionSteps(entry) {
   const steps = [
     `git clone ${entry.meta.github_url}`,
@@ -118,6 +152,7 @@ export function suggest(entries, categories, projectDescription, goals = "", max
       stars: entry.meta.stars ?? 0,
       status: entry.meta.status,
       summary: firstSummaryLine(entry.body),
+      personal_notes: extractNotes(entry, tokens),
       relevance_score: score,
       why: reasons,
       how_to_adopt: adoptionSteps(entry),

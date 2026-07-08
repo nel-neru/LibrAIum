@@ -105,7 +105,8 @@ server.registerTool(
     title: "Suggest repositories for a new project",
     description:
       "Given a description of a project the user wants to build, rank the library's repositories " +
-      "by fit and return the best candidates with reasoning and concrete adoption steps. " +
+      "by fit and return the best candidates with reasoning, concrete adoption steps, and the " +
+      "owner's firsthand Personal Notes bullets (personal_notes; null when none are recorded). " +
       "Use this when the user asks 'what should I use for X?'.",
     inputSchema: {
       project_description: z

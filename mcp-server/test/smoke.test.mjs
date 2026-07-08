@@ -114,6 +114,11 @@ try {
   assert.ok(suggestions.suggestions[0].why.length > 0);
   assert.ok(suggestions.suggestions[0].how_to_adopt.length > 0);
   assert.ok(suggestions.suggestions.some((s) => s.full_name === "qdrant/qdrant"));
+  const qdrant = suggestions.suggestions.find((s) => s.full_name === "qdrant/qdrant");
+  assert.ok(
+    Array.isArray(qdrant.personal_notes) && qdrant.personal_notes.length >= 1,
+    "suggestions must inline the owner's Personal Notes bullets"
+  );
 
   // suggest: an irrelevant query must return ZERO suggestions — status/stars
   // alone must never clear the relevance threshold (regression: star-ranked

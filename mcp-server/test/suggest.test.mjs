@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { tokenize, scoreEntry, suggest } from "../lib/suggest.js";
+import { tokenize, scoreEntry, suggest, extractNotes } from "../lib/suggest.js";
 
 function entry(fullName, { tags = [], stars = 0, status = "active", language, category = "ai-agent", body = "" } = {}) {
   const slug = fullName.replace("/", "-");
@@ -78,6 +78,47 @@ test("scoreEntry: stale/archived discount and warn even when relevant", () => {
   const archived = scoreEntry(entry("a/c", { tags: ["rag"], status: "archived" }), ["rag"], CATEGORIES);
   assert.ok(archived.reasons.some((r) => r.includes("archived")));
   assert.ok(archived.score < stale.score, "archived must rank below stale at equal relevance");
+});
+
+test("extractNotes: token bullets outrank caution cues outrank body order, capped at 3", () => {
+  const body = [
+    "# x",
+    "",
+    "Summary.",
+    "",
+    "## Personal Notes",
+    "",
+    "- Plain first bullet.",
+    "- Second bullet about latency.",
+    "- Gotcha: breaks on empty input.",
+    "- Fourth bullet, plain.",
+    "",
+  ].join("\n");
+  const e = entry("a/b", { body });
+
+  const noTok = extractNotes(e, []);
+  assert.equal(noTok.length, 3, "capped at 3");
+  assert.match(noTok[0], /^Gotcha/, "caution cue wins without token hits");
+  assert.match(noTok[1], /^Plain first/, "remaining bullets keep body order");
+
+  const tok = extractNotes(e, ["latency"]);
+  assert.match(tok[0], /latency/, "a query-token bullet outranks the cue bullet");
+});
+
+test("extractNotes: placeholder stubs and missing section return null", () => {
+  assert.equal(extractNotes(entry("a/b", { body: "# x\n\nSummary only.\n" }), []), null);
+  assert.equal(extractNotes(entry("a/c", { body: "# x\n\n## Personal Notes\n- \n-   \n" }), []), null);
+});
+
+test("suggest: suggestions inline personal_notes from the entry body", () => {
+  const entries = [
+    entry("acme/rag-lib", {
+      tags: ["rag"],
+      body: "# rag-lib\n\nA lib.\n\n## Personal Notes\n- Watch memory on big corpora.\n",
+    }),
+  ];
+  const res = suggest(entries, CATEGORIES, "a RAG pipeline");
+  assert.deepEqual(res.suggestions[0].personal_notes, ["Watch memory on big corpora."]);
 });
 
 test("suggest: irrelevant query returns ZERO suggestions despite active high-star entries", () => {
