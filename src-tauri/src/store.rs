@@ -333,6 +333,35 @@ mod tests {
     }
 
     #[test]
+    fn directory_is_authoritative_for_id() {
+        let dir = tmp();
+        // A file whose frontmatter category disagrees with its directory —
+        // e.g. moved by hand, or a category rename applied halfway. The id
+        // must derive from the directory or load/save would disagree about
+        // which entry this is, breaking updates and duplicate detection.
+        let cat_dir = dir.join("entries").join("actual-dir");
+        fs::create_dir_all(&cat_dir).unwrap();
+        let content =
+            frontmatter::serialize(&meta("owner/repo", "claimed-cat"), "# Repo\n\nBody.").unwrap();
+        fs::write(cat_dir.join("owner-repo.md"), content).unwrap();
+
+        let all = list_entries(&dir).unwrap();
+        assert_eq!(all.len(), 1);
+        assert_eq!(
+            all[0].id, "actual-dir/owner-repo",
+            "id comes from the directory"
+        );
+        assert_eq!(
+            all[0].meta.category, "claimed-cat",
+            "raw meta keeps the frontmatter value"
+        );
+
+        assert!(get_entry(&dir, "actual-dir/owner-repo").is_ok());
+        assert!(get_entry(&dir, "claimed-cat/owner-repo").is_err());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn awesome_export_groups_by_category() {
         let dir = tmp();
         save_entry(&dir, &meta("a/x", "ai-agent"), "# x\n\nAgent tool.", None).unwrap();
