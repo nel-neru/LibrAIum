@@ -66,9 +66,18 @@ pub fn get_data_dir(state: State<AppState>) -> String {
 
 // ---------- entries ----------
 
+#[derive(serde::Serialize)]
+pub struct EntriesPayload {
+    pub entries: Vec<Entry>,
+    /// Files/dirs skipped during the scan — surfaced as a GUI toast so a
+    /// shrunken list is never silent.
+    pub warnings: Vec<String>,
+}
+
 #[tauri::command]
-pub fn list_entries(state: State<AppState>) -> CmdResult<Vec<Entry>> {
-    store::list_entries(&state.data_dir()).map_err(err)
+pub fn list_entries(state: State<AppState>) -> CmdResult<EntriesPayload> {
+    let (entries, warnings) = store::scan_entries(&state.data_dir()).map_err(err)?;
+    Ok(EntriesPayload { entries, warnings })
 }
 
 #[tauri::command]
@@ -120,8 +129,10 @@ pub async fn add_repo_from_url(
             return Err(format!("already registered as {}", existing.id));
         }
         let gh = github::fetch_repo(&full_name, read_github_token().as_deref()).map_err(err)?;
-        let push_date: Option<String> =
-            gh.pushed_at.as_deref().map(|s| s.chars().take(10).collect());
+        let push_date: Option<String> = gh
+            .pushed_at
+            .as_deref()
+            .map(|s| s.chars().take(10).collect());
         let meta = EntryMeta {
             github_url: canonical,
             full_name: gh.full_name.clone(),
@@ -177,7 +188,11 @@ pub async fn refresh_all(state: State<'_, AppState>) -> CmdResult<RefreshReport>
     tauri::async_runtime::spawn_blocking(move || {
         let token = read_github_token();
         let entries = store::list_entries(&data_dir).map_err(err)?;
-        let mut report = RefreshReport { refreshed: 0, became_stale: 0, errors: Vec::new() };
+        let mut report = RefreshReport {
+            refreshed: 0,
+            became_stale: 0,
+            errors: Vec::new(),
+        };
         for mut entry in entries {
             match github::fetch_repo(&entry.meta.full_name, token.as_deref()) {
                 Ok(gh) => {

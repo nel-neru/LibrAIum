@@ -70,29 +70,63 @@ fn entry_from_file(path: &Path) -> Result<Entry> {
     })
 }
 
-pub fn list_entries(data_dir: &Path) -> Result<Vec<Entry>> {
+/// Load all entries, collecting per-file and per-directory warnings instead
+/// of aborting or hiding them: one bad file (or one unreadable category dir)
+/// must not take down — or silently shrink — the rest of the library.
+pub fn scan_entries(data_dir: &Path) -> Result<(Vec<Entry>, Vec<String>)> {
     let dir = entries_dir(data_dir);
     let mut out = Vec::new();
+    let mut warnings = Vec::new();
     if !dir.exists() {
-        return Ok(out);
+        return Ok((out, warnings));
     }
     for cat in fs::read_dir(&dir)? {
-        let cat = cat?.path();
+        let cat = match cat {
+            Ok(c) => c.path(),
+            Err(e) => {
+                warnings.push(format!("unreadable item under {}: {e}", dir.display()));
+                continue;
+            }
+        };
         if !cat.is_dir() {
             continue;
         }
-        for file in fs::read_dir(&cat)? {
-            let file = file?.path();
+        let files = match fs::read_dir(&cat) {
+            Ok(f) => f,
+            Err(e) => {
+                warnings.push(format!(
+                    "skipping unreadable category dir {}: {e}",
+                    cat.display()
+                ));
+                continue;
+            }
+        };
+        for file in files {
+            let file = match file {
+                Ok(f) => f.path(),
+                Err(e) => {
+                    warnings.push(format!("unreadable item under {}: {e}", cat.display()));
+                    continue;
+                }
+            };
             if file.extension().and_then(|e| e.to_str()) == Some("md") {
                 match entry_from_file(&file) {
                     Ok(e) => out.push(e),
-                    Err(e) => eprintln!("[libraium] skipping unreadable entry: {e}"),
+                    Err(e) => warnings.push(format!("skipping unreadable entry: {e}")),
                 }
             }
         }
     }
     out.sort_by(|a, b| a.id.cmp(&b.id));
-    Ok(out)
+    Ok((out, warnings))
+}
+
+pub fn list_entries(data_dir: &Path) -> Result<Vec<Entry>> {
+    let (entries, warnings) = scan_entries(data_dir)?;
+    for w in &warnings {
+        eprintln!("[libraium] {w}");
+    }
+    Ok(entries)
 }
 
 pub fn get_entry(data_dir: &Path, id: &str) -> Result<Entry> {
@@ -329,6 +363,27 @@ mod tests {
             save_entry(&dir, &meta("owner/repo", "web-app"), "# B v2", Some(&b.id)).unwrap();
         assert_eq!(updated.id, b.id);
         assert_eq!(get_entry(&dir, &b.id).unwrap().body.trim(), "# B v2");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn scan_entries_collects_warnings_instead_of_hiding_files() {
+        let dir = tmp();
+        save_entry(&dir, &meta("owner/good", "cat-a"), "# Good\n\nFine.", None).unwrap();
+        fs::write(dir.join("entries/cat-a/broken.md"), "no frontmatter here").unwrap();
+
+        let (entries, warnings) = scan_entries(&dir).unwrap();
+        assert_eq!(entries.len(), 1, "the good entry must survive");
+        assert_eq!(entries[0].meta.full_name, "owner/good");
+        assert_eq!(
+            warnings.len(),
+            1,
+            "the broken file must be reported, not silent"
+        );
+        assert!(warnings[0].contains("broken.md"), "got: {}", warnings[0]);
+
+        // list_entries keeps its old shape for internal callers.
+        assert_eq!(list_entries(&dir).unwrap().len(), 1);
         let _ = fs::remove_dir_all(&dir);
     }
 

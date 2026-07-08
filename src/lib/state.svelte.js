@@ -32,10 +32,18 @@ export function fail(e) {
   showToast(`⚠ ${msg}`);
 }
 
+// list_entries now reports files it had to skip — a silently shrunken
+// library is worse than a noisy toast.
+function notifyEntryWarnings(warnings = []) {
+  if (!warnings.length) return;
+  console.warn("[libraium] skipped entry files:", warnings);
+  showToast(`⚠ ${warnings.length} entry file(s) skipped — check data/entries (details in console)`);
+}
+
 export async function bootstrap() {
   app.loading = true;
   try {
-    const [entries, categories, settings, dataDir] = await Promise.all([
+    const [{ entries, warnings }, categories, settings, dataDir] = await Promise.all([
       api.listEntries(),
       api.getCategories(),
       api.getSettings(),
@@ -46,6 +54,7 @@ export async function bootstrap() {
     app.categories = categories;
     app.settings = settings;
     app.dataDir = dataDir;
+    notifyEntryWarnings(warnings);
   } catch (e) {
     fail(e);
   } finally {
@@ -55,7 +64,9 @@ export async function bootstrap() {
 
 export async function reloadEntries() {
   try {
-    app.entries = await api.listEntries();
+    const { entries, warnings } = await api.listEntries();
+    app.entries = entries;
+    notifyEntryWarnings(warnings);
     await runSearch();
   } catch (e) {
     fail(e);
