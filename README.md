@@ -53,6 +53,10 @@ claude mcp add libraium -e LIBRAIUM_DATA_DIR="$PWD/../data" -- node "$PWD/index.
 
 The server resolves its data directory from `--data-dir`, `$LIBRAIUM_DATA_DIR`, `./data`, the repo checkout, or `~/LibrAIum/data` — in that order.
 
+### Use it from every project
+
+Register the server at **user scope** and install the [libraium-first skill](integrations/claude/skills/libraium-first/SKILL.md), and Claude Code will consult your library before every dependency decision — in any repo on the machine, quoting your Personal Notes as evidence. One-page setup (including a paste-in `CLAUDE.md` block): [docs/library-first-setup.md](docs/library-first-setup.md).
+
 ## Data model
 
 ```
