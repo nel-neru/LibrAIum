@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P3 — CATALOG.md auto-fresh catalog + living README stats block
-- **Deliverable**: `scripts/build-catalog.mjs`, `CATALOG.md`, README marker block, verify-all drift stage, post-edit hook regeneration.
-- **Why**: the public repo shows the machinery but not the curation.
-- **Acceptance**: editing any entry fails verify-all's drift stage until regeneration; CATALOG.md + README stats then match the live library.
-- **Build notes**: TOC + per-category sections (categories.yaml order, stars-sorted, status markers, deep links to raw entry files) + tag index. --readme rewrites only the marker-delimited region (counts, top languages, 5 newest by added_date). Hook: regenerate after data/ edits (outputs live outside data/ — no loop). verify-all: regenerate to temp + diff, fail on drift; bump STAGE_TOTAL.
-
 ### [ ] P3 — Owner-authored '## Setup' section drives real adoption steps
 - **Deliverable**: entry-authoring SKILL.md + add-entry.md capture step, adoptionSteps preference in suggest.js, backfill ~8 flagship entries, tests.
 - **Why**: how_to_adopt is boilerplate ("git clone…"), so first-hour friction survives every suggestion.
@@ -39,6 +33,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P3 CATALOG.md + README stats, drift-checked — 2082460 (2026-07-09, iter 13). Proven: entry edit → --check exit 1; regen → exit 0; verify-all now 7 stages. Post-edit hook auto-regenerates. Output timestamp-free so drift is real, not calendar noise.
 - [x] P3 /confirm-notes + seeded notes-review checklist — 634b49f (2026-07-09, iter 12). Proven: 36 AI-drafted entries enumerated (all on disk, 7 seeds excluded), curation-report reads 0/36, ticking advances the counter. Owner-facing action: run `/confirm-notes` to burn down the 36.
 - [x] P3 rename-tag.mjs — 061873e (2026-07-09, iter 11). Proven: 3-entry atomic rename on a library copy with a diff of exactly the tags lines; dry-run on real data; --merge/guard-rail fixture tests.
 - [x] P2 curation-report.mjs — 258aacb (2026-07-09, iter 10). Proven: real-library run in 0.23s, swarm stale-but-covered, surfaced the github ~ github-actions judgment pair; 5 fixture tests. P2 tier complete.
