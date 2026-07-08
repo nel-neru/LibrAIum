@@ -69,12 +69,29 @@ const staleLib = startServer(resolve(HERE, "fixtures", "stale-lib"));
 try {
   await main.handshake("smoke");
 
-  // all five tools registered
+  // all six tools registered
   const tools = await main.request("tools/list", {});
   assert.deepEqual(
     tools.result.tools.map((t) => t.name).sort(),
-    ["add_repo", "compare_repos", "get_repo_details", "search_repos", "suggest_for_new_project"]
+    ["add_repo", "compare_repos", "get_library_overview", "get_repo_details", "search_repos", "suggest_for_new_project"]
   );
+
+  // overview: counts reconcile and the tag vocabulary is search-filterable
+  const map = toolJson(
+    await main.request("tools/call", { name: "get_library_overview", arguments: {} })
+  );
+  assert.equal(map.totals.categories, map.categories.length);
+  assert.equal(
+    map.categories.reduce((n, c) => n + c.entry_count, 0),
+    map.totals.entries,
+    "per-category counts must sum to the library total"
+  );
+  assert.ok(map.data_dir.endsWith("data"));
+  const sampleTag = Object.keys(map.tags)[0];
+  const tagHit = toolJson(
+    await main.request("tools/call", { name: "search_repos", arguments: { tags: [sampleTag] } })
+  );
+  assert.ok(tagHit.count >= 1, `vocabulary tag "${sampleTag}" must be filterable`);
 
   // search: free text
   const search = toolJson(
@@ -242,7 +259,7 @@ try {
     "- Superseded in practice; use new/active for real work."
   );
 
-  console.log("✓ MCP smoke test passed — 5 tools, 17 scenarios (main + stale-fixture server)");
+  console.log("✓ MCP smoke test passed — 6 tools, 19 scenarios (main + stale-fixture server)");
   process.exitCode = 0;
 } catch (e) {
   console.error("✗ MCP smoke test failed:", e);

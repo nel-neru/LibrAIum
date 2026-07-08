@@ -21,6 +21,7 @@ import {
 } from "./lib/store.js";
 import { suggest } from "./lib/suggest.js";
 import { compare, resolveSelector } from "./lib/compare.js";
+import { overview } from "./lib/overview.js";
 
 const DATA_DIR = resolveDataDir();
 
@@ -40,7 +41,8 @@ server.registerTool(
     title: "Search repositories",
     description:
       "Search the user's personally curated LibrAIum library of best-practice GitHub repositories. " +
-      "All filters are optional; text query matches name, tags, language and summary.",
+      "All filters are optional; text query matches name, tags, language and summary. Category " +
+      "ids and tags must match exactly — call get_library_overview first when unsure.",
     inputSchema: {
       query: z.string().optional().describe("free-text query"),
       category: z.string().optional().describe("category id, e.g. 'ai-agent'"),
@@ -150,6 +152,26 @@ server.registerTool(
 );
 
 server.registerTool(
+  "get_library_overview",
+  {
+    title: "Library overview — shelf map, tag vocabulary, health",
+    description:
+      "Cheap read-only map of the whole library: every category id with entry/stale/archived " +
+      "counts and its top tags, the full tag vocabulary with usage counts, library totals, and " +
+      "the resolved data directory. Call this FIRST when unsure which category ids or tags " +
+      "exist — search_repos tag filters and add_repo categories must match them exactly.",
+    inputSchema: {},
+  },
+  async () => {
+    try {
+      return json(overview(listEntries(DATA_DIR), loadCategories(DATA_DIR), DATA_DIR));
+    } catch (e) {
+      return jsonError(e.message);
+    }
+  }
+);
+
+server.registerTool(
   "compare_repos",
   {
     title: "Compare library entries side by side",
@@ -217,8 +239,8 @@ server.registerTool(
     title: "Add repository to the library",
     description:
       "Register a GitHub repository in the user's LibrAIum library. Fetches stars/language/freshness " +
-      "from the GitHub API automatically. Fails on duplicates. Valid categories come from the " +
-      "category master — call search_repos or check data/master/categories.yaml ids.",
+      "from the GitHub API automatically. Fails on duplicates. Valid category ids and the existing " +
+      "tag vocabulary come from get_library_overview — call it first and reuse tags before minting new ones.",
     inputSchema: {
       github_url: z.string(),
       category: z.string().describe("category id, e.g. 'ai-agent'"),
