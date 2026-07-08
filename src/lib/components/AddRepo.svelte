@@ -8,9 +8,19 @@
   let notes = $state("");
   let duplicate = $state(null);
   let adding = $state(false);
+  let urlInput = $state(null);
+
+  // Focus the first field when the modal opens (it is mounted on demand).
+  $effect(() => {
+    urlInput?.focus();
+  });
 
   function close() {
     app.showAdd = false;
+  }
+
+  function onKeydown(e) {
+    if (e.key === "Escape" && !adding) close();
   }
 
   async function checkDup() {
@@ -45,17 +55,21 @@
   }
 </script>
 
+<svelte:window onkeydown={onKeydown} />
+
 <div class="modal-backdrop" onclick={(e) => e.target === e.currentTarget && close()} role="presentation">
-  <div class="modal">
+  <form class="modal" onsubmit={(e) => { e.preventDefault(); submit(); }}>
     <div class="row" style="margin-bottom: 16px;">
       <h2 class="grow" style="font-size: 19px;">Add a repository</h2>
-      <button class="small" onclick={close}>✕</button>
+      <button type="button" class="small" onclick={close}>✕</button>
     </div>
 
-    <label>GitHub URL</label>
+    <label for="add-url">GitHub URL</label>
     <input
+      id="add-url"
       style="width: 100%; margin-bottom: 4px;"
       placeholder="https://github.com/owner/repo"
+      bind:this={urlInput}
       bind:value={url}
       onblur={checkDup}
     />
@@ -67,19 +81,20 @@
 
     <div class="row" style="gap: 10px; margin: 14px 0;">
       <div class="grow">
-        <label>Category</label>
-        <select style="width: 100%;" bind:value={category}>
+        <label for="add-category">Category</label>
+        <select id="add-category" style="width: 100%;" bind:value={category}>
           {#each app.categories as c}<option value={c.id}>{c.icon} {c.name}</option>{/each}
         </select>
       </div>
       <div class="grow">
-        <label>Tags (comma-separated)</label>
-        <input style="width: 100%;" placeholder="vector-db, rag" bind:value={tags} />
+        <label for="add-tags">Tags (comma-separated)</label>
+        <input id="add-tags" style="width: 100%;" placeholder="vector-db, rag" bind:value={tags} />
       </div>
     </div>
 
-    <label>Personal notes (optional, Markdown)</label>
+    <label for="add-notes">Personal notes (optional, Markdown)</label>
     <textarea
+      id="add-notes"
       rows="4"
       style="width: 100%;"
       placeholder="- why this repo is on my shelf&#10;- gotchas, pairings, ideas"
@@ -91,10 +106,10 @@
     </p>
 
     <div class="row" style="gap: 8px; margin-top: 8px;">
-      <button class="primary" onclick={submit} disabled={adding || !url.trim() || !!duplicate}>
+      <button type="submit" class="primary" disabled={adding || !url.trim() || !!duplicate}>
         {adding ? "Fetching from GitHub…" : "Add to library"}
       </button>
-      <button onclick={close}>Cancel</button>
+      <button type="button" onclick={close}>Cancel</button>
     </div>
-  </div>
+  </form>
 </div>
