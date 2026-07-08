@@ -12,7 +12,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P3 — error handling / UX / docs / DX
-- [ ] P3 `refresh_all` keeps hammering GitHub after 403/429 — floods errors, wastes quota (`src-tauri/src/commands.rs:181-195`). Break early with one "rate limited — set a token" message.
 - [ ] P3 corrupt categories.yaml: `suggest_for_new_project` has no try/catch → SDK-level crash; add_repo relays a cryptic parser error (`mcp-server/lib/store.js:67`, `index.js:113-120`). Wrap + actionable message.
 - [ ] P3 MCP `fetchGithubRepo`: no fetch timeout (can hang the tool call) and 429 lacks the rate-limit hint that 403 has; Rust handles both (`mcp-server/lib/store.js:120-122`). Add `AbortSignal.timeout`, include 429.
 - [ ] P3 suggest tool accepts empty/whitespace `project_description` → combined with the threshold bug returns confident noise (`mcp-server/index.js:108`). `z.string().trim().min(1)` + early "no tokens" note.
@@ -26,6 +25,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P3 refresh_all rate-limit abort: typed `AppError::RateLimited` (403/429), sweep breaks on first hit with one actionable message. — 42a8575 (2026-07-08)
 - [x] P3 entry-scan visibility: `scan_entries` returns (entries, warnings), per-dir degradation matches per-file, list_entries command → {entries, warnings}, GUI toasts skipped count. — db2a72a (2026-07-08)
 - [x] P3 corrupt settings.json: absent≠corrupt distinguished; corrupt file preserved as `settings.json.corrupt` + logged before defaults; unit test covers both. — e37962e (2026-07-08)
 - [x] P3 add_repo path traversal closed: fail-closed on empty category master + kebab-case segment guard in saveNewEntry; unit test + smoke scenario 10. — 9a24e7f (2026-07-08)
