@@ -6,7 +6,7 @@
 // surface on purpose, so nothing here needs Rust parity.
 import { summarize, today } from "./store.js";
 
-function editDistance(a, b) {
+export function editDistance(a, b) {
   if (a === b) return 0;
   let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
   for (let i = 1; i <= a.length; i++) {
