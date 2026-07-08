@@ -17,6 +17,7 @@ import {
   findDuplicate,
   guardRedirectedDuplicate,
   listEntries,
+  normalizeTags,
   saveNewEntry,
   firstSummaryLine,
   loadCategories,
@@ -92,6 +93,12 @@ test("body handling: leading blank lines stripped, bare --- kept as body text", 
 test("firstSummaryLine skips headings, blanks and horizontal rules", () => {
   assert.equal(firstSummaryLine("# H1\n\n---\n\nThe summary.\nSecond."), "The summary.");
   assert.equal(firstSummaryLine("\n\n# only headings\n"), "");
+});
+
+test("normalizeTags trims and drops empty tags like the desktop AddRepo path", () => {
+  assert.deepEqual(normalizeTags([" rag ", "", "   ", "vector-db"]), ["rag", "vector-db"]);
+  assert.deepEqual(normalizeTags(undefined), []);
+  assert.deepEqual(normalizeTags([]), []);
 });
 
 test("parseEntry materializes the serde defaults like Rust (minimal entry)", () => {

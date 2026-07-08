@@ -218,6 +218,13 @@ export function guardRedirectedDuplicate(dataDir, inputFullName, ghFullName) {
   }
 }
 
+// Mirror of the desktop add path (AddRepo.svelte): LLM clients send padded or
+// empty tag strings, which validate-data.mjs rejects once written and which
+// never match search_repos' exact tag filter.
+export function normalizeTags(tags) {
+  return (tags ?? []).map((t) => t.trim()).filter(Boolean);
+}
+
 export function firstSummaryLine(body) {
   return (
     body
