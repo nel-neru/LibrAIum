@@ -149,14 +149,28 @@ export function loadCategories(dataDir) {
   if (!Array.isArray(categories)) {
     throw new Error(`category master ${path} is malformed: 'categories' must be a list`);
   }
-  // A hand-edit slip (trailing '-', bare string) parses to a null/non-mapping
-  // item and would surface downstream as a raw TypeError naming neither the
-  // file nor the fix. Fail closed here with both, like the shapes above.
+  // A hand-edit slip (trailing '-', bare string, unquoted numeric scalar)
+  // must fail closed naming the file, item, and cause — not surface as a raw
+  // TypeError or silently diverge from the Rust side. Scalar strictness
+  // mirrors the Rust Category schema (models.rs strict_string + i64 order):
+  // `id: 2048` or `order: "3"` is rejected identically on both sides.
   categories.forEach((c, i) => {
-    if (c === null || typeof c !== "object" || Array.isArray(c) || typeof c.id !== "string") {
-      throw new Error(
-        `category master ${path} is malformed: item ${i + 1} is not a category mapping with a string 'id' (stray '-' or unfinished entry?) — fix or remove it`
-      );
+    const bad = (what) => {
+      throw new Error(`category master ${path} is malformed: item ${i + 1} ${what} — fix or remove it`);
+    };
+    if (c === null || typeof c !== "object" || Array.isArray(c)) {
+      bad("is not a category mapping (stray '-' or unfinished entry?)");
+    }
+    for (const key of ["id", "name"]) {
+      if (typeof c[key] !== "string") bad(`needs a string '${key}' (got ${JSON.stringify(c[key])})`);
+    }
+    for (const key of ["color", "icon", "description"]) {
+      if (c[key] !== undefined && typeof c[key] !== "string") {
+        bad(`field '${key}' must be a string (got ${JSON.stringify(c[key])})`);
+      }
+    }
+    if (c.order !== undefined && typeof c.order !== "number") {
+      bad(`field 'order' must be a number (got ${JSON.stringify(c.order)})`);
     }
   });
   return categories.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));

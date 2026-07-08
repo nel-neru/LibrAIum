@@ -226,12 +226,23 @@ test("loadCategories: absent => [], corrupt/malformed => actionable error naming
     // A hand-edit slip inside a valid list (trailing '-' → null item, or a
     // bare string) must fail closed naming the file — not crash the sort
     // comparator with a raw TypeError (Rust's typed serde also rejects these).
-    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: a\n    order: 1\n  -\n");
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: a\n    name: A\n    order: 1\n  -\n");
     assert.throws(() => loadCategories(dir), /item 2 is not a category mapping.*fix or remove/);
     writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - just-a-string\n");
     assert.throws(() => loadCategories(dir), /item 1 is not a category mapping/);
 
-    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: b\n    order: 2\n  - id: a\n    order: 1\n");
+    // scalar strictness mirrors Rust's Category schema: bare numeric id,
+    // quoted numeric order, and non-string optional scalars all fail closed
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: 2048\n    name: X\n");
+    assert.throws(() => loadCategories(dir), /needs a string 'id' \(got 2048\)/);
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: x\n    name: X\n    order: \"3\"\n");
+    assert.throws(() => loadCategories(dir), /'order' must be a number \(got "3"\)/);
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: x\n    name: X\n    color: 123\n");
+    assert.throws(() => loadCategories(dir), /'color' must be a string/);
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: x\n");
+    assert.throws(() => loadCategories(dir), /needs a string 'name'/);
+
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: b\n    name: B\n    order: 2\n  - id: a\n    name: A\n    order: 1\n");
     assert.deepEqual(loadCategories(dir).map((c) => c.id), ["a", "b"], "sorted by order");
   } finally {
     rmSync(dir, { recursive: true, force: true });

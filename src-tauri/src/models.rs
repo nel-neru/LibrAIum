@@ -109,15 +109,21 @@ pub struct Entry {
     pub body: String,
 }
 
+// Same strict-scalar contract as EntryMeta (see the quirk note above): a
+// hand-edited `id: 2048` must be rejected here exactly as the Node twin
+// (store.js loadCategories) rejects it — never coerced into "2048", which
+// would let the two sides disagree about the category master.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Category {
+    #[serde(deserialize_with = "strict_string")]
     pub id: String,
+    #[serde(deserialize_with = "strict_string")]
     pub name: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "strict_string")]
     pub color: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "strict_string")]
     pub icon: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "strict_string")]
     pub description: String,
     #[serde(default)]
     pub order: i64,

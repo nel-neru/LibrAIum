@@ -33,7 +33,9 @@ pub fn save(data_dir: &Path, categories: &[Category]) -> Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    let file = CategoryFile { categories: categories.to_vec() };
+    let file = CategoryFile {
+        categories: categories.to_vec(),
+    };
     fs::write(&path, serde_yaml::to_string(&file)?)?;
     Ok(())
 }
@@ -49,8 +51,22 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
 
         let cats = vec![
-            Category { id: "b".into(), name: "B".into(), color: "#123".into(), icon: "📘".into(), description: String::new(), order: 2 },
-            Category { id: "a".into(), name: "A".into(), color: "#456".into(), icon: "📗".into(), description: String::new(), order: 1 },
+            Category {
+                id: "b".into(),
+                name: "B".into(),
+                color: "#123".into(),
+                icon: "📘".into(),
+                description: String::new(),
+                order: 2,
+            },
+            Category {
+                id: "a".into(),
+                name: "A".into(),
+                color: "#456".into(),
+                icon: "📗".into(),
+                description: String::new(),
+                order: 1,
+            },
         ];
         save(&dir, &cats).unwrap();
         let loaded = load(&dir).unwrap();
@@ -59,6 +75,39 @@ mod tests {
 
         let dup = vec![cats[0].clone(), cats[0].clone()];
         assert!(save(&dir, &dup).is_err());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn strict_scalars_rejected_like_node() {
+        let dir = std::env::temp_dir().join(format!(
+            "libraium-cat-strict-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join("master")).unwrap();
+        let write =
+            |yaml: &str| fs::write(dir.join("master").join("categories.yaml"), yaml).unwrap();
+
+        // bare numeric id must be rejected, never coerced into "2048"
+        // (mirrors Node loadCategories; serde_yaml would otherwise coerce)
+        write("categories:\n  - id: 2048\n    name: X\n");
+        assert!(load(&dir).is_err());
+
+        // quoted numeric order must be rejected (i64 field)
+        write("categories:\n  - id: x\n    name: X\n    order: \"3\"\n");
+        assert!(load(&dir).is_err());
+
+        // present-but-non-string optional scalar must be rejected
+        write("categories:\n  - id: x\n    name: X\n    color: 123\n");
+        assert!(load(&dir).is_err());
+
+        // valid minimal file still loads with defaults
+        write("categories:\n  - id: x\n    name: X\n");
+        let cats = load(&dir).unwrap();
+        assert_eq!(cats[0].id, "x");
+        assert_eq!(cats[0].order, 0);
         let _ = fs::remove_dir_all(&dir);
     }
 }
