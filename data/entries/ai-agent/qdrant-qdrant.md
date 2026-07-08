@@ -3,9 +3,9 @@ github_url: https://github.com/qdrant/qdrant
 full_name: qdrant/qdrant
 category: ai-agent
 tags: [vector-db, rag, similarity-search, rust]
-stars: 21400
+stars: 33051
 language: Rust
-last_github_push: 2026-07-05
+last_github_push: 2026-07-08
 last_checked: 2026-07-08
 status: active
 source: manual

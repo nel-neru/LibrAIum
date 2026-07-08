@@ -107,6 +107,7 @@ npm run build                   # frontend production build
 npm test                        # frontend unit tests (markdown-renderer hardening)
 cd src-tauri && cargo test      # Rust unit tests (data/git/search/github layers)
 cd mcp-server && npm test       # store/suggest unit tests + MCP stdio smoke test
+node scripts/refresh-metadata.mjs   # dry-run GitHub metadata refresh (--write to apply)
 bash scripts/make-icons.sh      # regenerate app icons (macOS)
 ```
 
