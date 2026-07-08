@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P2 — search_repos v2 — richer filters + self-diagnosing empty results
-- **Deliverable**: `mcp-server/index.js` search_repos handler + per-parameter test coverage.
-- **Why**: AND-everything substring search is the most common dead end for LLM callers.
-- **Acceptance**: tags:["vectordb"] returns count 0 plus a note naming "vector-db"; any_tags:["rag","mcp-server"] with sort:"freshness" returns the union ordered by last_github_push.
-- **Build notes**: (1) filters: language (exact, case-insensitive), any_tags (OR; existing tags stays AND), updated_within_days, sort stars|freshness|added, '-token' negation in query. (2) zero-result diagnostics: per-token match report, retry suggestion with rarest tokens, valid category ids, closest real tags by prefix/substring/edit-distance ≤2. Update tool description.
-
 ### [ ] P2 — curation-report.mjs — deterministic health report feeding /curate-review
 - **Deliverable**: `scripts/curation-report.mjs` (+ --json), fixture test, curate-review.md step 2 rewired.
 - **Why**: every /curate-review session re-invents five ad-hoc greps.
@@ -63,6 +57,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P2 search_repos v2 (filters + zero diagnostics) — 6cc4a6a (2026-07-09, iter 9). Proven: vectordb→0件+note names vector-db exactly (short-tag containment noise guarded); OR-tags union of 5 in non-increasing push order. Logic extracted to lib/search.js with 7 unit tests.
 - [x] P2 register-mcp.mjs (+ --doctor, --with-skill) — 620bae1 (2026-07-09, iter 8). Proven live: registered user-scope (claude mcp list: Connected), skill installed to ~/.claude/skills, doctor reports data dir + 43 entries. The iter-2 "user action required" is hereby closed.
 - [x] P2 Stale-alternatives on get_repo_details — 29f0200 (2026-07-09, iter 7). Proven: swarm (stale) auto-carried langgraph (3 shared tags) + llama_index on real data; fixture pins it deterministically; active entries carry no field.
 - [x] P2 get_library_overview MCP tool — 02550c5 (2026-07-09, iter 6). Proven: 18 categories summing exactly to 43 entries; all 78 vocabulary tags verified filterable (exhaustive, not sampled). Helper landed in lib/overview.js (not store.js as drafted — keeps the parity-watched file server-logic-free).
