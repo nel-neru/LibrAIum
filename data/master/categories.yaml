@@ -103,7 +103,7 @@ categories:
     order: 17
   - id: open-source-tooling
     name: OSS Tooling
-    color: "#878580"
+    color: "#DA702C"
     icon: "🧰"
     description: "Libraries and tools for building open source software"
     order: 18

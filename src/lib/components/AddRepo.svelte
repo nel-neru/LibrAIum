@@ -43,7 +43,7 @@
         tags.split(",").map((t) => t.trim()).filter(Boolean),
         notes.trim() ? notes : null
       );
-      showToast(`Shelved ${entry.meta.full_name} — ⭐ ${entry.meta.stars.toLocaleString()}`);
+      showToast(`Shelved ${entry.meta.full_name} — ★ ${entry.meta.stars.toLocaleString()}`);
       close();
       await reloadEntries();
       app.selectedId = entry.id;

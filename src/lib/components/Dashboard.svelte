@@ -99,7 +99,9 @@
   .page-head { margin-bottom: 28px; }
   .page-title { font-size: 26px; line-height: 32px; }
   .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-  .stat { text-align: left; cursor: pointer; padding: 16px 18px; }
+  .stat { text-align: left; padding: 16px 18px; }
+  /* only the filter-jump stats are clickable — the combined-stars div is not */
+  button.stat { cursor: pointer; }
   .stat .n { font-size: 28px; line-height: 1.2; font-family: var(--serif); font-weight: 500; }
   .stat .n.overdue { color: var(--st-stale-tx); }
   .stat-label {

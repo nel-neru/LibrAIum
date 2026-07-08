@@ -52,7 +52,7 @@
 
   /* motion */
   --t-fast: 140ms ease-out;
-  --t-drawer: 300ms cubic-bezier(0.32, 0.72, 0, 1);
+  --t-drawer: 240ms cubic-bezier(0.32, 0.72, 0, 1); /* DESIGN.md §7 drawer spec */
 
   /* paper grain (one-time rasterized noise; felt, not seen) */
   --grain-opacity: 0.04;
