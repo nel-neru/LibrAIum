@@ -139,16 +139,46 @@ export function extractNotes(entry, tokens = []) {
     .map((b) => b.text);
 }
 
+// The owner-authored '## Setup' section: verified install/run commands (fenced
+// code lines) and step bullets, in body order. Null when the section is absent
+// so adoptionSteps knows to fall back to the generic clone/README pointer.
+export function extractSetup(entry) {
+  const body = entry.body ?? "";
+  const idx = body.toLowerCase().indexOf("## setup");
+  if (idx === -1) return null;
+  const steps = [];
+  let inFence = false;
+  for (const line of body.slice(idx).split("\n").slice(1)) {
+    if (/^#{1,6}\s/.test(line)) break; // next heading ends the section
+    if (/^\s*```/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) {
+      if (line.trim()) steps.push(line.trim());
+      continue;
+    }
+    const m = line.match(/^-\s+(.*\S)\s*$/);
+    if (m) steps.push(m[1]);
+  }
+  return steps.length ? steps : null;
+}
+
 export function adoptionSteps(entry) {
-  const steps = [
-    `git clone ${entry.meta.github_url}`,
-    `Read its README against your requirements — then check your Personal Notes in LibrAIum (${entry.id}) for firsthand gotchas.`,
-  ];
+  // Owner-verified Setup commands beat the generic clone/README dance — this is
+  // the first-hour friction the library exists to remove.
+  const setup = extractSetup(entry);
+  const steps = setup
+    ? [...setup, `Then check your Personal Notes in LibrAIum (${entry.id}) for firsthand gotchas.`]
+    : [
+        `git clone ${entry.meta.github_url}`,
+        `Read its README against your requirements — then check your Personal Notes in LibrAIum (${entry.id}) for firsthand gotchas.`,
+      ];
   const tags = entry.meta.tags ?? [];
-  if (tags.includes("mcp-server")) {
+  if (!setup && tags.includes("mcp-server")) {
     steps.push(`If it ships an MCP server: claude mcp add ${entry.meta.full_name.split("/")[1]} -- <its run command>`);
   }
-  if (tags.includes("vector-db")) {
+  if (!setup && tags.includes("vector-db")) {
     steps.push("Runs as infrastructure — check for a docker-compose.yml or a hosted option before embedding.");
   }
   return steps;

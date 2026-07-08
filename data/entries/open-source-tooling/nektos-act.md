@@ -16,6 +16,15 @@ added_date: 2026-07-09
 
 Runs GitHub Actions workflows locally in Docker containers — `act push` replays the event against `.github/workflows/` in seconds instead of a commit/push/wait cycle. Maps runner labels to container images so the same YAML works locally and on GitHub.
 
+## Setup
+
+```bash
+brew install act    # or: gh extension install nektos/gh-act
+act -l              # list jobs; `act push` replays the push event
+```
+
+- Needs a running Docker daemon; first run prompts for a runner-image size (medium is the sane default).
+
 ## Personal Notes
 
 - The default micro image is deliberately bare; most real workflows need `-P ubuntu-latest=catthehacker/ubuntu:act-latest` (put it in `.actrc`). The `full-*` parity images work but cost tens of GB of disk.

@@ -34,6 +34,14 @@ Dates are plain unquoted scalars (`2026-07-08`). Omit optional fields entirely r
 
 <summary — at most 2 sentences>
 
+## Setup            (optional)
+
+```bash
+<2-4 verified install/run commands>
+```
+
+- <optional step note>
+
 ## Personal Notes
 
 - <bullet>
@@ -41,6 +49,10 @@ Dates are plain unquoted scalars (`2026-07-08`). Omit optional fields entirely r
 ```
 
 The heading is the repo's short name only (`# qdrant`, `# kit`, `# just`) — not `owner/repo`.
+
+## Setup section (optional)
+
+An optional `## Setup` between the summary and Personal Notes: 2-4 **verified** install/run commands (a fenced ```bash block) plus optional step bullets — the real first-hour path. The MCP server's `adoptionSteps` reads it, so a suggestion returns `docker run -p 6333:6333 qdrant/qdrant` instead of the generic "git clone … read the README". Rules: commands must come from the repo's README/docs at research time — **never invent flags, ports, or package names**. Keep it minimal (the happy path, not every install method); omit the section entirely rather than guess.
 
 ## Summary rules
 

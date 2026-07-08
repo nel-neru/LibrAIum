@@ -16,6 +16,14 @@ added_date: 2026-06-20
 
 High-performance vector database and similarity search engine with filtering, written in Rust. gRPC + REST APIs, runs great locally via Docker.
 
+## Setup
+
+```bash
+docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
+```
+
+- REST + web dashboard on `:6333/dashboard`, gRPC on `:6334`.
+
 ## Personal Notes
 
 - My default vector DB for RAG prototypes — single `docker run` and you're up.

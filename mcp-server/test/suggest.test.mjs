@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { tokenize, scoreEntry, suggest, extractNotes, alternativesFor } from "../lib/suggest.js";
+import { tokenize, scoreEntry, suggest, extractNotes, alternativesFor, adoptionSteps, extractSetup } from "../lib/suggest.js";
 
 function entry(fullName, { tags = [], stars = 0, status = "active", language, category = "ai-agent", body = "" } = {}) {
   const slug = fullName.replace("/", "-");
@@ -145,6 +145,33 @@ test("alternativesFor mirrors Rust suggest_alternatives: shared tag + active + s
   // different category never qualifies
   const otherCat = [entries[0], entry("web/kit", { tags: ["vector-db"], category: "web-app" })];
   assert.equal(alternativesFor(otherCat, entries[0], 3).length, 0);
+});
+
+test("extractSetup collects fenced commands and step bullets, null when absent", () => {
+  const withSetup = entry("q/db", {
+    body: "# db\n\nA store.\n\n## Setup\n\n```bash\ndocker run -p 6333:6333 q/db\n```\n\n- Then hit http://localhost:6333/dashboard\n\n## Personal Notes\n- fast\n",
+  });
+  assert.deepEqual(extractSetup(withSetup), [
+    "docker run -p 6333:6333 q/db",
+    "Then hit http://localhost:6333/dashboard",
+  ]);
+  assert.equal(extractSetup(entry("n/o", { body: "# o\n\nNo setup here.\n\n## Personal Notes\n- x\n" })), null);
+});
+
+test("adoptionSteps: Setup commands win over the clone fallback; tag hints only without Setup", () => {
+  const withSetup = entry("q/db", {
+    tags: ["vector-db"],
+    body: "# db\n\nA store.\n\n## Setup\n\n```bash\ndocker run -p 6333:6333 q/db\n```\n\n## Personal Notes\n- fast\n",
+  });
+  const steps = adoptionSteps(withSetup);
+  assert.equal(steps[0], "docker run -p 6333:6333 q/db", "real command leads");
+  assert.ok(!steps.some((s) => s.startsWith("git clone")), "no generic clone when Setup exists");
+  assert.ok(!steps.some((s) => s.includes("infrastructure")), "tag hint suppressed when Setup is authoritative");
+  assert.ok(steps.at(-1).includes("Personal Notes"));
+
+  const noSetup = adoptionSteps(entry("a/b", { tags: ["vector-db"] }));
+  assert.ok(noSetup[0].startsWith("git clone"));
+  assert.ok(noSetup.some((s) => s.includes("infrastructure")), "tag hint kept as fallback");
 });
 
 test("suggest: irrelevant query returns ZERO suggestions despite active high-star entries", () => {

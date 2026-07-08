@@ -16,6 +16,15 @@ added_date: 2026-07-09
 
 GitHub's official CLI (`gh`) — PRs, issues, releases, and Actions runs from the terminal, with `gh api` reaching any REST or GraphQL endpoint the porcelain commands don't cover. Single Go binary for macOS/Linux/Windows; works against GitHub.com and Enterprise Server 2.20+.
 
+## Setup
+
+```bash
+brew install gh    # or see cli.github.com for apt/dnf/winget
+gh auth login
+```
+
+- `gh auth token` prints a token for scripting; `gh api repos/<owner>/<repo>` reaches the raw API.
+
 ## Personal Notes
 
 - The scripting backbone for repo automation: human-oriented output isn't stable across versions, so scripts should go through `--json ... --jq` (or `--template`), and `gh api --paginate` fills every gap the subcommands leave.
