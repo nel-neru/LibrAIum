@@ -15,7 +15,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 `settings::load` swallows corrupt settings.json → silently resets `data_dir` and next save overwrites the file (`src-tauri/src/settings.rs:30`). Distinguish absent (defaults) from unparseable (surface error).
 - [ ] P3 `list_entries` hides malformed entries (stderr only, GUI never sees it) and aborts entirely on one unreadable category dir (`src-tauri/src/store.rs:82,87`). Return warnings; degrade per-dir like per-file.
 - [ ] P3 `refresh_all` keeps hammering GitHub after 403/429 — floods errors, wastes quota (`src-tauri/src/commands.rs:181-195`). Break early with one "rate limited — set a token" message.
-- [ ] P3 MCP add_repo: category never sanitized as a path segment; when categories.yaml is missing the master check is SKIPPED, so `../../x` writes outside the data dir (`mcp-server/index.js:153`, `lib/store.js:104-105`). Validate `/^[a-z0-9-]+$/` + fail closed.
 - [ ] P3 corrupt categories.yaml: `suggest_for_new_project` has no try/catch → SDK-level crash; add_repo relays a cryptic parser error (`mcp-server/lib/store.js:67`, `index.js:113-120`). Wrap + actionable message.
 - [ ] P3 MCP `fetchGithubRepo`: no fetch timeout (can hang the tool call) and 429 lacks the rate-limit hint that 403 has; Rust handles both (`mcp-server/lib/store.js:120-122`). Add `AbortSignal.timeout`, include 429.
 - [ ] P3 suggest tool accepts empty/whitespace `project_description` → combined with the threshold bug returns confident noise (`mcp-server/index.js:108`). `z.string().trim().min(1)` + early "no tokens" note.
@@ -29,6 +28,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - [ ] P3 verify-all/CI never exercises app startup or bundling — a broken tauri.conf bundle config or startup panic passes all 5 stages (this exact gap shipped the `default-run` breakage). Add stage 6: `cargo build --bin libraium --locked`.
 
 ## Done
+- [x] P3 add_repo path traversal closed: fail-closed on empty category master + kebab-case segment guard in saveNewEntry; unit test + smoke scenario 10. — 9a24e7f (2026-07-08)
 - [x] P2 per-action busy flags: `busy: {refreshAll, refreshOne, push}` replaces the shared string; refresh actions mutually exclusive, push independent, all guard re-entry. ALL P2 ITEMS NOW RESOLVED. — 272117e (2026-07-08)
 - [x] P2 EntryDetail Save double-submit guard: `saving` in-flight flag, early return, Saving… label, both edit buttons disabled. — 51cf2d8 (2026-07-08)
 - [x] P2 EntryDetail load race: monotonic sequence token discards stale getEntry responses/failures; wrong-entry Edit/Delete path closed (parent already unmounts on close). — f59a5ac (2026-07-08)
