@@ -16,7 +16,6 @@ MCP/parity sweep surfaced the items below).
 - (all resolved — see Done)
 
 ### P3 — error handling / UX / parity robustness
-- [ ] P3 MCP `add_repo` tag normalization: empty/whitespace/padded tags are written verbatim, producing entries validate-data.mjs rejects (breaks verify-all stage 1 / the data hook when data dir is the repo's) and that miss the exact-match tag filter; mirror AddRepo's trim + filter(Boolean) (same class as de28212). — mcp-server/index.js:160,196 vs src/lib/components/AddRepo.svelte:43
 - [ ] P3 EntryCard keyboard activation broken two ways: Space never activates the card (Enter-only handler), and Enter on a focused tag chip bubbles to the card keydown so keyboard tag-filtering ALSO opens the drawer (mouse path stops click only). — src/lib/components/EntryCard.svelte:14-18,24-27,39-41
 - [ ] P3 Categories new-row id input self-disables mid-typing when the value matches ANY existing id (lock is by value, not row persistence) — the row becomes permanently uneditable and must be deleted; the Rust save guard would reject the dup anyway, so the lock only traps. — src/lib/components/Categories.svelte:110-111
 
@@ -39,6 +38,7 @@ MCP/parity sweep surfaced the items below).
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
 
+- [x] P3 MCP add_repo tag normalization: `normalizeTags` (trim + drop empties, mirrors AddRepo.svelte) exported from lib/store.js and unit-tested — LLM-sent padded/empty tags no longer produce validator-rejected entries or unfilterable tags. — f722703 (2026-07-08) [iter-43]
 - [x] P1 Node parseEntry serde-default parity: minimal entries (status/source/tags/stars absent) were silently EXCLUDED from status-filtered search_repos while summarize labeled them "active"; parseEntry now materializes the four defaults like models.rs, and conformance's normalizeMeta stopped re-filling them (it was masking exactly this drift against its own comment) — example-minimal.md now pins the contract live. Found independently by two iter-42 auditors. — a6ccef8 (2026-07-08) [iter-42]
 - [x] P5 automation drift ×2 (as one): post-edit hook parity set gains `github.rs` (+ "status computation" in the message) — the one dual-implemented rule with zero tripwire; `/improve` doc "5 stages" → 6. Hook verified with fake payloads. — 94e7edf (2026-07-08) [iter-41]
 - [x] P3 Settings labels associated (settings-data-dir / settings-stale-days for/id pairs): the production build is now WARNING-CLEAN — any future build warning is a regression signal. — 7a6357f (2026-07-08) [iter-40]
