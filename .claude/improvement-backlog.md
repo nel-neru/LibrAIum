@@ -13,7 +13,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 
 ### P3 — error handling / UX / parity robustness
 - [ ] P3 CSP defense-in-depth: replace `"csp": null` with a real policy (second layer behind the markdown-renderer hardening; `img-src` would also stop remote-image tracking pixels in synced bodies). — src-tauri/tauri.conf.json:23
-- [ ] P3 EntryDetail drawer keyboard access: no Escape-to-close, no focus-into-drawer, and 3 edit-form labels are unassociated — the app's primary modal surface is mouse-only while AddRepo already does all three. — src/lib/components/EntryDetail.svelte (backdrop/labels; build a11y warnings)
+- [ ] P3 Settings.svelte label association: 2 remaining a11y_label warnings (Settings.svelte:168,176) — same defect class just fixed in EntryDetail (696aac5); associate or convert to .field-label, making the whole build a11y-warning-clean. [found during iter-38]
 
 ### P5 — docs / DX
 - [ ] P5 post-edit hook parity set omits `github.rs`: `store.js computeStatus` mirrors `github::compute_status` (7569f6d) but editing the Rust side triggers no parity reminder, and the function corpus doesn't cover status — the one dual-implemented rule with zero tripwire. — .claude/hooks/post-edit.mjs:41-53
@@ -24,6 +24,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
 
+- [x] P3 EntryDetail drawer keyboard access: Escape cancels-edit-then-closes (guarded while saving, defers to AddRepo on top), drawer receives focus on open (tabindex=-1), 4 edit labels for/id-associated, meta-grid captions → .field-label spans (styled from the same rule as label). All 10 EntryDetail a11y warnings gone; behavior verified live in browser preview. — 696aac5 (2026-07-08) [iter-38]
 - [x] P3 suggest `tokenize` sentence-final periods stripped: "…in Rust." no longer misses the exact language match and category/name substring scoring; interior/leading dots (node.js/.net) preserved, dots-only fragments dropped as a bonus. 4 new tokenize cases. — 71cbd1f (2026-07-08) [iter-37]
 - [x] P3 `loadCategories` fails closed on null/non-mapping items: trailing `-` / bare string in a hand-edited categories.yaml now throws an error naming the file, item index, and likely cause instead of a raw sort-comparator TypeError (0feab8d failure class, one level deeper; Rust's typed serde already rejects these). Unit-tested both slip shapes. — 7188546 (2026-07-08) [iter-36]
 - [x] P3 MCP `resolveDataDir` env parity: flag/env tiers now trim and fall through on whitespace-only (mirrors Rust resolve_data_dir_from, 2d94f7c) — a padded `LIBRAIUM_DATA_DIR` can no longer split the MCP server and desktop app onto different data dirs. env made injectable like the Rust testable core; precedence test rewritten mutation-free + trim/fallthrough cases. — 0fab55f (2026-07-08) [iter-35]
