@@ -28,10 +28,29 @@ impl Default for Settings {
 
 pub fn load(config_dir: &Path) -> Settings {
     let path = config_dir.join("settings.json");
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|s| serde_json::from_str(&s).ok())
-        .unwrap_or_default()
+    let content = match fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(_) => return Settings::default(), // absent: normal first run
+    };
+    match serde_json::from_str(&content) {
+        Ok(s) => s,
+        Err(e) => {
+            // Present-but-corrupt must not silently become defaults: the next
+            // save() would overwrite the file and permanently discard the
+            // configured data_dir. Preserve the evidence, then degrade.
+            let backup = config_dir.join("settings.json.corrupt");
+            match fs::copy(&path, &backup) {
+                Ok(_) => eprintln!(
+                    "[libraium] settings.json is corrupt ({e}); original preserved at {}, using defaults",
+                    backup.display()
+                ),
+                Err(copy_err) => eprintln!(
+                    "[libraium] settings.json is corrupt ({e}); backup also failed ({copy_err}), using defaults"
+                ),
+            }
+            Settings::default()
+        }
+    }
 }
 
 pub fn save(config_dir: &Path, settings: &Settings) -> Result<()> {
@@ -115,6 +134,31 @@ mod tests {
         assert!(dir.join("master/categories.yaml").is_file());
         let cats = crate::categories::load(&dir).unwrap();
         assert!(cats.iter().any(|c| c.id == "ai-agent"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn corrupt_settings_are_backed_up_not_silently_replaced() {
+        let dir =
+            std::env::temp_dir().join(format!("libraium-corrupt-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("settings.json"), "{ this is not json").unwrap();
+
+        let s = load(&dir);
+        assert_eq!(s.data_dir, "", "corrupt file degrades to defaults");
+        assert_eq!(s.stale_days, 180);
+        assert_eq!(
+            fs::read_to_string(dir.join("settings.json.corrupt")).unwrap(),
+            "{ this is not json",
+            "original content must be preserved before defaults take over"
+        );
+
+        // Absent file: plain defaults, no backup artifact.
+        let empty = dir.join("no-such-subdir");
+        let s = load(&empty);
+        assert_eq!(s.stale_days, 180);
+        assert!(!empty.join("settings.json.corrupt").exists());
         let _ = fs::remove_dir_all(&dir);
     }
 
