@@ -116,13 +116,35 @@ const gitLog = [
   { hash: "c1b01f2", date: "2026-07-01", message: "notes: qdrant snapshot tip" },
 ];
 
+// Mini-ports of the Rust core semantics (store.rs / search.rs) — just enough
+// for the mock to exercise the REAL id/dedup/search flows in a browser. The
+// authoritative implementations live in src-tauri/src ⇔ mcp-server/lib.
+function slugify(fullName) {
+  return [...fullName.toLowerCase()]
+    .map((c) => (/[a-z0-9\-_.]/.test(c) ? c : "-"))
+    .join("")
+    .replace(/^-+|-+$/g, "");
+}
+
+function parseFullName(url) {
+  const m = String(url).match(/github\.com[/:]([^/]+)\/([^/?#]+)/);
+  return m ? `${m[1]}/${m[2].replace(/\.git$/, "")}` : null;
+}
+
+const firstSummaryLine = (body) =>
+  body.split("\n").map((l) => l.trim()).find((l) => l && !l.startsWith("#") && !l.startsWith("---")) ?? "";
+
 function matches(e, q) {
   if (q.category && e.meta.category !== q.category) return false;
   if (q.status && e.meta.status !== q.status) return false;
   if (q.min_stars != null && e.meta.stars < q.min_stars) return false;
-  if (q.tags?.length && !q.tags.every((t) => e.meta.tags.includes(t))) return false;
+  if (q.tags?.length && !q.tags.every((t) => e.meta.tags.some((et) => et.toLowerCase() === t.toLowerCase()))) {
+    return false;
+  }
   if (q.query) {
-    const hay = `${e.meta.full_name} ${e.meta.tags.join(" ")} ${e.meta.language ?? ""} ${e.body}`.toLowerCase();
+    // Same haystack fields as search.rs (name, tags, language, FIRST SUMMARY
+    // LINE — not the whole body); plain substring stands in for Skim fuzzy.
+    const hay = `${e.meta.full_name} ${e.meta.tags.join(" ")} ${e.meta.language ?? ""} ${firstSummaryLine(e.body)}`.toLowerCase();
     if (!hay.includes(q.query.toLowerCase())) return false;
   }
   return true;
@@ -136,28 +158,45 @@ const handlers = {
   get_data_dir: () => "/Users/you/LibrAIum/data (mock)",
 
   list_entries: () => ({ entries, warnings: [] }),
-  search_entries: ({ query }) => entries.filter((e) => matches(e, query ?? {})),
+  search_entries: ({ query }) =>
+    entries.filter((e) => matches(e, query ?? {})).sort((a, b) => b.meta.stars - a.meta.stars),
   get_entry: ({ id }) => {
     const e = entries.find((x) => x.id === id);
     if (!e) throw `entry not found: ${id}`;
     return e;
   },
   save_entry: ({ meta, body, previousId }) => {
-    const idx = entries.findIndex((x) => x.id === previousId);
-    const saved = { id: previousId, meta, body };
+    // Mirrors store.rs save_entry: the id is ALWAYS <category>/<slug> — a
+    // category change MOVES the entry (new call number) — and writing onto a
+    // path owned by another entry is refused as a duplicate.
+    const id = `${meta.category}/${slugify(meta.full_name)}`;
+    const occupant = entries.find((x) => x.id === id);
+    if (occupant && occupant.id !== previousId) throw `duplicate entry: ${id} already exists`;
+    const saved = { id, meta, body };
+    const idx = previousId ? entries.findIndex((x) => x.id === previousId) : -1;
     if (idx >= 0) entries[idx] = saved;
+    else entries.push(saved);
     return saved;
   },
   delete_entry: ({ id }) => void (entries = entries.filter((x) => x.id !== id)),
-  check_duplicate: ({ githubUrl }) =>
-    entries.find((e) => e.meta.github_url === githubUrl.replace(/\/+$/, "")) ?? null,
+  check_duplicate: ({ githubUrl }) => {
+    // Mirrors commands.rs: normalize to full_name, compare case-insensitively
+    // (raw-URL comparison missed `.git`/case/SSH variants of the same repo).
+    const full = parseFullName(githubUrl);
+    if (!full) throw `not a github.com repository URL: ${githubUrl}`;
+    return entries.find((e) => e.meta.full_name.toLowerCase() === full.toLowerCase()) ?? null;
+  },
   add_repo_from_url: async ({ githubUrl, category, tags, notes }) => {
     await sleep(600);
-    const m = githubUrl.match(/github\.com\/([^/]+)\/([^/?#]+)/);
-    if (!m) throw "not a valid GitHub repository URL";
-    const full = `${m[1]}/${m[2].replace(/\.git$/, "")}`;
-    const e = entry(`${category}/${full.replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase()}`, {
-      github_url: githubUrl, full_name: full, category, tags,
+    const full = parseFullName(githubUrl);
+    if (!full) throw "not a valid GitHub repository URL";
+    // Mirrors the real add path: duplicates are refused (a double-add used to
+    // create twin ids and crash Library's keyed {#each} in dev), and the
+    // canonical URL derives from full_name, not the typed URL.
+    const dup = entries.find((e) => e.meta.full_name.toLowerCase() === full.toLowerCase());
+    if (dup) throw `already registered as ${dup.id}`;
+    const e = entry(`${category}/${slugify(full)}`, {
+      github_url: `https://github.com/${full}`, full_name: full, category, tags,
       stars: 4321, language: "TypeScript",
       last_github_push: now, last_checked: now,
       status: "active", source: "manual", added_date: now,
@@ -177,10 +216,20 @@ const handlers = {
   suggest_alternatives: ({ id }) => {
     const cur = entries.find((x) => x.id === id);
     if (!cur) return [];
-    return entries.filter(
-      (e) => e.id !== id && e.meta.status === "active" && e.meta.category === cur.meta.category &&
-        e.meta.tags.some((t) => cur.meta.tags.includes(t))
-    );
+    // Mirrors search.rs suggest_alternatives: same category, active, ≥1 shared
+    // tag (case-insensitive), ranked by overlap then stars, capped at 3.
+    return entries
+      .filter((e) => e.id !== id && e.meta.status === "active" && e.meta.category === cur.meta.category)
+      .map((e) => {
+        const overlap = e.meta.tags.filter((t) =>
+          cur.meta.tags.some((tt) => tt.toLowerCase() === t.toLowerCase())
+        ).length;
+        return { e, score: overlap * 1000 + Math.min(e.meta.stars, 999) };
+      })
+      .filter(({ score }) => score >= 1000)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(({ e }) => e);
   },
 
   get_categories: () => categories,
