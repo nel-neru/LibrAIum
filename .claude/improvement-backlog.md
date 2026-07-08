@@ -13,7 +13,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 
 ### P3 — error handling / UX / parity robustness
 - [ ] P3 CSP defense-in-depth: replace `"csp": null` with a real policy (second layer behind the markdown-renderer hardening; `img-src` would also stop remote-image tracking pixels in synced bodies). — src-tauri/tauri.conf.json:23
-- [ ] P3 suggest `tokenize` keeps sentence-final periods: the last keyword of every sentence ("…in Rust.") loses the language/category/name scoring; strip trailing dots while keeping interior ones (`node.js` is pinned by suggest.test.mjs:33-34). — mcp-server/lib/suggest.js:9-16,36,42,49,55
 - [ ] P3 EntryDetail drawer keyboard access: no Escape-to-close, no focus-into-drawer, and 3 edit-form labels are unassociated — the app's primary modal surface is mouse-only while AddRepo already does all three. — src/lib/components/EntryDetail.svelte (backdrop/labels; build a11y warnings)
 
 ### P5 — docs / DX
@@ -25,6 +24,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
 
+- [x] P3 suggest `tokenize` sentence-final periods stripped: "…in Rust." no longer misses the exact language match and category/name substring scoring; interior/leading dots (node.js/.net) preserved, dots-only fragments dropped as a bonus. 4 new tokenize cases. — 71cbd1f (2026-07-08) [iter-37]
 - [x] P3 `loadCategories` fails closed on null/non-mapping items: trailing `-` / bare string in a hand-edited categories.yaml now throws an error naming the file, item index, and likely cause instead of a raw sort-comparator TypeError (0feab8d failure class, one level deeper; Rust's typed serde already rejects these). Unit-tested both slip shapes. — 7188546 (2026-07-08) [iter-36]
 - [x] P3 MCP `resolveDataDir` env parity: flag/env tiers now trim and fall through on whitespace-only (mirrors Rust resolve_data_dir_from, 2d94f7c) — a padded `LIBRAIUM_DATA_DIR` can no longer split the MCP server and desktop app onto different data dirs. env made injectable like the Rust testable core; precedence test rewritten mutation-free + trim/fallthrough cases. — 0fab55f (2026-07-08) [iter-35]
 - [x] P3 MCP `listEntries` per-category-dir degradation: an unreadable category dir (EACCES) no longer kills all four tools — guarded readdir warns on stderr and skips, mirroring Rust `scan_entries` (db2a72a); unreadable entries/ ROOT stays a hard error on both sides on purpose. Unit test chmods a category to 000 (root-skipped). — 1df89cc (2026-07-08) [iter-34]
