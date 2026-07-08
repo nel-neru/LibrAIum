@@ -1,9 +1,20 @@
 # Improvement Backlog
 
+## LOOP COMPLETE
+
+Closed 2026-07-08 after 30 iterations (37 findings fixed, one focused commit each, all
+6 verify-all stages green throughout). A final full-repo adversarial audit — including
+the previously-unaudited `src-tauri/src/search.rs` — returned **CONVERGED: nothing
+clears the bar**. Pending is empty; the loop stopped rather than invent low-value work.
+Restart anytime with `/improve` (it re-audits and seeds a new backlog if it finds anything).
+
+---
+
 Seeded 2026-07-08 by a 4-agent audit (Rust core / MCP server / Svelte frontend / format-parity+docs+CI).
 Worked by the `/improve` loop — one item per iteration, verified via `scripts/verify-all.sh`, committed.
 
 ## Pending  (ordered: highest value first)
+- (empty — LOOP COMPLETE)
 
 ### P1 — correctness & data-safety
 - (all resolved — see Done)
