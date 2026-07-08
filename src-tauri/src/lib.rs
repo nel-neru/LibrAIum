@@ -1,13 +1,13 @@
-mod categories;
+pub mod categories;
 mod commands;
-mod error;
-mod frontmatter;
+pub mod error;
+pub mod frontmatter;
 mod github;
 mod gitops;
-mod models;
-mod search;
-mod settings;
-mod store;
+pub mod models;
+pub mod search;
+pub mod settings;
+pub mod store;
 
 use tauri::Manager;
 

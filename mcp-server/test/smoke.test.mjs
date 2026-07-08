@@ -34,7 +34,9 @@ function request(method, params) {
   const id = nextId++;
   return new Promise((resolvePromise, reject) => {
     pending.set(id, resolvePromise);
-    setTimeout(() => reject(new Error(`timeout waiting for ${method}`)), 10_000).unref();
+    // 30s: server boot (node + SDK import) can exceed 10s when the test runs
+    // right after cargo/vite stages on a loaded machine (observed flake).
+    setTimeout(() => reject(new Error(`timeout waiting for ${method}`)), 30_000).unref();
     server.stdin.write(JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n");
   });
 }

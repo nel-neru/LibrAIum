@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(cargo test *)",
+      "Bash(cargo check *)",
+      "Bash(cargo build *)",
+      "Bash(cargo fmt *)",
+      "Bash(npm test)",
+      "Bash(npm run build)",
+      "Bash(npm install)",
+      "Bash(npm ci)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(bash scripts/verify-all.sh)",
+      "Bash(bash scripts/make-icons.sh)",
+      "Bash(node scripts/validate-data.mjs)",
+      "Bash(node scripts/conformance.mjs)",
+      "mcp__ccd_session_mgmt__search_session_transcripts"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit.mjs\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
