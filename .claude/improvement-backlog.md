@@ -12,7 +12,6 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 - (all resolved — see Done)
 
 ### P3 — error handling / UX / parity robustness
-- [ ] P3 CSP defense-in-depth: replace `"csp": null` with a real policy (second layer behind the markdown-renderer hardening; `img-src` would also stop remote-image tracking pixels in synced bodies). — src-tauri/tauri.conf.json:23
 - [ ] P3 Settings.svelte label association: 2 remaining a11y_label warnings (Settings.svelte:168,176) — same defect class just fixed in EntryDetail (696aac5); associate or convert to .field-label, making the whole build a11y-warning-clean. [found during iter-38]
 
 ### P5 — docs / DX
@@ -24,6 +23,7 @@ Worked by the `/improve` loop — one item per iteration, verified via `scripts/
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.
 
+- [x] P3 CSP defense-in-depth: `csp: null` → self-pinned policy (style-src 'unsafe-inline' for style attrs, img-src data: for the grain texture — remote tracking pixels blocked, connect-src ipc:/http://ipc.localhost for Tauri IPC, object/frame 'none'). Verified via meta-tag injection in browser preview: zero violations, grain + all views + drawer work. One manual `npm run tauri dev` sanity check of the ipc: directives recommended. markdown.js comment updated (escaping stays primary). — 601d6b5 (2026-07-08) [iter-39]
 - [x] P3 EntryDetail drawer keyboard access: Escape cancels-edit-then-closes (guarded while saving, defers to AddRepo on top), drawer receives focus on open (tabindex=-1), 4 edit labels for/id-associated, meta-grid captions → .field-label spans (styled from the same rule as label). All 10 EntryDetail a11y warnings gone; behavior verified live in browser preview. — 696aac5 (2026-07-08) [iter-38]
 - [x] P3 suggest `tokenize` sentence-final periods stripped: "…in Rust." no longer misses the exact language match and category/name substring scoring; interior/leading dots (node.js/.net) preserved, dots-only fragments dropped as a bonus. 4 new tokenize cases. — 71cbd1f (2026-07-08) [iter-37]
 - [x] P3 `loadCategories` fails closed on null/non-mapping items: trailing `-` / bare string in a hand-edited categories.yaml now throws an error naming the file, item index, and likely cause instead of a raw sort-comparator TypeError (0feab8d failure class, one level deeper; Rust's typed serde already rejects these). Unit-tested both slip shapes. — 7188546 (2026-07-08) [iter-36]
