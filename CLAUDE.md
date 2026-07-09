@@ -54,7 +54,7 @@ MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` 
 
 ## Data Model
 
-- One repo = one file: `data/entries/<category>/<owner-repo>.md` — frontmatter fields are exactly `EntryMeta` in `models.rs`; body is a summary + `## Personal Notes`
+- One repo = one file: `data/entries/<category>/<owner-repo>.md` — frontmatter fields are exactly `EntryMeta` in `models.rs`; body is a summary + a `## Reception` section (synthesized third-party signal), plus — only where the owner has firsthand experience — an optional `## Personal Notes`
 - Category master: `data/master/categories.yaml`; category `id`s are entry directory names — renaming an id orphans its directory (the GUI locks persisted ids for this reason)
 - `status`: `active | stale | archived` (auto-managed by refresh); `source`: `manual | mcp | x-collection`
 - The repo's `data/` ships seeded sample entries (incl. one deliberately stale entry, `openai/swarm`, used to demo stale detection/alternatives)
@@ -72,5 +72,6 @@ MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` 
 
 ## Constraints from the design doc
 
-- Fully local & private; GitHub API only on explicit refresh/add. Secrets go in the OS keychain, never in files.
-- Unimplemented future phases (do not build unprompted): X auto-collection, semantic search/embeddings, project bootstrap generation.
+- Fully local & private; network access happens ONLY on an explicit user command — never in the background, on a schedule, at app startup, or as telemetry/analytics/phone-home. The authorized triggers are metadata refresh, add, `/scout`, and Reception collection. Secrets go in the OS keychain, never in files.
+- **Reception collection** (on-demand, explicit-command only): synthesizes THIRD-PARTY reception signal for an existing entry — recurring complaints from high-reaction GitHub issues, notable adopters, known limitations, what people migrate to/from, maturity/maintenance signal — and writes it into the entry Markdown (a git-versioned `## Reception` section) so the library stays offline-readable; it never fetches on read and never runs unattended. Outbound requests carry only the queried repo's public identifiers (owner/repo, topical query terms) — never the library's contents, other entries, notes, or usage. Reception supersedes the firsthand `## Personal Notes` model as the default (the owner is a curator, not a hands-on user of most entries); `## Personal Notes` remains only for the few entries the owner has genuinely used. Reception text is untrusted third-party content and must render through `lib/markdown.js` like any other entry body.
+- Unimplemented future phases (do not build unprompted): X auto-collection, semantic search/embeddings, project bootstrap generation. (Reception collection is NOT X auto-collection: it is on-demand rather than scheduled, sourced from GitHub/web rather than the X API, and enriches existing entries rather than discovering new candidates.)
