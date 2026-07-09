@@ -18,97 +18,97 @@ Coverage is reported by `scripts/curation-report.mjs` (reception line).
 
 ### affiliate
 
-- [ ] affiliate/dubinc-dub — dubinc/dub
-- [ ] affiliate/yourls-yourls — YOURLS/YOURLS
+- [x] affiliate/dubinc-dub — dubinc/dub
+- [x] affiliate/yourls-yourls — YOURLS/YOURLS
 
 ### ai-agent
 
-- [ ] ai-agent/langchain-ai-langgraph — langchain-ai/langgraph
-- [ ] ai-agent/langgenius-dify — langgenius/dify
-- [ ] ai-agent/modelcontextprotocol-servers — modelcontextprotocol/servers
-- [ ] ai-agent/ollama-ollama — ollama/ollama
-- [ ] ai-agent/openai-swarm — openai/swarm
-- [ ] ai-agent/qdrant-qdrant — qdrant/qdrant
-- [ ] ai-agent/run-llama-llama_index — run-llama/llama_index
+- [x] ai-agent/langchain-ai-langgraph — langchain-ai/langgraph
+- [x] ai-agent/langgenius-dify — langgenius/dify
+- [x] ai-agent/modelcontextprotocol-servers — modelcontextprotocol/servers
+- [x] ai-agent/ollama-ollama — ollama/ollama
+- [x] ai-agent/openai-swarm — openai/swarm
+- [x] ai-agent/qdrant-qdrant — qdrant/qdrant
+- [x] ai-agent/run-llama-llama_index — run-llama/llama_index
 
 ### audio-voice
 
-- [ ] audio-voice/ggml-org-whisper.cpp — ggml-org/whisper.cpp
-- [ ] audio-voice/openai-whisper — openai/whisper
+- [x] audio-voice/ggml-org-whisper.cpp — ggml-org/whisper.cpp
+- [x] audio-voice/openai-whisper — openai/whisper
 
 ### blockchain-web3
 
-- [ ] blockchain-web3/bitcoin-bitcoin — bitcoin/bitcoin
-- [ ] blockchain-web3/ethereum-go-ethereum — ethereum/go-ethereum
+- [x] blockchain-web3/bitcoin-bitcoin — bitcoin/bitcoin
+- [x] blockchain-web3/ethereum-go-ethereum — ethereum/go-ethereum
 
 ### blog-content
 
-- [ ] blog-content/gohugoio-hugo — gohugoio/hugo
-- [ ] blog-content/strapi-strapi — strapi/strapi
+- [x] blog-content/gohugoio-hugo — gohugoio/hugo
+- [x] blog-content/strapi-strapi — strapi/strapi
 
 ### data-science
 
-- [ ] data-science/pytorch-pytorch — pytorch/pytorch
-- [ ] data-science/tensorflow-tensorflow — tensorflow/tensorflow
+- [x] data-science/pytorch-pytorch — pytorch/pytorch
+- [x] data-science/tensorflow-tensorflow — tensorflow/tensorflow
 
 ### design-ui
 
-- [ ] design-ui/ant-design-ant-design — ant-design/ant-design
-- [ ] design-ui/shadcn-ui-ui — shadcn-ui/ui
+- [x] design-ui/ant-design-ant-design — ant-design/ant-design
+- [x] design-ui/shadcn-ui-ui — shadcn-ui/ui
 
 ### desktop-app
 
-- [ ] desktop-app/electron-electron — electron/electron
-- [ ] desktop-app/tauri-apps-tauri — tauri-apps/tauri
+- [x] desktop-app/electron-electron — electron/electron
+- [x] desktop-app/tauri-apps-tauri — tauri-apps/tauri
 
 ### devops-infra
 
-- [ ] devops-infra/casey-just — casey/just
-- [ ] devops-infra/kubernetes-kubernetes — kubernetes/kubernetes
-- [ ] devops-infra/netdata-netdata — netdata/netdata
+- [x] devops-infra/casey-just — casey/just
+- [x] devops-infra/kubernetes-kubernetes — kubernetes/kubernetes
+- [x] devops-infra/netdata-netdata — netdata/netdata
 
 ### education-edtech
 
-- [ ] education-edtech/ankitects-anki — ankitects/anki
-- [ ] education-edtech/freecodecamp-freecodecamp — freeCodeCamp/freeCodeCamp
+- [x] education-edtech/ankitects-anki — ankitects/anki
+- [x] education-edtech/freecodecamp-freecodecamp — freeCodeCamp/freeCodeCamp
 
 ### finance-trading
 
-- [ ] finance-trading/freqtrade-freqtrade — freqtrade/freqtrade
-- [ ] finance-trading/openbb-finance-openbb — OpenBB-finance/OpenBB
+- [x] finance-trading/freqtrade-freqtrade — freqtrade/freqtrade
+- [x] finance-trading/openbb-finance-openbb — OpenBB-finance/OpenBB
 
 ### game-dev
 
-- [ ] game-dev/bevyengine-bevy — bevyengine/bevy
-- [ ] game-dev/godotengine-godot — godotengine/godot
+- [x] game-dev/bevyengine-bevy — bevyengine/bevy
+- [x] game-dev/godotengine-godot — godotengine/godot
 
 ### mobile-app
 
-- [ ] mobile-app/flutter-flutter — flutter/flutter
-- [ ] mobile-app/react-react-native — react/react-native
+- [x] mobile-app/flutter-flutter — flutter/flutter
+- [x] mobile-app/react-react-native — react/react-native
 
 ### open-source-tooling
 
-- [ ] open-source-tooling/cli-cli — cli/cli
-- [ ] open-source-tooling/nektos-act — nektos/act
+- [x] open-source-tooling/cli-cli — cli/cli
+- [x] open-source-tooling/nektos-act — nektos/act
 
 ### productivity
 
-- [ ] productivity/appflowy-io-appflowy — AppFlowy-IO/AppFlowy
-- [ ] productivity/n8n-io-n8n — n8n-io/n8n
+- [x] productivity/appflowy-io-appflowy — AppFlowy-IO/AppFlowy
+- [x] productivity/n8n-io-n8n — n8n-io/n8n
 
 ### security
 
-- [ ] security/aquasecurity-trivy — aquasecurity/trivy
-- [ ] security/hashicorp-vault — hashicorp/vault
+- [x] security/aquasecurity-trivy — aquasecurity/trivy
+- [x] security/hashicorp-vault — hashicorp/vault
 
 ### video
 
-- [ ] video/ffmpeg-ffmpeg — FFmpeg/FFmpeg
-- [ ] video/obsproject-obs-studio — obsproject/obs-studio
+- [x] video/ffmpeg-ffmpeg — FFmpeg/FFmpeg
+- [x] video/obsproject-obs-studio — obsproject/obs-studio
 
 ### web-app
 
-- [ ] web-app/react-react — react/react
-- [ ] web-app/sveltejs-kit — sveltejs/kit
-- [ ] web-app/vercel-next.js — vercel/next.js
+- [x] web-app/react-react — react/react
+- [x] web-app/sveltejs-kit — sveltejs/kit
+- [x] web-app/vercel-next.js — vercel/next.js

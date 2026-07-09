@@ -16,9 +16,13 @@ added_date: 2026-07-09
 
 Declarative, component-based UI library for web (and native via React Native) — the de facto standard with the largest ecosystem of any frontend stack. Function components, hooks, and Server Components define the component model the rest of that ecosystem builds on.
 
-## Personal Notes
+## Reception
 
-- The safe default when ecosystem breadth and hiring pool matter — but don't start bare: Create React App is deprecated, and react.dev steers new projects to a framework (Next.js, React Router framework mode, Expo) or Vite for a plain SPA. Since the 2026 React Foundation move the repo lives at react/react; old facebook/react links redirect.
-- React Compiler 1.0 (stable since Oct 2025) makes hand-written `useMemo`/`useCallback` mostly legacy in new code — but it silently skips components that violate the Rules of React, so keep `eslint-plugin-react-hooks` on to see what didn't get memoized.
-- Server Components are the sharpest edge: the `"use client"` boundary is a genuine mental-model shift and plenty of third-party libraries are still client-only — budget real migration time on existing codebases.
-- For content-heavy, low-interaction sites, [sveltejs/kit](https://github.com/sveltejs/kit) ships far less JavaScript; React earns its runtime weight when interaction density and ecosystem depth outrank bundle size.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The tracker's most-reacted threads are historical roadmap and release umbrellas rather than bug reports — the top items are the "React Fire" DOM-modernization plan ([react/react#13525](https://github.com/react/react/issues/13525), 3,584👍) and the React 16 RC and umbrella threads ([#10294](https://github.com/react/react/issues/10294), 3,555👍; [#8854](https://github.com/react/react/issues/8854), 1,206👍), all since closed.
+- The 2017 proposal to re-license the project drew heavy engagement ([#10191](https://github.com/react/react/issues/10191), 871👍) and is now closed, marking a licensing debate that has since been resolved.
+- The loudest still-open threads are long-running feature umbrellas — releasing Suspense ([#13206](https://github.com/react/react/issues/13206), 627👍) and an RFC for custom-element attributes/properties in React 19 ([#11347](https://github.com/react/react/issues/11347), 507👍).
+- Actively developed (last pushed 2026-07-08) against a large tracker of ~1,200 open issues and PRs, with 20 tagged releases through 2026-06-01; the README lists no adopters, so treat that as limited public signal.

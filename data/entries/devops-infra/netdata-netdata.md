@@ -16,9 +16,12 @@ added_date: 2026-07-09
 
 Zero-config, per-second observability agent for hosts and containers — one install gives auto-detected collectors, auto-generated dashboards, per-metric ML anomaly detection, and hundreds of stock alerts. Claims ~5% of one core / ~150MiB RAM per node, with a tiered on-disk engine (per-second → per-minute → per-hour) for retention.
 
-## Personal Notes
+## Reception
 
-- The fastest answer to "what is this box doing right now" — you get per-second metrics before you'd finish writing a Prometheus scrape config. It complements rather than replaces a fleet-wide stack: it exports to Prometheus/InfluxDB/Graphite for long-term storage.
-- Know the licensing split: the agent is GPLv3+, but the v2 dashboard UI is closed-source, served from a CDN, and nudges toward Netdata Cloud (optional, has a free tier). Anonymous telemetry is on by default — opt out at install time (`--disable-telemetry`) or via the `.opt-out-of-anonymous-statistics` file.
-- Default retention is modest by design; for longer history or many nodes, stream children to a parent node instead of fattening every agent. The stock alarm set is extensive and can be noisy — expect to silence a handful early on.
-- Newer releases ship an MCP server, so an agent's live metrics are queryable from Claude Code — same ecosystem as [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers).
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The loudest open grievance is UI-related — a request to disable the redesigned UI sits among the top-reacted open issues ([netdata/netdata#15640](https://github.com/netdata/netdata/issues/15640), 33👍) — while a Kafka-monitoring request is the single most-reacted item still open ([#4819](https://github.com/netdata/netdata/issues/4819), 38👍).
+- Most of the historically highest-voted asks have since shipped and been closed: Windows support ([#92](https://github.com/netdata/netdata/issues/92), 67👍), authentication ([#70](https://github.com/netdata/netdata/issues/70), 59👍), PostgreSQL collection ([#82](https://github.com/netdata/netdata/issues/82), 51👍), and configurable alerts ([#88](https://github.com/netdata/netdata/issues/88), 30👍).
+- Actively maintained on a fast cadence — 20 tagged releases at a ~13-day median gap, latest 2026-04-27 — against a moderate backlog of ~357 open issues (incl. PRs).

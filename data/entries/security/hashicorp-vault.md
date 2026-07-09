@@ -16,9 +16,13 @@ added_date: 2026-07-09
 
 Identity-based secrets management — short-lived dynamic credentials for databases and clouds, encryption as a service via the transit engine, and lease-based automatic revocation. Ships as a single Go binary with integrated Raft storage, so HA no longer needs an external Consul cluster.
 
-## Personal Notes
+## Reception
 
-- The reach-for once a team outgrows `.env` files and per-cloud secret stores — dynamic DB/AWS credentials that auto-revoke on lease expiry are the killer feature over static-key vaults. Heavy for small projects, though; day-2 ops (policies, upgrades, audit devices) are a real cost, and a managed cloud secret manager often covers plain KV needs.
-- Biggest operational gotcha: restarts leave Vault sealed. Configure auto-unseal against a cloud KMS from day one, or someone is hand-entering Shamir key shares at 3am.
-- License is BUSL 1.1 since 1.15 (now under IBM) — no longer OSI open source. If that matters, OpenBao is the Linux Foundation MPL fork; drift is still modest but growing.
-- On [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes), inject secrets via the Agent Injector or Vault Secrets Operator rather than wiring tokens by hand. Note the 2.0 line (2026-04) breaks unauthenticated rekey automation and drops mlock in containers — set `disable_mlock = true` before upgrading.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The two loudest open requests are long-standing auth and usability gaps: Yubikey as an auth backend ([hashicorp/vault#131](https://github.com/hashicorp/vault/issues/131), 210👍) and recursive key listing in the KV engine ([#5275](https://github.com/hashicorp/vault/issues/5275), 201👍).
+- Permission introspection and operations docs are recurring open asks — listing every secret path a user is authorized to view ([#5362](https://github.com/hashicorp/vault/issues/5362), 106👍) and documentation for backup and restore ([#5683](https://github.com/hashicorp/vault/issues/5683), 93👍) both remain unresolved.
+- Several heavily-upvoted requests have since shipped and are closed: Kubernetes secrets syncing ([#7364](https://github.com/hashicorp/vault/issues/7364), 114👍) and a Let's Encrypt / ACME secret engine ([#4950](https://github.com/hashicorp/vault/issues/4950), 102👍).
+- Maintenance is steady — 20 tracked releases at a median of 15 days apart, latest 2026-06-17 — though the tracker carries a large backlog (~1,523 open issues and PRs).

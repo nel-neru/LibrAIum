@@ -25,9 +25,14 @@ gh auth login
 
 - `gh auth token` prints a token for scripting; `gh api repos/<owner>/<repo>` reaches the raw API.
 
-## Personal Notes
+## Reception
 
-- The scripting backbone for repo automation: human-oriented output isn't stable across versions, so scripts should go through `--json ... --jq` (or `--template`), and `gh api --paginate` fills every gap the subcommands leave.
-- In CI it's preinstalled on Actions runners — just export `GH_TOKEN` — but the built-in `GITHUB_TOKEN` won't trigger downstream workflows, so release automation that must kick off other pipelines needs a PAT or GitHub App token.
-- `gh extension install` makes it a platform (any repo named `gh-*` becomes a subcommand), and `gh alias` covers the small stuff. Honest limit: GitHub-only by design — `glab` is the GitLab counterpart — and it superseded `hub` as a standalone tool rather than a git proxy.
-- Wrap the team's repetitive invocations (`gh pr create --fill`, `gh release create` with assets) into [casey/just](https://github.com/casey/just) recipes so the flags live in the repo, not in shell history.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- Multi-account support is the loudest open request by a wide margin — a long-standing issue asking to allow multiple account credentials leads the tracker ([cli/cli#326](https://github.com/cli/cli/issues/326), 496👍) and remains open.
+- Packaging and auth friction recur in the top issues: an expired GPG key blocking install/update is still open ([#9569](https://github.com/cli/cli/issues/9569), 196👍), while earlier pain around SAML-enforced access was addressed with docs ([#2661](https://github.com/cli/cli/issues/2661), 233👍, closed) and GitHub Enterprise support has since shipped ([#273](https://github.com/cli/cli/issues/273), 301👍, closed).
+- Several PR/workflow ergonomics remain open feature requests — a default push target for `pr create` ([#1718](https://github.com/cli/cli/issues/1718), 176👍), reading notifications ([#659](https://github.com/cli/cli/issues/659), 171👍), and `gh pr push` ([#2189](https://github.com/cli/cli/issues/2189), 159👍).
+- Maintenance is steady: 20 releases at a ~14-day median cadence (latest 2026-07-02), against a large backlog of ~1,033 open issues and PRs.
+- No adopters are named in the README, so downstream-usage signal is limited beyond the issue tracker.

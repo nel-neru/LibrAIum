@@ -16,9 +16,13 @@ added_date: 2026-07-09
 
 Open-source Notion alternative — docs, wikis, and kanban/grid databases — built with Flutter on a Rust core, shipping native on macOS/Windows/Linux plus iOS/Android. Data lives on-device by default; sync via AppFlowy Cloud or a self-hosted backend is strictly optional.
 
-## Personal Notes
+## Reception
 
-- The pick when you want Notion's block-and-database model but the data must stay yours. Since v0.8.7 the AI features run free against local models through [ollama/ollama](https://github.com/ollama/ollama), and v0.9.5 added a "Vault" workspace that keeps everything — AI included — fully offline.
-- Local-first does not mean easy self-hosted sync: the AppFlowy-Cloud backend is a ~10-service docker-compose stack (Postgres, Redis, MinIO, GoTrue auth, nginx, AI, search, worker). Budget real ops time, or accept the hosted cloud for multi-device sync.
-- Know the limits going in: the maintainers themselves don't claim Notion parity in features or polish yet, Android ARMv7 is unsupported, and the AGPL-3.0 license matters if you ever plan to embed or fork it into a product.
-- Also worth reading as the flagship large-scale [flutter/flutter](https://github.com/flutter/flutter) desktop app — the Flutter-frontend-over-Rust-core split is a solid reference architecture for cross-platform Dart work.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The two most-reacted issues on the tracker both asked for a browser version — a web interface ([AppFlowy-IO/AppFlowy#89](https://github.com/AppFlowy-IO/AppFlowy/issues/89), 150👍) and running AppFlowy as a web app ([#313](https://github.com/AppFlowy-IO/AppFlowy/issues/313), 131👍) — and both are now closed.
+- Other early high-demand asks have likewise been closed: Neovim/Vim support ([#284](https://github.com/AppFlowy-IO/AppFlowy/issues/284), 86👍), Notion import ([#20](https://github.com/AppFlowy-IO/AppFlowy/issues/20), 73👍), a collaboration/self-host server ([#714](https://github.com/AppFlowy-IO/AppFlowy/issues/714), 67👍), and a Docker image ([#13](https://github.com/AppFlowy-IO/AppFlowy/issues/13), 46👍).
+- Data portability is the loudest still-open request — bulk export of all Markdown files ([#3334](https://github.com/AppFlowy-IO/AppFlowy/issues/3334), 46👍).
+- Actively released — 20 tagged releases at a median 12-day cadence (latest 2026-06-23) — against a large backlog of ~990 open issues (includes PRs).

@@ -16,9 +16,12 @@ added_date: 2026-07-09
 
 Self-hosted URL shortener in PHP + MySQL that keeps every short link and its click log on your own server. The long-standing backbone for affiliate link cloaking — branded short domains, per-link click/referrer/geo stats, and a plugin ecosystem covering redirect codes, expiry, and A/B rotation.
 
-## Personal Notes
+## Reception
 
-- Reach for it when cloaked affiliate links on your own domain matter more than dashboards — you own the click history outright, and swapping a dead offer is a one-field edit instead of republishing content.
-- Click-tracking gotcha: redirects are hardcoded 301 (`yourls_redirect_shorturl`), so browsers cache them and repeat clicks go uncounted. Swap to 302/307 via a plugin on the `redirect_code` filter when accurate counts matter more than the permanent-redirect SEO signal.
-- Auth is username/password pairs in `config.php` — no roles, no per-user link ownership. Fine solo; the wrong tool for handing dashboards to a team or clients. Also budget for the log table: one row per click, so prune it or stats pages crawl at high volume.
-- Needs PHP 8.1+ and MySQL (1.10.x); most affiliate workflow lives in community plugins, so vet them — quality varies widely. Pairs well with [gohugoio/hugo](https://github.com/gohugoio/hugo): point a content site's outbound links at your YOURLS domain and link edits never trigger a rebuild.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases; each claim carries its source. Last gathered: 2026-07-09. -->
+
+- Mature but slow-moving: 20 tagged releases at a ~164-day median gap (latest 2026-05-23) over a small ~50-issue backlog — a stable, lightly-maintained project rather than a fast-evolving one.
+- Multi-user / access control is the community's long-standing ask — the "user management" wishlist thread ([YOURLS/YOURLS#1255](https://github.com/YOURLS/YOURLS/issues/1255)) has stayed open for years, confirming it stays single-admin by design.
+- Scale caveats surface on the tracker: `YOURLS_UNIQUE_URLS` "slows down large instances" ([#3793](https://github.com/YOURLS/YOURLS/issues/3793)) and pruning old redirect/click rows is a recurring request ([#2123](https://github.com/YOURLS/YOURLS/issues/2123)) — plan for click-log growth at volume.
+- Firmly MySQL/PDO + PHP: PostgreSQL support ([#2487](https://github.com/YOURLS/YOURLS/issues/2487)) and a front-end rewrite ([#1618](https://github.com/YOURLS/YOURLS/issues/1618)) are requested but unshipped.

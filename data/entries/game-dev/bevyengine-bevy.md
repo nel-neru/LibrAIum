@@ -16,9 +16,13 @@ added_date: 2026-07-09
 
 Data-driven game engine in Rust built around a fast parallel ECS, with a wgpu renderer and a plugin architecture where the engine's own features are themselves plugins. Targets Windows/macOS/Linux plus Web, iOS and Android from one codebase.
 
-## Personal Notes
+## Reception
 
-- The default answer to "a game, in Rust" — systems are plain functions with dependency injection via parameters, and swapping engine subsystems is genuinely easy because everything is a plugin.
-- Pre-1.0 on purpose: a breaking release lands roughly every 3 months (0.19 shipped 2026-06). Budget a migration-guide pass per upgrade, and expect third-party plugins (physics, egui integrations) to lag each new version by weeks.
-- Workflow is code-first — the official editor is still in the prototypes repo as of 0.19. If a mature scene editor matters today, [godotengine/godot](https://github.com/godotengine/godot) is the honest answer; Bevy compensates with asset hot-reloading out of the box.
-- Iteration gotcha: enable the `dynamic_linking` cargo feature and a fast linker for debug builds, or Rust compile times dominate the edit-run loop.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- A first-party editor is the single loudest ask on the tracker by a wide margin — the top-reacted issue requests a Bevy Editor ([bevyengine/bevy#85](https://github.com/bevyengine/bevy/issues/85), 587👍) and is still open, alongside a related Editor-Ready UI request ([#254](https://github.com/bevyengine/bevy/issues/254), 221👍, since closed).
+- Cross-platform reach was an early high-demand theme that has largely shipped: Web Support ([#88](https://github.com/bevyengine/bevy/issues/88), 259👍) and Android Support ([#86](https://github.com/bevyengine/bevy/issues/86), 152👍) are both closed, as is the much-requested entity-entity relations feature ([#3742](https://github.com/bevyengine/bevy/issues/3742), 100👍).
+- Remaining open requests cluster around runtime and rendering gaps — frame-rate limiting ([#1343](https://github.com/bevyengine/bevy/issues/1343), 95👍) and OpenXR/VR rendering ([#115](https://github.com/bevyengine/bevy/issues/115), 89👍) are both still open.
+- Actively developed on a rapid release cadence (20 tagged releases, latest 2026-06-18, ~11 days between releases at the median), but carrying a very large backlog (~3,305 open issues incl. PRs), so expect frequent churn rather than long-stable APIs.

@@ -16,9 +16,13 @@ added_date: 2026-07-09
 
 Open-source investment research platform: one Python interface over 30+ market-data providers — equities, options, crypto, macro — with standardized schemas and pandas output. The open Platform is the data layer; the Workspace UI on top is proprietary.
 
-## Personal Notes
+## Reception
 
-- The free Bloomberg-substitute data layer: `pip install openbb`, one standardized call like `obb.equity.price.historical(provider="yfinance")`, swap `provider=` to change sources, `.to_df()` straight into pandas. Ignore Terminal-era tutorials — v4 rewrote everything, and the CLI is a separate `openbb-cli` package.
-- Unified interface is not unified data: out of the box only keyless providers (yfinance, SEC, CBOE) answer, deeper fundamentals/news coverage (FMP, Intrinio, Benzinga) needs paid API keys, and returned fields still vary by provider despite the standard schema.
-- License gotcha: MIT until May 2024, AGPL-3.0 since — the network-copyleft clause bites if it sits inside a hosted product (OpenBB sells a commercial license for that case).
-- Ships a first-party `mcp_server` extension that exposes every endpoint as agent tools — the natural way to feed market data to agents, same ecosystem as [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers). It is a research/data layer, not a backtester or execution engine — bring your own.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The loudest still-open request on the tracker is broker/execution integration — a call to add Interactive Brokers support ([OpenBB-finance/OpenBB#343](https://github.com/OpenBB-finance/OpenBB/issues/343), 11👍) — pointing to a gap between the data-layer focus and users who want order routing alongside research.
+- The most-reacted issues otherwise cluster around early installation and dependency friction, especially on macOS: a `sentencepiece` wheel that wouldn't resolve ([#34](https://github.com/OpenBB-finance/OpenBB/issues/34), 11👍), `scipy` version pinning ([#25](https://github.com/OpenBB-finance/OpenBB/issues/25)), and several macOS setup threads ([#21](https://github.com/OpenBB-finance/OpenBB/issues/21), [#42](https://github.com/OpenBB-finance/OpenBB/issues/42), [#70](https://github.com/OpenBB-finance/OpenBB/issues/70)) — all now closed.
+- Actively maintained with a steady release rhythm: 20 tagged releases at a ~28-day median cadence (latest 2026-04-25) against a moderate ~71 open issues/PRs.
+- No adopters are named in the README, so third-party adoption is limited public signal.
