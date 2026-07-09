@@ -1,8 +1,8 @@
 // compare_repos: side-by-side decision matrix over 2-5 library entries (or a
-// whole category shelf). Pure local reads — the owner's Personal Notes travel
-// verbatim, because they are the point of comparing from YOUR shelf instead
-// of asking the internet.
-import { firstSummaryLine, normalizeGithubUrl } from "./store.js";
+// whole category shelf). Pure local reads — each entry's Reception (third-party
+// signal) and any firsthand Personal Notes travel verbatim, because that curated
+// take is the point of comparing from YOUR shelf instead of asking the internet.
+import { firstSummaryLine, normalizeGithubUrl, bodySection } from "./store.js";
 
 // Same matching semantics as get_repo_details: entry id ('category/slug'),
 // 'owner/repo' full name, or a GitHub URL.
@@ -24,22 +24,6 @@ export function resolveSelector(entries, selector) {
   );
 }
 
-// The '## Personal Notes' section content, verbatim (heading dropped — the
-// field is already named after it). Null when the section is missing.
-export function personalNotesSection(body) {
-  const text = body ?? "";
-  const idx = text.toLowerCase().indexOf("## personal notes");
-  if (idx === -1) return null;
-  const lines = text.slice(idx).split(/\r?\n/).slice(1);
-  const out = [];
-  for (const line of lines) {
-    if (/^#{1,2}\s/.test(line)) break; // next section ends the notes
-    out.push(line);
-  }
-  const section = out.join("\n").trim();
-  return section || null;
-}
-
 export function compare(selected) {
   const columns = selected.map((e) => ({
     id: e.id,
@@ -51,7 +35,8 @@ export function compare(selected) {
     added_date: e.meta.added_date ?? null,
     tags: e.meta.tags ?? [],
     summary: firstSummaryLine(e.body),
-    personal_notes: personalNotesSection(e.body),
+    reception: bodySection(e.body, "reception"),
+    personal_notes: bodySection(e.body, "personal notes"),
   }));
 
   const tagSets = columns.map((c) => new Set(c.tags.map((t) => t.toLowerCase())));

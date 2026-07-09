@@ -20,6 +20,7 @@ import {
   normalizeTags,
   saveNewEntry,
   firstSummaryLine,
+  bodySection,
   loadCategories,
   resolveDataDir,
   summarize,
@@ -93,6 +94,19 @@ test("body handling: leading blank lines stripped, bare --- kept as body text", 
 test("firstSummaryLine skips headings, blanks and horizontal rules", () => {
   assert.equal(firstSummaryLine("# H1\n\n---\n\nThe summary.\nSecond."), "The summary.");
   assert.equal(firstSummaryLine("\n\n# only headings\n"), "");
+});
+
+test("bodySection extracts a '## <heading>' block verbatim, case-insensitively, null when absent/empty", () => {
+  const body =
+    "# x\n\nSummary.\n\n## Reception\n\n- Issues cite slow cold-start.\n- Adopters include acme.\n\n## Personal Notes\n\n- Firsthand only.\n";
+  // stops at the next level-1/2 heading, drops the heading line, trims
+  assert.equal(bodySection(body, "reception"), "- Issues cite slow cold-start.\n- Adopters include acme.");
+  assert.equal(bodySection(body, "personal notes"), "- Firsthand only.");
+  // heading match is case-insensitive; deeper (###) sub-headings stay inside
+  assert.equal(bodySection("# x\n\n## Reception\n\n### Complaints\n\n- slow.\n", "Reception"), "### Complaints\n\n- slow.");
+  // absent section and an empty section both return null
+  assert.equal(bodySection("# x\n\nSummary only.\n", "reception"), null);
+  assert.equal(bodySection("# x\n\n## Reception\n\n\n", "reception"), null);
 });
 
 test("normalizeTags trims and drops empty tags like the desktop AddRepo path", () => {

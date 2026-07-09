@@ -17,6 +17,7 @@ import {
   saveNewEntry,
   fetchGithubRepo,
   summarize,
+  bodySection,
   today,
   computeStatus,
 } from "./lib/store.js";
@@ -74,11 +75,12 @@ server.registerTool(
   {
     title: "Get repository details",
     description:
-      "Full details of one library entry — metadata plus the Markdown body including the user's " +
-      "Personal Notes (firsthand experience, gotchas, good pairings). Accepts an entry id " +
-      "('category/owner-repo'), an 'owner/repo' name, or a GitHub URL. For stale/archived " +
-      "entries the response carries alternatives: active same-category entries sharing tags " +
-      "(the shelf's suggested successors; empty array = none shelved yet).",
+      "Full details of one library entry — metadata plus the Markdown body including its " +
+      "Reception (reception: third-party signal — recurring complaints, notable adopters, known " +
+      "limitations, migration signal) and, where the owner has used it, firsthand Personal Notes. " +
+      "Accepts an entry id ('category/owner-repo'), an 'owner/repo' name, or a GitHub URL. For " +
+      "stale/archived entries the response carries alternatives: active same-category entries " +
+      "sharing tags (the shelf's suggested successors; empty array = none shelved yet).",
     inputSchema: { id_or_url: z.string() },
   },
   async ({ id_or_url }) => {
@@ -97,7 +99,14 @@ server.registerTool(
         (fullName && e.meta.full_name.toLowerCase() === fullName)
     );
     if (!entry) return jsonError(`no entry found for "${id_or_url}"`);
-    const result = { ...summarize(entry), meta: entry.meta, body: entry.body };
+    const result = {
+      ...summarize(entry),
+      meta: entry.meta,
+      body: entry.body,
+      // Convenience projection of the '## Reception' section so callers need
+      // not parse the Markdown body; null when none has been gathered yet.
+      reception: bodySection(entry.body, "reception"),
+    };
     // Parity with the GUI's "what replaces this stale repo?" — attached at
     // exactly the decision moment; an empty array means no successor shelved.
     const status = entry.meta.status ?? "active";
@@ -119,8 +128,9 @@ server.registerTool(
     title: "Suggest repositories for a new project",
     description:
       "Given a description of a project the user wants to build, rank the library's repositories " +
-      "by fit and return the best candidates with reasoning, concrete adoption steps, and the " +
-      "owner's firsthand Personal Notes bullets (personal_notes; null when none are recorded). " +
+      "by fit and return the best candidates with reasoning, concrete adoption steps, each entry's " +
+      "Reception (reception: third-party signal — complaints, adopters, limitations), and any " +
+      "firsthand Personal Notes bullets (personal_notes; null when none are recorded). " +
       "Use this when the user asks 'what should I use for X?'.",
     inputSchema: {
       project_description: z
@@ -188,7 +198,8 @@ server.registerTool(
     title: "Compare library entries side by side",
     description:
       "Decision matrix over 2-5 library entries (or a whole category shelf): aligned metadata, " +
-      "each entry's full Personal Notes verbatim, shared vs unique tags, and computed decision " +
+      "each entry's Reception verbatim (reception: third-party signal — complaints, adopters, " +
+      "limitations) plus any firsthand Personal Notes, shared vs unique tags, and computed decision " +
       "hints (stale/archived flags, star leader, push freshness). Use when the user weighs " +
       "options — 'LangGraph vs Dify?'. Pass exactly one of entries or category.",
     inputSchema: {
@@ -329,7 +340,7 @@ server.registerResource(
   }),
   {
     title: "LibrAIum entry",
-    description: "A curated repository entry (frontmatter + summary + your Personal Notes) as raw Markdown.",
+    description: "A curated repository entry (frontmatter + summary + its Reception, and any firsthand Personal Notes) as raw Markdown.",
     mimeType: "text/markdown",
   },
   (uri, { category, slug }) => {
