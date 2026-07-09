@@ -267,10 +267,13 @@ server.registerTool(
       github_url: z.string(),
       category: z.string().describe("category id, e.g. 'ai-agent'"),
       tags: z.array(z.string()).default([]),
-      personal_notes: z.string().optional().describe("Markdown notes: why it's worth shelving"),
+      reception: z
+        .string()
+        .optional()
+        .describe("Markdown Reception notes — third-party signal (complaints, adopters, limitations); left as a placeholder if omitted"),
     },
   },
-  async ({ github_url, category, tags, personal_notes }) => {
+  async ({ github_url, category, tags, reception }) => {
     try {
       const { fullName } = normalizeGithubUrl(github_url);
       const dup = findDuplicate(DATA_DIR, fullName);
@@ -315,7 +318,7 @@ server.registerTool(
         added_date: today(),
       };
       const repoName = gh.full_name.split("/").pop();
-      const body = `# ${repoName}\n\n${gh.description ?? "(no description)"}\n\n## Personal Notes\n\n${personal_notes ?? "- "}\n`;
+      const body = `# ${repoName}\n\n${gh.description ?? "(no description)"}\n\n## Reception\n\n${reception ?? "- "}\n`;
       const entry = saveNewEntry(DATA_DIR, meta, body);
       return json({ added: entry.id, ...summarize(entry) });
     } catch (e) {

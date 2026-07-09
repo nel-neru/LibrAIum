@@ -236,7 +236,7 @@
           <input id="edit-tags" style="width: 100%;" bind:value={editTags} />
         </div>
       </div>
-      <label for="edit-body">Body — summary &amp; Personal Notes (Markdown)</label>
+      <label for="edit-body">Body — summary &amp; Reception (Markdown)</label>
       <textarea id="edit-body" rows="18" style="width: 100%;" bind:value={editBody}></textarea>
       <div class="row" style="gap: 8px; margin-top: 14px;">
         <button class="primary" onclick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</button>

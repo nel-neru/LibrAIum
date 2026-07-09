@@ -38,7 +38,7 @@ export GITHUB_TOKEN=$(gh auth token)
 The skeletons carry a placeholder note that `/curate-review` would flag. For **each** new entry, follow the `entry-authoring` skill:
 
 - Read the repo's README (WebFetch) and write a ≤2-sentence summary replacing the raw GitHub description.
-- Add 2–4 honest Personal Notes bullets — doc-derived guidance is fine, fabricated firsthand experience is not; cross-link related library entries.
+- Add 2–5 attributive `## Reception` bullets — third-party signal (complaints, adopters, limitations, migration, maturity), every claim sourced; never fabricated firsthand experience. Cross-link related library entries. See the `entry-authoring` skill's "Reception voice".
 - Add 3–6 kebab-case tags, reusing the existing vocabulary (`node scripts/curation-report.mjs` shows it) before minting new ones.
 - Optionally add a `## Setup` section with verified install commands.
 

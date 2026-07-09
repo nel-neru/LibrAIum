@@ -200,7 +200,7 @@ const handlers = {
       stars: 4321, language: "TypeScript",
       last_github_push: now, last_checked: now,
       status: "active", source: "manual", added_date: now,
-    }, `# ${full.split("/")[1]}\n\nFetched description would land here.\n\n## Personal Notes\n\n${notes ?? "-"}`);
+    }, `# ${full.split("/")[1]}\n\nFetched description would land here.\n\n## Reception\n\n${notes ?? "-"}`);
     entries.push(e);
     return e;
   },

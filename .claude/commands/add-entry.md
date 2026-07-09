@@ -46,7 +46,7 @@ House-style essentials:
 - Frontmatter fields exactly as in `EntryMeta` (`src-tauri/src/models.rs`) — no invented keys. Set `last_checked` and `added_date` to today, `source: manual`, `status: active` unless GitHub reports the repo archived.
 - Body starts with `# <repo-short-name>`, then a **summary of at most 2 sentences** — what it is and why it earns a shelf spot. No marketing copy.
 - Optional `## Setup` section (after the summary): 2-4 real install/run commands captured from the README while you're already reading it — a fenced ```bash block. The MCP `adoptionSteps` surfaces these instead of a generic clone. Never invent flags/ports; omit the section rather than guess.
-- `## Personal Notes` — 2–4 concrete, firsthand-style bullets: when to reach for it, gotchas discovered in the docs/issues, and pairings with existing library entries (as Markdown links). Honest about weaknesses. Never restate the README.
+- `## Reception` — 2–5 attributive bullets of third-party signal: recurring complaints from high-reaction issues (link them), maintainer-acknowledged limitations, named adopters (with links), migration signal, and maturity/maintenance. Third-person, every claim sourced — never first person or fabricated experience, never a README restatement. Cross-link related library entries. See the `entry-authoring` skill's "Reception voice". (Keep `## Personal Notes` only where you've genuinely used it firsthand.)
 - Tags: 3–6, kebab-case, reuse-first — check what already exists with `grep -rh "^tags:" data/entries` and only mint a new tag when nothing fits. Mix technology tags (`rust`, `python`) with concept tags (`rag`, `task-runner`).
 
 ## 5. Validate and show the result
@@ -57,4 +57,4 @@ node scripts/validate-data.mjs --data-dir data
 
 (`--data-dir data` pins validation to THIS repo's library — an exported `LIBRAIUM_DATA_DIR` would otherwise silently validate a different one.)
 
-Fix anything it reports. Then show the user the new file as a diff (`git diff` / `git status` for the untracked file, plus the full file content) and ask them to confirm the Personal Notes match their actual experience — they are *their* notes, so invite edits. Do **not** commit; leave that to the user.
+Fix anything it reports. Then show the user the new file as a diff (`git diff` / `git status` for the untracked file, plus the full file content) and ask them to sanity-check the Reception claims and their sourcing — invite edits. Do **not** commit; leave that to the user.
