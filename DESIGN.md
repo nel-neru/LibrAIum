@@ -178,8 +178,12 @@ squared paper, softly rounded.
 - **Status stamp** — uppercase mono 10px, letterspaced, 1px solid
   currentColor border, 3px radius, wash background per §2. Like a due-date
   stamp: labeled, never color-only.
-- **Ex-libris brand block (sidebar)** — eyebrow "EX LIBRIS" (label spec) above
-  "LibrAIum" in serif 22/500, finished with a thin double rule.
+- **Ex-libris brand block (sidebar)** — eyebrow "EX LIBRIS" above "LibrAIum" in
+  serif 22/500, finished with a thin double rule. The bookplate eyebrow and the
+  sidebar section eyebrows use **wider** tracking than §3's 0.08em base (≈0.18em
+  on the ex-libris mark, ≈0.14em on section titles) — a deliberate letterpress
+  flourish reserved to the sidebar's short uppercase marks, not a license to
+  widen labels elsewhere.
 - **Buttons** — default: paper bg + hairline; primary: `--ink` fill with
   `--ink-contrast` text (ink, not accent — accent fills are reserved for
   nothing); danger: red text + tinted border, filled red only on the final

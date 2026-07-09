@@ -16,15 +16,24 @@
   let hasFilters = $derived(
     app.filters.query || app.filters.category || app.filters.tag || app.filters.status || app.filters.minStars !== ""
   );
+
+  // Tags are a primary axis of the library; make them first-class in the filter
+  // bar (they were previously reachable only via a sidebar/card chip).
+  let allTags = $derived.by(() => {
+    const s = new Set();
+    for (const e of app.entries) for (const t of e.meta.tags ?? []) s.add(t);
+    return [...s].sort((a, b) => a.localeCompare(b));
+  });
 </script>
 
 <header class="page-head">
   <h2 class="page-title">Library</h2>
   <div class="row" style="flex-wrap: wrap;">
     <input
+      id="library-search"
       class="grow"
       style="min-width: 220px;"
-      placeholder="Search name, tags, language, summary…"
+      placeholder="Search name, tags, language, summary…  ( / )"
       bind:value={app.filters.query}
       oninput={onFilterChange}
     />
@@ -32,6 +41,12 @@
       <option value="">All categories</option>
       {#each app.categories as c}
         <option value={c.id}>{c.icon} {c.name}</option>
+      {/each}
+    </select>
+    <select bind:value={app.filters.tag} onchange={onFilterChange} aria-label="Filter by tag">
+      <option value="">Any tag</option>
+      {#each allTags as t}
+        <option value={t}>{t}</option>
       {/each}
     </select>
     <select bind:value={app.filters.status} onchange={onFilterChange}>
@@ -48,11 +63,6 @@
       bind:value={app.filters.minStars}
       oninput={onFilterChange}
     />
-    {#if app.filters.tag}
-      <button class="chip" onclick={() => { app.filters.tag = ""; runSearch(); }}>
-        tag: {app.filters.tag} ✕
-      </button>
-    {/if}
     {#if hasFilters}
       <button class="small" onclick={clearFilters}>Clear</button>
     {/if}

@@ -26,6 +26,18 @@ export function buildReport(entries, categories, { today: todayStr = today(), re
     }
   }
 
+  // Reception freshness, from the machine-readable reception_gathered date.
+  // Reception is the primary layer and time-sensitive, so its rot is tracked
+  // like metadata staleness: missing = never gathered, stale = > 180 days old.
+  const RECEPTION_STALE_DAYS = 180;
+  const reception_freshness = { fresh: [], stale: [], missing: [] };
+  for (const e of entries) {
+    const g = e.meta.reception_gathered;
+    if (!g) reception_freshness.missing.push(e.id);
+    else if (ageDays(g) > RECEPTION_STALE_DAYS) reception_freshness.stale.push(e.id);
+    else reception_freshness.fresh.push(e.id);
+  }
+
   const count = (fn) =>
     entries.reduce((m, e) => {
       const k = fn(e);
@@ -82,6 +94,7 @@ export function buildReport(entries, categories, { today: todayStr = today(), re
     singleton_tags,
     near_synonym_pairs,
     succession,
+    reception_freshness,
     reception_review: receptionReview,
   };
 }
@@ -105,8 +118,14 @@ function printHuman(r) {
   for (const c of r.succession.covered) console.log(`  covered  : ${c.id} -> ${c.alternatives.join(", ")}`);
   for (const u of r.succession.uncovered) console.log(`  UNCOVERED: ${u} — shelf hole, no active shared-tag alternative`);
   if (!r.succession.covered.length && !r.succession.uncovered.length) console.log("  (no stale/archived entries)");
+  const rf = r.reception_freshness;
   console.log(
-    `reception: ${r.reception_review ? `${r.reception_review.gathered}/${r.reception_review.total} gathered` : "n/a (.claude/reception-review.md not found)"}`
+    `reception freshness (reception_gathered): ${rf.fresh.length} fresh | ${rf.stale.length} stale (>180d) | ${rf.missing.length} missing`
+  );
+  if (rf.stale.length) console.log(`  stale  : ${ids(rf.stale)}`);
+  if (rf.missing.length) console.log(`  missing: ${ids(rf.missing)}`);
+  console.log(
+    `reception tracker: ${r.reception_review ? `${r.reception_review.gathered}/${r.reception_review.total} gathered` : "n/a (.claude/reception-review.md not found)"}`
   );
 }
 

@@ -17,19 +17,48 @@ export const app = $state({
   busy: { refreshAll: false, refreshOne: false, push: false },
   error: "",
   toast: "",
+  toastKind: "info", // info | error — drives aria-live politeness + persistence
+  // Ambient git state so "you have uncommitted changes" is visible everywhere,
+  // not only inside Settings. Refreshed on bootstrap and after every mutation.
+  git: { is_repo: false, branch: "", changes: 0, has_remote: false, ahead: 0 },
 });
 
 let toastTimer;
-export function showToast(msg) {
+export function showToast(msg, kind = "info") {
   app.toast = msg;
+  app.toastKind = kind;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (app.toast = ""), 3500);
+  // Errors are the messages a user must actually read — give them longer, and
+  // they can be dismissed. Success/info stays a brief transient rise.
+  toastTimer = setTimeout(() => (app.toast = ""), kind === "error" ? 9000 : 3500);
+}
+
+export function dismissToast() {
+  clearTimeout(toastTimer);
+  app.toast = "";
 }
 
 export function fail(e) {
   const msg = typeof e === "string" ? e : (e?.message ?? String(e));
   app.error = msg;
-  showToast(`⚠ ${msg}`);
+  showToast(`⚠ ${msg}`, "error");
+}
+
+// Best-effort: the git panel is informational, so a failure here must never
+// break a flow — it just leaves the ambient badge stale until the next refresh.
+export async function refreshGitStatus() {
+  try {
+    const s = await api.gitStatus();
+    app.git = {
+      is_repo: s.is_repo,
+      branch: s.branch,
+      changes: s.changes.length,
+      has_remote: s.has_remote,
+      ahead: s.ahead,
+    };
+  } catch {
+    /* leave last-known git state */
+  }
 }
 
 // list_entries now reports files it had to skip — a silently shrunken
@@ -55,6 +84,7 @@ export async function bootstrap() {
     app.settings = settings;
     app.dataDir = dataDir;
     notifyEntryWarnings(warnings);
+    refreshGitStatus();
   } catch (e) {
     fail(e);
   } finally {
@@ -68,6 +98,7 @@ export async function reloadEntries() {
     app.entries = entries;
     notifyEntryWarnings(warnings);
     await runSearch();
+    refreshGitStatus(); // entry files just changed — update the dirty-state badge
   } catch (e) {
     fail(e);
   }

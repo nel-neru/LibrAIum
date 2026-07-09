@@ -249,14 +249,24 @@ label,
   background: var(--ink);
   color: var(--ink-contrast);
   padding: 9px 18px;
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   box-shadow: var(--shadow-overlay);
   z-index: 100;
   max-width: 70vw;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Wrap rather than truncate: errors (the messages a user most needs to read
+     in full — rate limits, rejected saves) are the ones most likely to exceed
+     one line. Cap height and scroll only in the pathological case. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 40vh;
+  overflow-y: auto;
+  line-height: 1.45;
+  cursor: pointer; /* click to dismiss */
   animation: toast-rise 200ms ease-out;
+}
+.toast.error {
+  border-left: 3px solid var(--danger);
+  text-align: left;
 }
 @keyframes toast-rise {
   from { opacity: 0; transform: translate(-50%, 6px); }

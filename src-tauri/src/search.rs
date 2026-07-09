@@ -105,6 +105,7 @@ mod tests {
                 status: status.into(),
                 source: "manual".into(),
                 added_date: None,
+                reception_gathered: None,
             },
             body: format!("# {full_name}\n\nA tool for things."),
         }

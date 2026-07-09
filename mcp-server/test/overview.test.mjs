@@ -53,6 +53,25 @@ test("overview: tag vocabulary is lowercased, counted, sorted by usage", () => {
   assert.deepEqual(o.tags, { rag: 2, cli: 1, rust: 1 });
 });
 
+test("overview: reception freshness counts missing (no date) and stale (>180d)", () => {
+  const withRecep = (fullName, gathered) => {
+    const e = entry(fullName);
+    if (gathered !== undefined) e.meta.reception_gathered = gathered;
+    return e;
+  };
+  const o = overview(
+    [
+      withRecep("x/fresh", "2999-01-01"), // far future → not stale
+      withRecep("x/stale", "2000-01-01"), // ancient → stale
+      withRecep("x/none"), // no gather date → missing
+    ],
+    CATEGORIES,
+    "/data"
+  );
+  assert.equal(o.totals.reception_missing, 1);
+  assert.equal(o.totals.reception_stale, 1);
+});
+
 test("overview: entries under a category id missing from the master are surfaced", () => {
   const o = overview([entry("x/lost", { category: "ghost" })], CATEGORIES, "/data");
   assert.deepEqual(o.orphaned_entries, ["ghost/x-lost"]);

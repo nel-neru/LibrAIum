@@ -11,6 +11,22 @@
   );
   let dirty = $state(false);
 
+  // Category colors must come from Flexoki accent scales (DESIGN.md §2/§11) so
+  // data-driven color never reintroduces neon. A constrained swatch replaces
+  // the native OS picker (which exposed the full sRGB gamut and ignored the
+  // token system). These are the confirmed Flexoki accent values, hue-ordered.
+  const PALETTE = [
+    "#AF3029", "#DA702C", "#BC5215", "#AD8301",
+    "#879A39", "#768D21", "#66800B", "#536907",
+    "#3AA99F", "#24837B", "#1C6C66", "#4385BE",
+    "#205EA6", "#8B7EC8", "#735EB5", "#5E409D",
+    "#CE5D97", "#A02F6F",
+  ];
+  function setColor(row, c) {
+    row.color = c;
+    touch();
+  }
+
   let counts = $derived.by(() => {
     const m = {};
     for (const e of app.entries) m[e.meta.category] = (m[e.meta.category] ?? 0) + 1;
@@ -79,13 +95,14 @@
 
 <header class="row" style="margin-bottom: 24px;">
   <div class="grow">
-    <h2 style="font-size: 26px; line-height: 32px;">Catalog</h2>
+    <h2 style="font-size: 26px; line-height: 32px;">Categories</h2>
     <span class="muted mono" style="font-size: 11px;">data/master/categories.yaml — ids become entry directories</span>
   </div>
   <button onclick={addRow}>+ Add category</button>
   <button class="primary" onclick={save} disabled={!dirty}>Save changes</button>
 </header>
 
+<div class="table-scroll">
 <table class="grid">
   <thead>
     <tr>
@@ -118,7 +135,22 @@
           />
         </td>
         <td><input style="width: 150px;" bind:value={row.name} oninput={touch} /></td>
-        <td><input type="color" style="width: 46px; padding: 2px;" bind:value={row.color} oninput={touch} /></td>
+        <td>
+          <div class="swatches" role="group" aria-label="Category color">
+            {#each PALETTE as c}
+              <button
+                type="button"
+                class="swatch"
+                class:sel={(row.color ?? "").toLowerCase() === c.toLowerCase()}
+                style="background: {c};"
+                title={c}
+                aria-label={c}
+                aria-pressed={(row.color ?? "").toLowerCase() === c.toLowerCase()}
+                onclick={() => setColor(row, c)}
+              ></button>
+            {/each}
+          </div>
+        </td>
         <td><input style="width: 100%;" bind:value={row.description} oninput={touch} /></td>
         <td class="muted">{counts[row.id] ?? 0}</td>
         <td><button class="small danger" onclick={() => removeRow(i)}>remove</button></td>
@@ -126,3 +158,29 @@
     {/each}
   </tbody>
 </table>
+</div>
+
+<style>
+  /* Wide content scrolls inside its own bounds, never the whole page (the
+     fixed-width columns exceed the ~620px content pane at the 960px min width). */
+  .table-scroll {
+    overflow-x: auto;
+  }
+  .swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: 132px;
+  }
+  .swatch {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 1px solid var(--ui-2);
+    border-radius: var(--radius-chip);
+    cursor: pointer;
+  }
+  .swatch.sel {
+    box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--tx);
+  }
+</style>

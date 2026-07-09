@@ -11,45 +11,30 @@
       .find((l) => l && !l.startsWith("#")) ?? ""
   );
 
-  function filterTag(tag, ev) {
-    ev.stopPropagation();
+  function filterTag(tag) {
     app.filters.tag = tag;
     runSearch();
   }
-
-  function cardKeydown(e) {
-    // role="button" must activate on BOTH Enter and Space (preventDefault
-    // keeps Space from scrolling). The target guard leaves activations that
-    // originate on the tag chips to the chips themselves — their
-    // stopPropagation covers click only, so without it Enter on a focused
-    // chip both filtered AND opened the drawer.
-    if (e.key !== "Enter" && e.key !== " ") return;
-    if (e.target !== e.currentTarget) return;
-    e.preventDefault();
-    selectEntry(entry.id);
-  }
 </script>
 
-<!-- a card-catalog index card: call number, category rule, title, notes -->
-<div
-  class="card entry"
-  onclick={() => selectEntry(entry.id)}
-  onkeydown={cardKeydown}
-  role="button"
-  tabindex="0"
->
+<!-- A card-catalog index card. The whole card opens the entry via the title
+     button's ::after overlay (a single real <button>, no interactive nesting);
+     the tag chips ride above that overlay (z-index) as their own buttons. -->
+<div class="card entry">
   <div class="row head">
     <span class="call-number grow">{entry.id}</span>
     <span class="badge {entry.meta.status}">{entry.meta.status}</span>
   </div>
   <div class="rule" style="background: {cat?.color ?? 'var(--ui-3)'};"></div>
 
-  <strong class="name">{entry.meta.full_name}</strong>
+  <button class="open" onclick={() => selectEntry(entry.id)} aria-label="Open {entry.meta.full_name}">
+    <span class="name">{entry.meta.full_name}</span>
+  </button>
   <p class="muted summary">{summary}</p>
 
-  <div class="row" style="flex-wrap: wrap; gap: 5px;">
+  <div class="row tags" style="flex-wrap: wrap; gap: 5px;">
     {#each entry.meta.tags.slice(0, 5) as tag}
-      <button class="chip" onclick={(ev) => filterTag(tag, ev)}>{tag}</button>
+      <button class="chip" onclick={() => filterTag(tag)}>{tag}</button>
     {/each}
   </div>
 
@@ -63,11 +48,34 @@
 
 <style>
   .entry {
-    cursor: pointer;
+    position: relative;
     transition: border-color var(--t-fast);
   }
+  /* hover/focus affordance lives on the card even though the button is the
+     focusable target (the ::after overlay makes the whole card the hit area) */
   .entry:hover { border-color: var(--ui-3); }
+  .entry:focus-within { border-color: var(--ui-3); }
   .head { margin-bottom: 8px; gap: 8px; }
+
+  /* the card's primary action: a real button whose ::after covers the whole
+     card, so a click anywhere (except the raised tag chips) opens the entry */
+  .open {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .open::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-card);
+  }
+  /* chips sit above the overlay so they stay independently clickable/focusable */
+  .tags { position: relative; z-index: 1; }
   .call-number {
     font: 10.5px/1.4 var(--mono);
     color: var(--tx-2);

@@ -336,6 +336,7 @@ mod tests {
             status: "active".into(),
             source: "manual".into(),
             added_date: Some("2026-07-08".into()),
+            reception_gathered: None,
         }
     }
 

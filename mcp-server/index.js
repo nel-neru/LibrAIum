@@ -277,10 +277,14 @@ server.registerTool(
       reception: z
         .string()
         .optional()
-        .describe("Markdown Reception notes — third-party signal (complaints, adopters, limitations); left as a placeholder if omitted"),
+        .describe("Markdown Reception — sourced THIRD-PARTY signal (recurring complaints, adopters, known limitations, migration signal); left as a placeholder if omitted. This is the primary layer."),
+      personal_notes: z
+        .string()
+        .optional()
+        .describe("Markdown Personal Notes — the USER's own FIRSTHAND take (gotchas, pairings). Optional; include ONLY when the user voiced genuine firsthand experience — never synthesized third-party signal (that goes in reception) and never invented."),
     },
   },
-  async ({ github_url, category, tags, reception }) => {
+  async ({ github_url, category, tags, reception, personal_notes }) => {
     try {
       const { fullName } = normalizeGithubUrl(github_url);
       const dup = findDuplicate(DATA_DIR, fullName);
@@ -325,7 +329,13 @@ server.registerTool(
         added_date: today(),
       };
       const repoName = gh.full_name.split("/").pop();
-      const body = `# ${repoName}\n\n${gh.description ?? "(no description)"}\n\n## Reception\n\n${reception ?? "- "}\n`;
+      // Reception (third-party signal) is the primary layer on every entry;
+      // Personal Notes (firsthand) is appended only when genuinely provided, so
+      // the two-layer contract stays honest (see the libraium-first skill).
+      let body = `# ${repoName}\n\n${gh.description ?? "(no description)"}\n\n## Reception\n\n${reception ?? "- "}\n`;
+      if (personal_notes && personal_notes.trim()) {
+        body += `\n## Personal Notes\n\n${personal_notes.trim()}\n`;
+      }
       const entry = saveNewEntry(DATA_DIR, meta, body);
       return json({ added: entry.id, ...summarize(entry) });
     } catch (e) {

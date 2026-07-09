@@ -185,7 +185,9 @@ test("adoptionSteps: Setup commands win over the clone fallback; tag hints only 
   assert.equal(steps[0], "docker run -p 6333:6333 q/db", "real command leads");
   assert.ok(!steps.some((s) => s.startsWith("git clone")), "no generic clone when Setup exists");
   assert.ok(!steps.some((s) => s.includes("infrastructure")), "tag hint suppressed when Setup is authoritative");
-  assert.ok(steps.at(-1).includes("Reception"));
+  // No circular "check its Reception in LibrAIum" pointer: suggest already
+  // inlines the full reception field in the same response object.
+  assert.ok(!steps.some((s) => s.includes("Reception")), "no circular Reception self-reference");
 
   const noSetup = adoptionSteps(entry("a/b", { tags: ["vector-db"] }));
   assert.ok(noSetup[0].startsWith("git clone"));

@@ -26,7 +26,7 @@ const KEBAB_RE = /^[a-z0-9-]+$/;
 const STATUSES = new Set(["active", "stale", "archived"]);
 const SOURCES = new Set(["manual", "mcp", "x-collection"]);
 const REQUIRED = ["github_url", "full_name", "category"];
-const DATE_FIELDS = ["last_github_push", "last_checked", "added_date"];
+const DATE_FIELDS = ["last_github_push", "last_checked", "added_date", "reception_gathered"];
 
 const dataDir = resolveDataDir(process.argv);
 const problems = [];

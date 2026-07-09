@@ -94,6 +94,15 @@ pub struct EntryMeta {
         deserialize_with = "strict_opt_string"
     )]
     pub added_date: Option<String>,
+    /// YYYY-MM-DD the `## Reception` section was last synthesized. Reception is
+    /// the primary, time-sensitive layer (issues close, projects die), so its
+    /// freshness is tracked in machine-readable frontmatter — not just prose.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "strict_opt_string"
+    )]
+    pub reception_gathered: Option<String>,
 }
 
 /// A fully loaded entry: metadata + Markdown body + its location.

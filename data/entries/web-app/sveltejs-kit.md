@@ -10,6 +10,7 @@ last_checked: 2026-07-08
 status: active
 source: manual
 added_date: 2026-06-23
+reception_gathered: 2026-07-09
 ---
 
 # kit

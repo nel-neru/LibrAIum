@@ -113,6 +113,7 @@ function normalizeMeta(meta) {
     status: val("status"),
     source: val("source"),
     added_date: val("added_date"),
+    reception_gathered: val("reception_gathered"),
   };
 }
 

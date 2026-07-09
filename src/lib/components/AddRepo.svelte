@@ -1,6 +1,7 @@
 <script>
   import { api } from "../api.js";
   import { app, showToast, fail, reloadEntries } from "../state.svelte.js";
+  import { trapFocus } from "../focustrap.js";
 
   let url = $state("");
   let category = $state(app.categories[0]?.id ?? "");
@@ -58,9 +59,10 @@
 <svelte:window onkeydown={onKeydown} />
 
 <div class="modal-backdrop" onclick={(e) => e.target === e.currentTarget && close()} role="presentation">
-  <form class="modal" onsubmit={(e) => { e.preventDefault(); submit(); }}>
+  <div class="modal" use:trapFocus role="dialog" aria-modal="true" aria-labelledby="add-title">
+  <form style="display: contents;" onsubmit={(e) => { e.preventDefault(); submit(); }}>
     <div class="row" style="margin-bottom: 18px;">
-      <h2 class="grow" style="font-size: 19px;">Add a repository</h2>
+      <h2 id="add-title" class="grow" style="font-size: 19px;">Add a repository</h2>
       <button type="button" class="small" onclick={close} aria-label="Close">✕</button>
     </div>
 
@@ -112,4 +114,5 @@
       <button type="button" onclick={close}>Cancel</button>
     </div>
   </form>
+  </div>
 </div>

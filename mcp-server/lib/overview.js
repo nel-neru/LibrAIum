@@ -19,6 +19,25 @@ function byCountThenName(a, b) {
   return b[1] - a[1] || a[0].localeCompare(b[0]);
 }
 
+// Reception is the primary, time-sensitive layer — track its freshness the way
+// metadata staleness is tracked. `missing` = no gather date recorded (run
+// /reception); `stale` = gathered longer ago than the threshold.
+const RECEPTION_STALE_DAYS = 180;
+function receptionHealth(entries) {
+  const now = Date.now();
+  let missing = 0;
+  let stale = 0;
+  for (const e of entries) {
+    const g = e.meta.reception_gathered;
+    if (!g || !/^\d{4}-\d{2}-\d{2}$/.test(g)) {
+      missing++;
+      continue;
+    }
+    if ((now - Date.parse(`${g}T00:00:00Z`)) / 86_400_000 > RECEPTION_STALE_DAYS) stale++;
+  }
+  return { missing, stale };
+}
+
 export function overview(entries, categories, dataDir) {
   const cats = categories.map((c) => {
     const inCat = entries.filter((e) => e.meta.category === c.id);
@@ -43,6 +62,10 @@ export function overview(entries, categories, dataDir) {
       stale: entries.filter((e) => e.meta.status === "stale").length,
       archived: entries.filter((e) => e.meta.status === "archived").length,
       categories: categories.length,
+      ...(() => {
+        const { missing, stale } = receptionHealth(entries);
+        return { reception_missing: missing, reception_stale: stale };
+      })(),
     },
     categories: cats,
     tags: Object.fromEntries(Object.entries(countTags(entries)).sort(byCountThenName)),

@@ -47,7 +47,7 @@ export function splitFrontmatter(content) {
 // emptiness/enums/date formats are data-level rules (validate-data.mjs), and
 // Rust likewise accepts e.g. an empty full_name at parse time.
 const REQUIRED_STRING_FIELDS = ["github_url", "full_name", "category"];
-const OPTION_STRING_FIELDS = ["language", "last_github_push", "last_checked", "added_date"];
+const OPTION_STRING_FIELDS = ["language", "last_github_push", "last_checked", "added_date", "reception_gathered"];
 const DEFAULTED_STRING_FIELDS = ["status", "source"]; // serde default fns — absent ok, null is NOT
 
 function validateMeta(meta) {
@@ -161,6 +161,7 @@ export function serializeEntry(meta, body) {
     status: meta.status ?? "active",
     source: meta.source ?? "manual",
     ...(meta.added_date != null ? { added_date: meta.added_date } : {}),
+    ...(meta.reception_gathered != null ? { reception_gathered: meta.reception_gathered } : {}),
   };
   const yaml = flowTags(YAML.stringify(ordered), ordered.tags);
   return `---\n${yaml}---\n\n${(body ?? "").trimEnd()}\n`;

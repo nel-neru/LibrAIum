@@ -19,7 +19,7 @@ LibrAIum is a **local-first desktop app** for curating the best-practice public 
 ## Features (v1.0)
 
 - **Git-native storage** — one Markdown file per repo (`YAML frontmatter + body`) in a local git repository. Diff, merge, and back up your knowledge like code.
-- **Reception** — every entry pairs structured metadata (stars, language, freshness) with synthesized third-party signal: what issues complain about, who adopts it, known limitations, and what people migrate to. Entries you've used firsthand also keep your own **Personal Notes**.
+- **Reception** — the primary layer. Every entry pairs structured metadata (stars, language, freshness) with synthesized **third-party** signal: what issues complain about, who adopts it, known limitations, and what people migrate to — each claim sourced, and stamped with a `reception_gathered` date so its freshness is tracked like metadata. Where you've used a repo firsthand, an optional **Personal Notes** section records your own take.
 - **Desktop GUI** (Tauri v2 + Svelte 5) — dashboard, instant fuzzy search with filters, entry editing, category master management, and a Git panel (status / commit / push).
 - **GitHub metadata refresh** — single or bulk refresh via the GitHub API; entries automatically flagged `stale` when a repo stops moving, with fresher alternatives suggested from your own shelves.
 - **MCP server for Claude Code** — six tools: `search_repos`, `get_repo_details`, `suggest_for_new_project`, `compare_repos`, `get_library_overview`, `add_repo`.
@@ -59,13 +59,13 @@ The script bakes in absolute paths from its own location and is idempotent — r
 | Tool | Purpose |
 | --- | --- |
 | `search_repos` | Filtered search: query, category, tags, min stars, status |
-| `get_repo_details` | Full entry incl. your Personal Notes, by id / name / URL |
-| `suggest_for_new_project` | Rank the library against a project description, with reasons, adoption steps + your Personal Notes |
+| `get_repo_details` | Full entry incl. its Reception (and any Personal Notes), by id / name / URL |
+| `suggest_for_new_project` | Rank the library against a project description, with reasons, adoption steps + each entry's Reception |
 | `compare_repos` | Side-by-side decision matrix (2-5 entries or a whole shelf) with notes + decision hints |
 | `get_library_overview` | Shelf map: category ids + health counts, tag vocabulary with usage, resolved data dir |
 | `add_repo` | Register a repo (fetches GitHub metadata; duplicate-safe) |
 
-Every entry is also exposed as an MCP **resource** (`entry://<category>/<slug>`), so `@libraium` autocomplete in Claude Code pulls a full entry — frontmatter, summary, and your Personal Notes — into context with no tool call.
+Every entry is also exposed as an MCP **resource** (`entry://<category>/<slug>`), so `@libraium` autocomplete in Claude Code pulls a full entry — frontmatter, summary, its Reception, and any Personal Notes — into context with no tool call.
 
 The server resolves its data directory from `--data-dir`, `$LIBRAIUM_DATA_DIR`, `./data`, the repo checkout, or `~/LibrAIum/data` — in that order.
 
@@ -94,13 +94,17 @@ last_checked: 2026-07-08
 status: active        # active | stale | archived
 source: manual        # manual | mcp | x-collection
 added_date: 2026-06-20
+reception_gathered: 2026-07-08   # when the ## Reception below was last synthesized
 ---
 
 # qdrant
 
 High-performance vector database…
 
-## Personal Notes
+## Reception
+- Recurring complaints, named adopters, known limitations, migration signal — each sourced.
+
+## Personal Notes        # optional — only where you've used it firsthand
 - My default vector DB for RAG prototypes…
 ```
 

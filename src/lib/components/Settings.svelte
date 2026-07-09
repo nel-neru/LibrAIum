@@ -23,6 +23,15 @@
     try {
       git = await api.gitStatus();
       gitLog = git.is_repo ? await api.gitLog(8) : [];
+      // Keep the ambient sidebar "uncommitted changes" badge in sync with this
+      // panel — so a commit/push here clears the badge everywhere immediately.
+      app.git = {
+        is_repo: git.is_repo,
+        branch: git.branch,
+        changes: git.changes.length,
+        has_remote: git.has_remote,
+        ahead: git.ahead,
+      };
     } catch (e) {
       fail(e);
     }

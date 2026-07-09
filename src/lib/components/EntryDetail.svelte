@@ -1,6 +1,7 @@
 <script>
   import { openUrl } from "@tauri-apps/plugin-opener";
   import { renderMarkdown } from "../markdown.js";
+  import { trapFocus } from "../focustrap.js";
   import { api } from "../api.js";
   import { app, showToast, fail, reloadEntries, categoryOf } from "../state.svelte.js";
 
@@ -154,11 +155,19 @@
 
 {#if entry}
   <div class="drawer-backdrop" onclick={close} role="presentation"></div>
-  <aside class="drawer" bind:this={drawerEl} tabindex="-1">
+  <div
+    class="drawer"
+    bind:this={drawerEl}
+    use:trapFocus
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="drawer-title"
+    tabindex="-1"
+  >
     <div class="row" style="align-items: flex-start;">
       <div class="grow">
         <div class="call-number">{entry.id}</div>
-        <h2 class="title">{entry.meta.full_name}</h2>
+        <h2 id="drawer-title" class="title">{entry.meta.full_name}</h2>
       </div>
       <button class="small" onclick={close} aria-label="Close">✕</button>
     </div>
@@ -251,7 +260,7 @@
         <button onclick={() => (editing = false)} disabled={saving}>Cancel</button>
       </div>
     {/if}
-  </aside>
+  </div>
 {/if}
 
 <style>

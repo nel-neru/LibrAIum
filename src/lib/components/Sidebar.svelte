@@ -5,7 +5,7 @@
   const NAV = [
     ["dashboard", "Reading Room", "reading-room"],
     ["library", "Library", "library"],
-    ["categories", "Catalog", "catalog"],
+    ["categories", "Categories", "catalog"],
     ["settings", "Settings", "settings"],
   ];
 
@@ -34,7 +34,12 @@
 
   <nav>
     {#each NAV as [view, label, icon]}
-      <button class="nav-item" class:current={app.view === view} onclick={() => (app.view = view)}>
+      <button
+        class="nav-item"
+        class:current={app.view === view}
+        aria-current={app.view === view ? "page" : undefined}
+        onclick={() => (app.view = view)}
+      >
         <Icon name={icon} />{label}
       </button>
     {/each}
@@ -73,6 +78,17 @@
     </div>
   </div>
 
+  {#if app.git.is_repo && app.git.changes > 0}
+    <button
+      class="git-dirty"
+      onclick={() => (app.view = "settings")}
+      title="Review and commit in Settings → Git"
+    >
+      <span class="git-dot"></span>
+      <span class="grow">{app.git.changes} uncommitted change{app.git.changes === 1 ? "" : "s"}</span>
+      {#if app.git.ahead > 0}<span class="muted num">↑{app.git.ahead}</span>{/if}
+    </button>
+  {/if}
   <button class="primary" onclick={() => (app.showAdd = true)}>+ Add repository</button>
 </aside>
 
@@ -111,7 +127,7 @@
     color: var(--accent);
     margin-bottom: 6px;
   }
-  .brand h1 { font-size: 23px; font-weight: 500; letter-spacing: 0.01em; }
+  .brand h1 { font-size: 22px; font-weight: 500; letter-spacing: 0.01em; }
   .tagline { font-size: 11px; display: block; margin-top: 3px; }
 
   nav { display: flex; flex-direction: column; gap: 2px; }
@@ -156,4 +172,29 @@
   .cat-item:hover { background: var(--ui); }
   .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .grow { flex: 1; }
+
+  /* Ambient "uncommitted changes" reminder — calm, not alarming: a hairline
+     row with a stale-toned dot that deep-links to the Git panel. */
+  .git-dirty {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--ui-2);
+    padding: 6px 10px;
+    border-radius: var(--radius-control);
+    text-align: left;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--tx-2);
+  }
+  .git-dirty:hover { background: var(--ui); color: var(--tx); }
+  .git-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--st-stale-tx);
+  }
 </style>

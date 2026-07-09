@@ -155,6 +155,9 @@ pub async fn add_repo_from_url(
             ),
             source: "manual".into(),
             added_date: Some(today()),
+            // Reception is not synthesized at add time (the body gets a
+            // placeholder ## Reception); /reception fills it and stamps the date.
+            reception_gathered: None,
         };
         let repo_name = gh.full_name.split('/').next_back().unwrap_or(&gh.full_name);
         let body = format!(

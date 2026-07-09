@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { app, bootstrap } from "./lib/state.svelte.js";
+  import { app, bootstrap, dismissToast } from "./lib/state.svelte.js";
   import Sidebar from "./lib/components/Sidebar.svelte";
   import Dashboard from "./lib/components/Dashboard.svelte";
   import Library from "./lib/components/Library.svelte";
@@ -10,7 +10,25 @@
   import AddRepo from "./lib/components/AddRepo.svelte";
 
   onMount(bootstrap);
+
+  // Accelerators for the two highest-frequency actions (daily curation):
+  // Cmd/Ctrl+N opens Add repository; "/" jumps focus to the Library search.
+  function onGlobalKey(e) {
+    const t = e.target;
+    const typing =
+      t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "n") {
+      e.preventDefault();
+      app.showAdd = true;
+    } else if (e.key === "/" && !typing && !app.showAdd && !app.selectedId) {
+      e.preventDefault();
+      app.view = "library";
+      requestAnimationFrame(() => document.getElementById("library-search")?.focus());
+    }
+  }
 </script>
+
+<svelte:window onkeydown={onGlobalKey} />
 
 <!-- macOS overlay titlebar: a quiet drag strip over the top edge -->
 <div class="titlebar" data-tauri-drag-region></div>
@@ -41,7 +59,14 @@
 {/if}
 
 {#if app.toast}
-  <div class="toast">{app.toast}</div>
+  <div
+    class="toast"
+    class:error={app.toastKind === "error"}
+    role={app.toastKind === "error" ? "alert" : "status"}
+    aria-live={app.toastKind === "error" ? "assertive" : "polite"}
+    title="Dismiss"
+    onclick={dismissToast}
+  >{app.toast}</div>
 {/if}
 
 <style>

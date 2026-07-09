@@ -10,6 +10,7 @@ last_checked: 2026-07-08
 status: stale
 source: manual
 added_date: 2026-06-22
+reception_gathered: 2026-07-09
 ---
 
 # swarm

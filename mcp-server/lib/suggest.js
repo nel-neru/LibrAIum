@@ -60,17 +60,25 @@ export function scoreEntry(entry, tokens, categories) {
     reasons.push(`written in ${entry.meta.language}`);
   }
 
+  // Primary body relevance comes from what the repo IS — the lead (title +
+  // description before the first '## ' section) — NOT the Reception text.
+  // Reception is third-party complaint/issue prose ("SEO of web apps",
+  // "WebSocket support"): scoring query tokens against it conflates
+  // "complained about re: X" with "is for X" and inflates popular,
+  // heavily-discussed repos (longest Reception → most incidental hits).
   const bodyLower = entry.body.toLowerCase();
-  const bodyHits = tokens.filter((tok) => bodyLower.includes(tok));
-  lexical += Math.min(bodyHits.length, 10);
+  const leadLower = bodyLower.split(/\n##\s/)[0];
+  const leadHits = tokens.filter((tok) => leadLower.includes(tok));
+  lexical += Math.min(leadHits.length, 10);
 
-  // Reward query relevance landing inside the curated sections — the community
-  // Reception layer or, for entries the owner has used, firsthand Personal Notes.
+  // A query token landing inside the curated Reception (or firsthand Personal
+  // Notes) is a WEAK secondary signal — kept small so it ranks among relevant
+  // entries without manufacturing relevance on its own.
   const sectionIdxs = ["## reception", "## personal notes"]
     .map((h) => bodyLower.indexOf(h))
     .filter((i) => i !== -1);
   const notesIdx = sectionIdxs.length ? Math.min(...sectionIdxs) : -1;
-  if (notesIdx !== -1 && bodyHits.some((tok) => bodyLower.indexOf(tok, notesIdx) !== -1)) {
+  if (notesIdx !== -1 && tokens.some((tok) => bodyLower.indexOf(tok, notesIdx) !== -1)) {
     lexical += 3;
     reasons.push("its Reception/notes mention related topics");
   }
@@ -175,19 +183,17 @@ export function extractSetup(entry) {
 
 export function adoptionSteps(entry) {
   // Owner-verified Setup commands beat the generic clone/README dance — this is
-  // the first-hour friction the library exists to remove.
+  // the first-hour friction the library exists to remove. No "check its
+  // Reception" pointer: suggest already inlines the full `reception` field in
+  // the SAME response object, so telling the caller to go fetch it is circular.
   const setup = extractSetup(entry);
-  const steps = setup
-    ? [...setup, `Then check its Reception in LibrAIum (${entry.id}) for the community's take and known limitations.`]
-    : [
-        `git clone ${entry.meta.github_url}`,
-        `Read its README against your requirements — then check its Reception in LibrAIum (${entry.id}) for the community's take and known limitations.`,
-      ];
+  if (setup) return setup;
+  const steps = [`git clone ${entry.meta.github_url}`, "Read its README against your requirements."];
   const tags = entry.meta.tags ?? [];
-  if (!setup && tags.includes("mcp-server")) {
+  if (tags.includes("mcp-server")) {
     steps.push(`If it ships an MCP server: claude mcp add ${entry.meta.full_name.split("/")[1]} -- <its run command>`);
   }
-  if (!setup && tags.includes("vector-db")) {
+  if (tags.includes("vector-db")) {
     steps.push("Runs as infrastructure — check for a docker-compose.yml or a hosted option before embedding.");
   }
   return steps;
