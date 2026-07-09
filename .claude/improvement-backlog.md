@@ -1,5 +1,14 @@
 # Improvement Backlog
 
+## Restarted 2026-07-10 — post-convergence feature audit
+
+The 2nd convergence closed 2026-07-09 (history below). On 2026-07-10 the
+category-icons-dnd feature (PR #9 — line-icon marks + drag-and-drop reorder)
+landed: code the loop had never audited. A fresh audit of that surface found a
+drag-and-drop reorder off-by-one (fixed, iter-51) and, while verifying, a
+Windows path-separator bug in build-catalog.mjs (queued as the top Pending
+item). Loop reopened.
+
 ## LOOP COMPLETE (2nd convergence)
 
 Closed 2026-07-09 after 50 iterations total — 20 in the restarted loop (31–50), 26
@@ -19,9 +28,12 @@ and the iter-42 mid-loop audit re-seeded 8 more after the 4dccdd6 UI redesign la
 ---
 
 ## Pending  (ordered: highest value first)
-- (EMPTY — loop closed at the 2nd convergence, see above)
+- [ ] P3 build-catalog.mjs emits OS-native path separators: run on Windows, the entry links become `data\entries\…` (backslashes) — they break as GitHub Markdown links AND make verify-all stage 6 (catalog drift) fail locally. Root cause: `scripts/build-catalog.mjs:71` uses `e.path.slice(ROOT.length + 1)` where `e.path` came from a `node:path` join (`\` on Windows); the fallback branch already hardcodes `/`. Fix: normalize the sliced path to `/` (e.g. `.split(sep).join('/')`). Content is otherwise current, so the fix makes regeneration byte-identical to the committed CATALOG.md — no CATALOG.md change, stage 6 green on Windows. Consider the same audit for other scripts that emit repo-relative paths into committed artifacts. [found iter-51]
+- [ ] P5 MCP test "listEntries skips an unreadable category dir" is not Windows-portable: `mcp-server/test/store.test.mjs:226` simulates an unreadable dir with `chmodSync(lockedDir, 0o000)`, but on Windows chmod does not remove directory read access (and `process.getuid` is undefined, so the existing root-skip guard at :211 doesn't trigger) — `readdirSync` still succeeds, the entry is NOT skipped, and the assertion fails locally. Same Windows-portability class as the build-catalog item above; the behavior itself is fine (CI/Unix covers it). Fix: also skip on `process.platform === 'win32'` (chmod-based unreadable simulation is a Unix concept), mirroring the root guard. [found iter-51, during MCP-stage verification]
 
 ## Done
+
+- [x] P3 Categories drag-and-drop reorder off-by-one: dropping a row while dragging DOWNWARD landed it one slot BELOW the top-line drop indicator (`splice(from,1)` shifts every later index down, so `splice(i,0,…)` overshoots). Extracted a pure `reorder(list, from, to)` with insert-above semantics (src/lib/reorder.js, mirrors the markdown.js pure-module pattern), used by onDrop; pinned by tests/reorder.test.mjs (9 cases: both directions, edges, no-ops, immutability, out-of-range guard). Live-verified in browser preview (downward drop now lands above the target; no console errors). libraium-reviewer approved; added the defensive `to` range guard per its one nit. — cff6f3a (2026-07-10) [iter-51, post-convergence feature audit]
 
 First convergence: closed 2026-07-08 after 30 iterations, 37 findings, all stages green
 throughout (see 3f771cb); the loop restarted the same day and re-seeded from a fresh audit.

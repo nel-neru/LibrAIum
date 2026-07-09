@@ -1,6 +1,7 @@
 <script>
   import { api } from "../api.js";
   import { app, showToast, fail } from "../state.svelte.js";
+  import { reorder } from "../reorder.js";
   import Icon from "./Icon.svelte";
 
   // Local editable copy. The id lock must be per ROW PERSISTENCE, not by
@@ -90,7 +91,8 @@
   }
 
   // Drag-and-drop reordering. dragFrom/dragOver drive the row highlight; on drop
-  // the dragged row is spliced into the target slot and every order renumbered.
+  // the dragged row lands ABOVE the target row (see reorder.js) and every order
+  // is renumbered.
   let dragFrom = $state(null);
   let dragOver = $state(null);
 
@@ -108,8 +110,7 @@
   }
   function onDrop(i) {
     if (dragFrom !== null && dragFrom !== i) {
-      const [moved] = rows.splice(dragFrom, 1);
-      rows.splice(i, 0, moved);
+      rows = reorder(rows, dragFrom, i);
       renumber();
       touch();
     }
