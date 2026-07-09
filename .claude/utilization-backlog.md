@@ -2,6 +2,21 @@
 
 ## LOOP COMPLETE (2026-07-09, after 20 iterations)
 
+**Re-confirmed 2026-07-10** (via `/loop /improve /utilize`). A fresh persona
+ideation pass found nothing above the bar. Grounding it, a live `curation-report`
+on Windows confirmed the tooling runs and the personas are served: 6 MCP tools,
+9 curator scripts, 5 commands, the library-first skill + setup doc — and the
+report itself already answers the curator's "what next" (thin shelves, tag drift,
+succession holes, reception freshness). Notably Reception is now 43/43 gathered
+(the "36 to draft" content gap from the 07-09 note is closed). The one new idea
+surfaced — a dependency-audit MCP tool — is in Rejected: matching npm/crate names
+to GitHub full_names needs a registry lookup (network) for acceptable precision,
+so it can't clear the bar within the local+lexical constraints. The remaining
+gap is purely CONTENT — thin shelves (15 categories at 2 entries) filled via
+`/scout` → `/bulk-add`, which are network + owner-judgment gated and so cannot be
+driven by a background loop. Restart anytime with `/loop /utilize` if new goals
+appear.
+
 The `/utilize` loop has converged. The seeded 16-item backlog plus 4 items
 surfaced by mid-loop convergence audits are all built, verified, and committed
 on `feat/utilization-tooling` (nothing pushed). Two independent adversarial
@@ -56,6 +71,7 @@ Utilization surface delivered (20 iterations):
 
 ## Rejected
 
+- Dependency-audit MCP tool (cross-reference a project's package.json/Cargo.toml against the library, flag shelved/stale + surface uncurated deps as curation candidates) — considered at the 2026-07-10 re-confirmation. The concept fits the library-first mission, but the input↔library join is the problem: manifest deps are registry names (`svelte`, `@tauri-apps/api`, `marked`) while entries are GitHub full_names (`sveltejs/kit`, `tauri-apps/tauri`, `markedjs/marked`). Mapping one to the other reliably needs an npm/crates registry lookup (network) — a pure lexical match on the repo/org/tag substrings is too noisy to be "proven useful," and network in a background tool violates the local-first constraint. Revisit if entries ever carry their package/registry names as a field (a format change worth its own item), or as an explicitly user-invoked (not background) command that may hit the registry.
 - Release-watch report — refresh digest already answers "what moved"; per-release breaking-change classification is speculative regex at M effort. Revisit after a refresh cadence exists.
 - Star-momentum report from git history — useless until refresh commits accumulate for a quarter.
 - GitHub Pages site — heavier surface, zero owner-utilization gain over drift-checked CATALOG.md.
