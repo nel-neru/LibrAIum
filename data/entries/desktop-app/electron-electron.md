@@ -16,9 +16,12 @@ added_date: 2026-07-09
 
 Chromium and Node.js fused into one runtime for building cross-platform desktop apps with web tech — the framework VS Code, Slack, and Discord ship on. OpenJS Foundation project; each major version tracks a current Chromium.
 
-## Personal Notes
+## Reception
 
-- The default when a web team needs a desktop app with full OS and Node access — packaging and auto-update are solved problems (electron-forge / electron-builder), and the renderer is plain Chromium, so any web stack drops in ([react/react](https://github.com/react/react) is the usual pick).
-- The tradeoff is baked in: every app bundles its own Chromium + Node, so expect roughly 100 MB installers and hundreds of MB of RAM at idle across its processes. When footprint matters more than Node access, [tauri-apps/tauri](https://github.com/tauri-apps/tauri) (system webview + Rust core) is the lean alternative.
-- Treat every renderer as untrusted web content: keep `contextIsolation: true` / `nodeIntegration: false` (the defaults) and expose only narrow IPC via a preload script's `contextBridge` — loading remote URLs into a privileged window is the classic Electron CVE pattern.
-- A new major lands every 8 weeks (v43 as of mid-2026) and only the latest three stable majors get security fixes — skipping upgrades means shipping known Chromium CVEs, so put the treadmill in the maintenance budget.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The most-reacted thread on the tracker is a long-open proposal for a shared "runtime mode" ([electron/electron#673](https://github.com/electron/electron/issues/673), 536👍); another open pain point flags cache data being written to the `userData` dir instead of a dedicated cache dir ([#8124](https://github.com/electron/electron/issues/8124), 219👍), and an open request for a workspace API ([#5362](https://github.com/electron/electron/issues/5362), 174👍) also ranks among the top issues.
+- Several of the highest-reacted feature asks have since shipped and closed: a macOS Touch Bar API ([#7781](https://github.com/electron/electron/issues/7781), 390👍), Node ES Modules support ([#21457](https://github.com/electron/electron/issues/21457), 378👍), and a Wayland build ([#10915](https://github.com/electron/electron/issues/10915), 291👍).
+- Maintenance is heavy and continuous — 20 recent releases at a median 1-day interval (latest 2026-07-07), a near-daily train that tracks Chromium — against a large backlog of ~894 open issues and PRs.

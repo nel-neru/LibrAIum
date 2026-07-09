@@ -16,9 +16,12 @@ added_date: 2026-07-09
 
 General-purpose speech recognition model from OpenAI — multilingual transcription, speech-to-English translation, and language ID from a single checkpoint, trained on 680k hours of weakly supervised audio. Ships as a pip package with a CLI and Python API (MIT license); needs PyTorch and ffmpeg on PATH.
 
-## Personal Notes
+## Reception
 
-- The first stop for any transcription task. Default to `turbo` (~6GB VRAM) for speed — but it is not trained for translation, so drop to `medium`/`large` (~10GB VRAM) when you need X-to-English.
-- Sharp edge: it hallucinates text on silence and music — put a VAD in front for long recordings. No speaker diarization either; bolt on pyannote or similar when you need "who said what."
-- This repo is the reference research implementation, not a serving stack. For production throughput, most people run the same weights through faster-whisper (CTranslate2) or [ggml-org/whisper.cpp](https://github.com/ggml-org/whisper.cpp) for CPU/edge — reach for those before optimizing this code.
-- Runs on [pytorch/pytorch](https://github.com/pytorch/pytorch); Python 3.8–3.11 is the supported range. Releases are infrequent (latest: v20250625) but the repo still gets pushes — slow-moving by design, not abandoned.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The public issue tracker yields limited reception signal in this snapshot — no standout high-reaction issues were captured — though it carries a sizeable backlog of 135 open issues and PRs.
+- Release history shows 13 tagged releases at a tight ~9-day median interval, but the latest is dated 2025-06-26, more than a year before this snapshot, so tagged releases have effectively gone quiet even as the backlog persists — track the commit history rather than a release tag.
+- No adopters are listed in the README, so third-party adoption evidence here is limited public signal beyond the release history and open-issue count.

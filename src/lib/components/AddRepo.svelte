@@ -92,12 +92,12 @@
       </div>
     </div>
 
-    <label for="add-notes">Personal notes (optional, Markdown)</label>
+    <label for="add-notes">Reception (optional, Markdown)</label>
     <textarea
       id="add-notes"
       rows="4"
       style="width: 100%;"
-      placeholder="- why this repo is on my shelf&#10;- gotchas, pairings, ideas"
+      placeholder="- what the community reports (issues, adopters, limits)&#10;- migration signal, maturity"
       bind:value={notes}
     ></textarea>
 

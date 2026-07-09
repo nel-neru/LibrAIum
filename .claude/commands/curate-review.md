@@ -32,7 +32,7 @@ Interpret its sections, don't just paste them:
 
 Then do the one judgment-only check the report cannot compute:
 
-**b) Placeholder notes** — a `## Personal Notes` section that is missing, empty, or contains only bare stubs (a lone `- ` bullet, "TODO", or a bullet that merely restates the summary). Personal Notes are LibrAIum's whole value proposition — flag every entry where they carry no firsthand signal.
+**b) Placeholder Reception** — a `## Reception` section that is missing, empty, or contains only bare stubs (a lone `- ` bullet, "TODO", an unsourced claim, or a bullet that merely restates the summary/README). Reception — synthesized third-party signal with a source per claim — is the library's primary content layer; flag every entry whose Reception is absent or uncited. (Entries the owner has genuinely used may also keep a firsthand `## Personal Notes`; that is a bonus, never a substitute for Reception.)
 
 ## 3. Report
 

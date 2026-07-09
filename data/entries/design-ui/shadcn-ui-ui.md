@@ -16,9 +16,13 @@ added_date: 2026-07-09
 
 Accessible React components you don't install but copy into your repo via a CLI — Base UI or Radix primitives styled with Tailwind, fully yours to edit. Doubles as a distribution platform: the registry format lets teams publish their own components, hooks, and blocks the same way.
 
-## Personal Notes
+## Reception
 
-- The default starting point for a React + Tailwind design system: unlike MUI or Ant there's no theme-API ceiling, because the escape hatch is editing the source you already own. Pairs naturally with [vercel/next.js](https://github.com/vercel/next.js) and [react/react](https://github.com/react/react).
-- Vendored code cuts both ways: there is no `npm update` — upstream fixes arrive only when you re-run the CLI and diff against your customizations, so budget maintenance time for every component you copy.
-- Since July 2026 `shadcn init` defaults to Base UI primitives (built by the ex-Radix team); Radix stays first-class via `-b radix` — pin that flag in non-interactive scripts/CI or new components will target a different primitive set than your existing ones. shadcn publishes a migration skill for coding agents that automates Radix-to-Base-UI moves component by component.
-- Hard-coupled to Tailwind (v4) and its CSS-variable theming convention; if the stack is CSS Modules or styled-components, reach for a headless primitive library directly instead of fighting the styling layer.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- Requests for more prebuilt components dominate the most-reacted issues: a Multi-select is the loudest and still open ([shadcn-ui/ui#66](https://github.com/shadcn-ui/ui/issues/66), 306👍), alongside since-closed asks for a datepicker with year navigation ([#546](https://github.com/shadcn-ui/ui/issues/546), 260👍), a time picker ([#255](https://github.com/shadcn-ui/ui/issues/255), 239👍), a dropzone ([#163](https://github.com/shadcn-ui/ui/issues/163), 188👍), and a timeline ([#949](https://github.com/shadcn-ui/ui/issues/949), 176👍).
+- Keeping current with the ecosystem was a top thread — Tailwind v4 and React 19 support ([#6585](https://github.com/shadcn-ui/ui/issues/6585), 252👍, closed) — and a CLI bug, `Cannot read properties of undefined (reading 'resolvedPaths')`, drew comparable heat ([#6527](https://github.com/shadcn-ui/ui/issues/6527), 200👍, closed).
+- Some users pushed to change the underlying primitives, requesting a migration from Radix to React-Aria Components ([#1622](https://github.com/shadcn-ui/ui/issues/1622), 173👍, closed).
+- Very actively maintained: 20 tagged releases at a median 4-day cadence (latest 2026-07-08), against a large backlog of ~2,083 open issues and PRs. The README lists no adopters.

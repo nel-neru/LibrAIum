@@ -16,9 +16,13 @@ added_date: 2026-07-09
 
 Container orchestrator that schedules, scales, and self-heals containerized workloads across clusters of machines through declarative APIs. Grew out of Google's Borg, CNCF-hosted, and the substrate virtually all modern deployment tooling targets.
 
-## Personal Notes
+## Reception
 
-- Reach for it when a team runs many services across multiple nodes; for a single app or small team, Docker Compose or a managed PaaS is dramatically less operational burden — a cluster is a product you have to staff.
-- Consume it through a managed control plane (EKS/GKE/AKS) or a light distribution (k3s; kind/minikube for local dev) — you almost never build or deploy from this repo directly. Its day-to-day value is as the source of truth for API types and CHANGELOGs; feature design lives in kubernetes/enhancements (KEPs).
-- Upgrade treadmill: three minor releases a year, each supported ~14 months (1.34–1.36 in support as of this check) — fall a year behind and you are out of support, and per-release API removals can break old manifests.
-- Raw manifest YAML sprawls fast; adopt kustomize (built into kubectl) or Helm early. Self-hosted stacks like [langgenius/dify](https://github.com/langgenius/dify) typically graduate from compose to a Helm chart here once they need multi-node scale.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- ConfigMap rollout/management is by far the loudest open request on the tracker — the top-reacted issue asks for first-class ConfigMap rollout handling ([kubernetes/kubernetes#22368](https://github.com/kubernetes/kubernetes/issues/22368), 1888👍) and remains open years on; a request for port ranges / whole IPs in Services is another still-open networking gap ([#23864](https://github.com/kubernetes/kubernetes/issues/23864), 380👍).
+- Several early high-demand asks have since shipped (issues closed): sidecar containers in batch Jobs ([#25908](https://github.com/kubernetes/kubernetes/issues/25908), 498👍), forcing a re-pull without changing the image tag ([#33664](https://github.com/kubernetes/kubernetes/issues/33664), 440👍), a `--user` flag for `kubectl exec` ([#30656](https://github.com/kubernetes/kubernetes/issues/30656), 426👍), `port-forward` to a Service ([#15180](https://github.com/kubernetes/kubernetes/issues/15180), 403👍), GPU sharing across containers ([#52757](https://github.com/kubernetes/kubernetes/issues/52757), 384👍), and multi-host Ingress ([#43633](https://github.com/kubernetes/kubernetes/issues/43633), 376👍).
+- Maintenance signal is strong: 20 recent releases at a ~1-day median interval (latest 2026-07-08), reflecting concurrent patch releases across supported minor branches, against a very large ~2,693 open issues-and-PRs backlog.
+- The README points to a general case-studies page ([User Case Studies](https://kubernetes.io/case-studies/)) rather than naming individual adopters inline.

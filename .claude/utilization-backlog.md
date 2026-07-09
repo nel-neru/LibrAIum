@@ -10,8 +10,8 @@ audits gate this call: a 3-lens convergence audit (defect-hunter + workflow-gap
 defect (rename-tag non-atomic half-write), fixed in iter 20 with a regression
 test; a final focused defect sweep over every remaining data-mutating write
 path (bulk-add intake, refresh-metadata setScalar, build-catalog write) came
-back clean. What remains is owner-driven CONTENT work — confirming the 36
-doc-derived Personal Notes (`/confirm-notes`) and filling thin shelves
+back clean. What remains is owner-driven CONTENT work — gathering third-party
+Reception for each entry (`/reception`) and filling thin shelves
 (`/scout` → `/bulk-add`) — which uses the tooling built here, not more tooling
 to build. Restart anytime with `/loop /utilize` if new goals appear.
 

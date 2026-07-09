@@ -4,7 +4,7 @@
 
 LibrAIum（ライブラリアム）は、厳選した GitHub リポジトリをローカル Git リポジトリで管理し、MCP サーバー経由で Claude Code から直接活用できる個人専用デスクトップアプリです。
 
-LibrAIum is a **local-first desktop app** for curating the best-practice public GitHub repositories you actually trust — across AI agents, web apps, games, DevOps, and any genre you define. Its differentiator: the library doubles as an **MCP server**, so Claude Code can search it, read your firsthand Personal Notes, and recommend the right repos for your next project.
+LibrAIum is a **local-first desktop app** for curating the best-practice public GitHub repositories you actually trust — across AI agents, web apps, games, DevOps, and any genre you define. Its differentiator: the library doubles as an **MCP server**, so Claude Code can search it, read each entry's Reception (real-world community signal — what issues complain about, who adopts it, known limitations), and recommend the right repos for your next project.
 
 > "Suggest the 3 best repos from my library for a RAG agent combining a vector DB and knowledge management — with setup commands."
 
@@ -19,12 +19,12 @@ LibrAIum is a **local-first desktop app** for curating the best-practice public 
 ## Features (v1.0)
 
 - **Git-native storage** — one Markdown file per repo (`YAML frontmatter + body`) in a local git repository. Diff, merge, and back up your knowledge like code.
-- **Personal Notes** — every entry pairs structured metadata (stars, language, freshness) with your hands-on experience, gotchas, and pairings.
+- **Reception** — every entry pairs structured metadata (stars, language, freshness) with synthesized third-party signal: what issues complain about, who adopts it, known limitations, and what people migrate to. Entries you've used firsthand also keep your own **Personal Notes**.
 - **Desktop GUI** (Tauri v2 + Svelte 5) — dashboard, instant fuzzy search with filters, entry editing, category master management, and a Git panel (status / commit / push).
 - **GitHub metadata refresh** — single or bulk refresh via the GitHub API; entries automatically flagged `stale` when a repo stops moving, with fresher alternatives suggested from your own shelves.
 - **MCP server for Claude Code** — six tools: `search_repos`, `get_repo_details`, `suggest_for_new_project`, `compare_repos`, `get_library_overview`, `add_repo`.
 - **Awesome-list export** — publish your curation as a standard awesome-list Markdown document.
-- **Private by design** — everything stays on your machine; the GitHub token lives in the OS keychain.
+- **Private by design** — your library data stays on your machine; the GitHub token lives in the OS keychain. Network access is explicit and on-demand only (metadata refresh, add, scouting, Reception collection), and outbound requests carry only public repo identifiers — no telemetry.
 
 ## Quick start
 

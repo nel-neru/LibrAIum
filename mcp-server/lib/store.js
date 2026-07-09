@@ -250,6 +250,25 @@ export function firstSummaryLine(body) {
   );
 }
 
+// Verbatim body of a "## <heading>" section (heading line dropped), trimmed,
+// up to the next level-1/2 heading. Null when the section is absent or empty.
+// Deeper (###) sub-headings stay inside the section. Shared by suggest and
+// compare so both tools read entry sections one way — this replaces the two
+// separate implementations that used to live in suggest.extractNotes and
+// compare.personalNotesSection.
+export function bodySection(body, heading) {
+  const text = body ?? "";
+  const idx = text.toLowerCase().indexOf(`## ${heading.toLowerCase()}`);
+  if (idx === -1) return null;
+  const out = [];
+  for (const line of text.slice(idx).split(/\r?\n/).slice(1)) {
+    if (/^#{1,2}\s/.test(line)) break; // next level-1/2 heading ends the section
+    out.push(line);
+  }
+  const section = out.join("\n").trim();
+  return section || null;
+}
+
 export function saveNewEntry(dataDir, meta, body) {
   // Defense in depth: category becomes a directory name below. Enforce the
   // category-id contract (kebab-case) here too, so no caller — and no gap in

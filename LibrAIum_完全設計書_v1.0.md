@@ -286,4 +286,24 @@ MVPで提供する主なツール:
 - 詳細なUI仕様書の作成
 - プロトタイプ開発の開始計画
 
+---
+
+## 15. v1.1 追補 — Reception レイヤ
+
+> v1.0 本文は as-shipped の設計記録として不変。本追補は v1.1 での方針変更を記録し、下記の v1.0 記述を **supersede** する。
+
+**背景**: オーナーは大半のエントリを実使用しない「キュレーター型」であり、firsthand な `## Personal Notes` は空か捏造になりがちだった。そこで **Reception レイヤ**を導入する。
+
+**Reception とは**: 各エントリ本文の `## Reception` セクションに、第三者の実使用シグナル（高リアクション issue の頻出不満、著名な採用先、既知の弱点、移行の to/from、成熟度・保守状況）を出典付きで合成したもの。三人称・attributive、一人称禁止、全 claim に出典を持つ。firsthand ではない。
+
+**supersede する v1.0 記述**:
+- §5 データモデル例／§14 用語「Personal Notes」: 主コンテンツ層は Reception。`## Personal Notes` は「オーナーが実際に使い込んだ稀なエントリ（7 reference seeds）」限定の任意セクションとして残る。
+
+**収集ポリシー（local-first を維持）**:
+- **明示コマンド時のみ**取得する（バックグラウンド・スケジュール・起動時の取得なし、テレメトリなし）。結果は git 管理下の `## Reception` セクションへ書き込み、閲覧時にはネットワークを叩かない → §4「基本動作にインターネット不要」を維持。
+- 既定は **GitHub-first**（api.github.com / `gh`）で新規ホスト0。一般 web 検索は実行毎の明示 opt-in。送出するのは対象リポジトリの公開識別子と話題語のみで、ライブラリの内容・他エントリ・ノート・利用状況は一切送らない。
+- §3.2 / §10 の「X自動収集」とは別物: on-demand（非スケジュール）、GitHub/web 由来（X API 非依存）、既存エントリの enrich（新規候補の発見ではない）。
+
+**MCP**: `suggest_for_new_project` / `compare_repos` / `get_repo_details` が `reception` フィールドを surface する（firsthand を持つ 7 seeds では `personal_notes` も併存）。
+
 ご指示をお待ちしています。

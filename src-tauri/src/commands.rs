@@ -158,7 +158,7 @@ pub async fn add_repo_from_url(
         };
         let repo_name = gh.full_name.split('/').next_back().unwrap_or(&gh.full_name);
         let body = format!(
-            "# {}\n\n{}\n\n## Personal Notes\n\n{}\n",
+            "# {}\n\n{}\n\n## Reception\n\n{}\n",
             repo_name,
             gh.description.as_deref().unwrap_or("(no description)"),
             notes.as_deref().unwrap_or("- "),

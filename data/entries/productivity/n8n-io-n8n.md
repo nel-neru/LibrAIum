@@ -16,9 +16,13 @@ added_date: 2026-07-09
 
 Fair-code workflow automation platform — a visual node canvas with escape hatches to real JavaScript/Python code, 400+ integrations, and native AI-agent/LangChain nodes. Self-hosts from a single Docker container or `npx n8n`.
 
-## Personal Notes
+## Reception
 
-- The default pick for self-hosted glue automation — a Zapier/Make replacement that keeps credentials and data on your own box, and the Code node rescues you from the usual low-code dead ends.
-- License gotcha: fair-code Sustainable Use License, not OSI open source — internal business use and consulting are fine, but embedding it in or reselling it as your own SaaS requires a paid embed/enterprise license.
-- The out-of-the-box SQLite single-process setup is for trying it out; past ~1k executions/day switch to Postgres + queue mode with Redis workers, and keep `N8N_ENCRYPTION_KEY` identical across main and workers or every execution fails on credential decryption. Set binary data mode to `filesystem` before moving large files through workflows.
-- AI nodes talk to hosted providers or local models via [ollama/ollama](https://github.com/ollama/ollama), and MCP client/server nodes let workflows call or act as MCP tools alongside [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers). For LLM-app-centric building (RAG, chat apps) [langgenius/dify](https://github.com/langgenius/dify) is the closer fit — n8n wins when the job is mostly wiring SaaS APIs together.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The "fair-code" licensing is the loudest point of contention by a wide margin — the top-reacted issue on the tracker disputes the open-source framing outright ([n8n-io/n8n#40](https://github.com/n8n-io/n8n/issues/40), 267👍, since closed), so evaluate the license before self-hosting rather than assuming OSI-standard terms.
+- The AI-agent nodes draw a distinct cluster of complaints: tool usages not persisted in agent memory ([#14361](https://github.com/n8n-io/n8n/issues/14361), 33👍, still open), lack of response streaming ([#11597](https://github.com/n8n-io/n8n/issues/11597), 31👍, closed), and a hard 5-minute AI-node timeout ([#11886](https://github.com/n8n-io/n8n/issues/11886), 17👍, closed).
+- The HTTP Request node surfaces integration friction of its own — Bearer auth reportedly breaks with pagination ([#16005](https://github.com/n8n-io/n8n/issues/16005), 23👍, open).
+- Very actively maintained but with a heavy backlog: the last 20 tracked releases land at a median gap of roughly zero days (often several a day, latest 2026-07-08), against ~1,455 open issues and PRs. No adopters are listed in the README.

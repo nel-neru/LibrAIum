@@ -16,9 +16,13 @@ added_date: 2026-07-09
 
 MIT-licensed 2D/3D game engine with its own full editor, a node/scene architecture, GDScript and C# scripting, and one-click export to desktop, mobile, and web. Community-governed under the nonprofit Godot Foundation — no royalties, no account, no runtime fees.
 
-## Personal Notes
+## Reception
 
-- The default pick for indie 2D and small-to-mid 3D: the editor is a single self-contained executable (no installer, no login) and it has a real 2D renderer, not a 3D scene with an orthographic camera. It is not the tool for AAA-scale open worlds, and console export requires a third-party porting partner (W4 Games et al.) — console SDKs can't ship in an MIT codebase.
-- C# needs the separate .NET editor build plus a locally installed .NET SDK, and C# projects still cannot export to the web platform as of 4.7. GDScript is the path of least resistance and what most docs and tutorials assume.
-- 3D physics: Jolt is bundled since 4.4 and the default for new projects, but projects started on older versions keep Godot Physics — switch Project Settings > Physics > 3D > Physics Engine to Jolt before debugging jitter, and check joint soft-limit behavior when migrating.
-- Minor 4.x releases move fast (4.7 stable landed 2026-06) and can rename APIs or change renderer behavior; pin the editor version per project and read the migration notes before bumping. The 3.x line is legacy — start anything new on 4.x.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The most-reacted still-open bug is a scripting-reflection gap — `get_class()` and `is_class()` not returning a script's `class_name` ([godotengine/godot#21789](https://github.com/godotengine/godot/issues/21789), 169👍).
+- Several of the tracker's loudest asks have since shipped and closed: C# support for Android in Godot 4.x ([#68153](https://github.com/godotengine/godot/issues/68153), 237👍), a multiline text cursor in the script editor ([#4884](https://github.com/godotengine/godot/issues/4884), 263👍), and a Godot 4.0 node-renaming proposal ([#30736](https://github.com/godotengine/godot/issues/30736), 248👍).
+- Recurring engine-level complaints center on the editor's inability to hot-reload a GDExtension library while running ([#66231](https://github.com/godotengine/godot/issues/66231), 197👍, closed) and a widely-noted performance critique of internal data-structure choices ([#23998](https://github.com/godotengine/godot/issues/23998), 224👍, closed).
+- Actively maintained — 20 tagged releases at a ~29-day median cadence (latest 2026-06-18) — but carrying a very large backlog (~18,500 open issues incl. PRs), so expect breadth of open reports.

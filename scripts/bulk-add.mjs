@@ -12,9 +12,9 @@
 //   node scripts/bulk-add.mjs --from-stars [--user <name>] [--min-stars <n>]
 //        [--language <L>] [--pushed-within <days>]
 //
-// Skeletons carry a placeholder Personal Notes bullet on purpose — the
-// /bulk-add command drafts real notes before anything is committed. The script
-// never commits.
+// Skeletons carry a placeholder Reception bullet on purpose — the /bulk-add
+// command drafts real Reception notes (third-party signal) before anything is
+// committed. The script never commits.
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -86,7 +86,7 @@ function skeleton(gh, category) {
     source: "manual",
     added_date: today(),
   };
-  const body = `# ${repoName}\n\n${gh.description ?? "(no description)"}\n\n## Personal Notes\n\n- \n`;
+  const body = `# ${repoName}\n\n${gh.description ?? "(no description)"}\n\n## Reception\n\n- \n`;
   return { meta, body };
 }
 
@@ -124,7 +124,7 @@ async function intake(dataDir, targets, defaultCategory) {
   console.log(`skipped (${dups.length}): ${dups.map((d) => `${d.url} → ${d.id}`).join(", ") || "—"}`);
   console.log(`failed  (${failed.length}): ${failed.map((f) => `${f.url}: ${f.error}`).join("; ") || "—"}`);
   if (added.length) {
-    console.log(`\nSkeletons written with placeholder notes — draft real Personal Notes before committing.`);
+    console.log(`\nSkeletons written with placeholder notes — draft real Reception before committing.`);
     const validator = join(dirname(fileURLToPath(import.meta.url)), "validate-data.mjs");
     execFileSync(process.execPath, [validator, "--data-dir", dataDir], { stdio: "inherit" });
   }

@@ -16,9 +16,12 @@ added_date: 2026-07-09
 
 The reference implementation of the Bitcoin protocol — a full node that downloads and validates every block and transaction on the P2P network, with an optional wallet and GUI. Consensus behavior is defined by this codebase rather than any spec, making it the ground truth for the whole ecosystem.
 
-## Personal Notes
+## Reception
 
-- Reach for it when you need a trust-nothing view of the chain or a backend for Bitcoin apps: it's a daemon you talk to over JSON-RPC (`bitcoin-cli`), REST, and ZMQ block/tx notifications — not a linkable library (the libbitcoinkernel extraction is still in progress).
-- Budget for initial block download: an archival node needs 650+ GB of disk and days of sync. `prune=550` cuts storage to a few GB if you don't need to serve historical blocks, and AssumeUTXO (`loadtxoutset`) shortcuts the sync itself.
-- Two recent breaking changes to know: the build moved from Autotools to CMake in v29.0 (older build guides are obsolete), and v30.0 removed legacy BDB wallets outright — run `migratewallet` to the descriptor format before upgrading old nodes.
-- Review culture is famously conservative — PRs routinely sit for months. The right trade-off for money software, but don't plan around a quick upstream fix; patch locally or track the release branch.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The most-reacted issues on the tracker are recurring "release schedule" coordination threads (e.g. [bitcoin/bitcoin#17432](https://github.com/bitcoin/bitcoin/issues/17432), 72👍; [#20851](https://github.com/bitcoin/bitcoin/issues/20851), 68👍; [#32275](https://github.com/bitcoin/bitcoin/issues/32275), 67👍), so the top of the list reflects how closely the ecosystem tracks each version rather than open defects.
+- The loudest policy dispute concerns arbitrary data in witness scripts — "Witness scripts being abused to bypass datacarriersize limit (CVE-2023-50428)" drew 49👍 ([#29187](https://github.com/bitcoin/bitcoin/issues/29187)) — alongside a debate over removing legacy message signing ([#27515](https://github.com/bitcoin/bitcoin/issues/27515), 46👍); both are now closed.
+- Maintenance is steady and mature: 20 tagged releases at a ~38-day median interval (latest 2026-07-08), against a large review surface (~681 open issues including PRs). No adopters are listed in the README.

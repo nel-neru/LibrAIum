@@ -1,6 +1,6 @@
 // Ranking for suggest_for_new_project: lexical scoring of the project
 // description against tags, category, name, language and body text.
-import { firstSummaryLine } from "./store.js";
+import { firstSummaryLine, bodySection } from "./store.js";
 
 const STOPWORDS = new Set(
   "a an and are as at be by for from has have i in is it my of on or that the to want with using use build make new project app".split(" ")
@@ -64,10 +64,15 @@ export function scoreEntry(entry, tokens, categories) {
   const bodyHits = tokens.filter((tok) => bodyLower.includes(tok));
   lexical += Math.min(bodyHits.length, 10);
 
-  const notesIdx = bodyLower.indexOf("## personal notes");
+  // Reward query relevance landing inside the curated sections — the community
+  // Reception layer or, for entries the owner has used, firsthand Personal Notes.
+  const sectionIdxs = ["## reception", "## personal notes"]
+    .map((h) => bodyLower.indexOf(h))
+    .filter((i) => i !== -1);
+  const notesIdx = sectionIdxs.length ? Math.min(...sectionIdxs) : -1;
   if (notesIdx !== -1 && bodyHits.some((tok) => bodyLower.indexOf(tok, notesIdx) !== -1)) {
     lexical += 3;
-    reasons.push("your Personal Notes mention related topics");
+    reasons.push("its Reception/notes mention related topics");
   }
 
   let score = lexical;
@@ -169,10 +174,10 @@ export function adoptionSteps(entry) {
   // the first-hour friction the library exists to remove.
   const setup = extractSetup(entry);
   const steps = setup
-    ? [...setup, `Then check your Personal Notes in LibrAIum (${entry.id}) for firsthand gotchas.`]
+    ? [...setup, `Then check its Reception in LibrAIum (${entry.id}) for the community's take and known limitations.`]
     : [
         `git clone ${entry.meta.github_url}`,
-        `Read its README against your requirements — then check your Personal Notes in LibrAIum (${entry.id}) for firsthand gotchas.`,
+        `Read its README against your requirements — then check its Reception in LibrAIum (${entry.id}) for the community's take and known limitations.`,
       ];
   const tags = entry.meta.tags ?? [];
   if (!setup && tags.includes("mcp-server")) {
@@ -205,6 +210,9 @@ export function suggest(entries, categories, projectDescription, goals = "", max
       stars: entry.meta.stars ?? 0,
       status: entry.meta.status,
       summary: firstSummaryLine(entry.body),
+      // Reception (third-party signal) is the primary curated layer; personal_notes
+      // stays populated only for the reference seeds the owner has used firsthand.
+      reception: bodySection(entry.body, "reception"),
       personal_notes: extractNotes(entry, tokens),
       relevance_score: score,
       why: reasons,

@@ -119,6 +119,24 @@ test("suggest: suggestions inline personal_notes from the entry body", () => {
   ];
   const res = suggest(entries, CATEGORIES, "a RAG pipeline");
   assert.deepEqual(res.suggestions[0].personal_notes, ["Watch memory on big corpora."]);
+  assert.equal(res.suggestions[0].reception, null, "no Reception section => reception is null");
+});
+
+test("suggest: surfaces the Reception section verbatim alongside personal_notes", () => {
+  const entries = [
+    entry("acme/rag-lib", {
+      tags: ["rag"],
+      body:
+        "# rag-lib\n\nA lib.\n\n## Reception\n\n- Issues frequently cite memory blowups on big corpora.\n\n## Personal Notes\n- Watch memory on big corpora.\n",
+    }),
+  ];
+  const res = suggest(entries, CATEGORIES, "a RAG pipeline");
+  assert.equal(
+    res.suggestions[0].reception,
+    "- Issues frequently cite memory blowups on big corpora.",
+    "Reception travels verbatim (third-party signal, not ranked bullets)"
+  );
+  assert.deepEqual(res.suggestions[0].personal_notes, ["Watch memory on big corpora."]);
 });
 
 test("alternativesFor mirrors Rust suggest_alternatives: shared tag + active + same category", () => {
@@ -167,7 +185,7 @@ test("adoptionSteps: Setup commands win over the clone fallback; tag hints only 
   assert.equal(steps[0], "docker run -p 6333:6333 q/db", "real command leads");
   assert.ok(!steps.some((s) => s.startsWith("git clone")), "no generic clone when Setup exists");
   assert.ok(!steps.some((s) => s.includes("infrastructure")), "tag hint suppressed when Setup is authoritative");
-  assert.ok(steps.at(-1).includes("Personal Notes"));
+  assert.ok(steps.at(-1).includes("Reception"));
 
   const noSetup = adoptionSteps(entry("a/b", { tags: ["vector-db"] }));
   assert.ok(noSetup[0].startsWith("git clone"));

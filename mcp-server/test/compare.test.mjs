@@ -1,13 +1,15 @@
-// Unit tests for the compare_repos matrix (lib/compare.js). The decision
-// hints and verbatim Personal Notes are the contract: comparisons must carry
-// the owner's firsthand judgment, not just metadata.
+// Unit tests for the compare_repos matrix (lib/compare.js). The decision hints
+// and the verbatim Reception (third-party signal) / Personal Notes (firsthand)
+// sections are the contract: comparisons must carry the curated take, not just
+// metadata. The section extractor itself is bodySection, unit-tested in store.test.
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { compare, resolveSelector, personalNotesSection } from "../lib/compare.js";
+import { compare, resolveSelector } from "../lib/compare.js";
 
-function entry(fullName, { tags = [], stars = 0, status = "active", language, push, category = "ai-agent", notes = "- A note." } = {}) {
+function entry(fullName, { tags = [], stars = 0, status = "active", language, push, category = "ai-agent", notes = "- A note.", reception } = {}) {
   const slug = fullName.toLowerCase().replace("/", "-");
+  const receptionBlock = reception ? `## Reception\n\n${reception}\n\n` : "";
   return {
     id: `${category}/${slug}`,
     path: `/fake/${slug}.md`,
@@ -21,7 +23,7 @@ function entry(fullName, { tags = [], stars = 0, status = "active", language, pu
       language,
       last_github_push: push,
     },
-    body: `# ${fullName.split("/")[1]}\n\nA summary line.\n\n## Personal Notes\n\n${notes}\n`,
+    body: `# ${fullName.split("/")[1]}\n\nA summary line.\n\n${receptionBlock}## Personal Notes\n\n${notes}\n`,
   };
 }
 
@@ -33,11 +35,13 @@ test("resolveSelector matches by id, full_name, and GitHub URL — case-insensit
   assert.equal(resolveSelector(entries, "no/such"), null);
 });
 
-test("personalNotesSection returns the verbatim section and null when absent", () => {
-  const withNotes = "# x\n\nSummary.\n\n## Personal Notes\n\n- First.\n- Second.\n";
-  assert.equal(personalNotesSection(withNotes), "- First.\n- Second.");
-  assert.equal(personalNotesSection("# x\n\nSummary only.\n"), null);
-  assert.equal(personalNotesSection("# x\n\n## Personal Notes\n\n\n"), null);
+test("compare: surfaces Reception verbatim alongside Personal Notes, null when a section is absent", () => {
+  const a = entry("open/old", { reception: "- Issues cite slow cold-start.", notes: "- Firsthand: fine for prototypes." });
+  const b = entry("graph/new");
+  const m = compare([a, b]);
+  assert.equal(m.entries[0].reception, "- Issues cite slow cold-start.");
+  assert.equal(m.entries[0].personal_notes, "- Firsthand: fine for prototypes.");
+  assert.equal(m.entries[1].reception, null, "no Reception section => null");
 });
 
 test("compare: matrix carries notes verbatim, tag analysis, and stale/star hints", () => {

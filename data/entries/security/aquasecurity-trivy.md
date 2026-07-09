@@ -16,9 +16,13 @@ added_date: 2026-07-09
 
 All-in-one security scanner from Aqua — one Go binary checks container images, filesystems, git repos, VM images, and Kubernetes clusters for CVEs, IaC misconfigurations, secrets, and licenses, and generates/scans SBOMs (CycloneDX, SPDX). Absorbed tfsec, so it doubles as the Terraform/Kubernetes-manifest misconfig linter.
 
-## Personal Notes
+## Reception
 
-- The default CI gate: `trivy image --exit-code 1 --severity HIGH,CRITICAL` plus the official trivy-action covers most pipelines. Grype is the leaner vuln-only alternative; Trivy earns the default slot by folding misconfig, secrets, and license checks into the same binary.
-- Biggest operational sharp edge is DB distribution: the vuln DB and the separate Java DB are pulled as OCI artifacts, and community-wide GHCR rate limits have broken CI at scale (`TOOMANYREQUESTS`, discussions #7668/#8009). Cache the DB between runs (`--download-db-only` once, then `--skip-db-update`); recent versions fall back through mirror.gcr.io → ghcr.io, and `--db-repository public.ecr.aws/aquasecurity/trivy-db` is the escape hatch.
-- Secret scanning is on by default and can dominate scan time on large images/filesystems — pass `--scanners vuln` when you only want CVEs. Suppress accepted findings with `.trivyignore` or VEX rather than dropping the severity gate.
-- Scope check: cloud-account scanning (`trivy aws`) moved out of core into the trivy-aws plugin. For continuous in-cluster scanning on [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes), run trivy-operator instead of cron-ing the CLI.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- Scan performance was the single loudest complaint on the tracker — image scans timing out drew the most reactions by a margin ([aquasecurity/trivy#3421](https://github.com/aquasecurity/trivy/issues/3421), 94👍) — and it has since been resolved (issue closed).
+- Output flexibility was a recurring, well-supported ask: emitting multiple outputs in one run ([#3243](https://github.com/aquasecurity/trivy/issues/3243), 74👍), a Markdown format template ([#3201](https://github.com/aquasecurity/trivy/issues/3201), 56👍), and multiple report options ([#720](https://github.com/aquasecurity/trivy/issues/720), 28👍) — all now closed.
+- The top-reacted *open* request is bundling the Java vulnerability DB into server mode ([#3560](https://github.com/aquasecurity/trivy/issues/3560), 63👍), a pain point for air-gapped/offline server deployments; distro coverage also lingers, e.g. Fedora support ([#121](https://github.com/aquasecurity/trivy/issues/121), 30👍, open).
+- Very actively maintained: 20 recent releases at a ~5-day median cadence (latest 2026-06-30), against a working backlog of ~230 open issues and PRs.

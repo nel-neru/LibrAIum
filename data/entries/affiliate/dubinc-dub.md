@@ -16,9 +16,12 @@ added_date: 2026-07-09
 
 Open-source link attribution platform — short links with conversion tracking, plus a Partners layer for running affiliate programs with flexible rewards and payouts. The closest thing to an open-source Rewardful/PartnerStack, built on Next.js + Prisma with Tinybird (ClickHouse) for click analytics.
 
-## Personal Notes
+## Reception
 
-- Reach for it when a SaaS needs referral/affiliate infrastructure end to end: per-click/lead/revenue-share rewards, dual-sided incentives, and payouts with tax-form handling (W-9/1099/W-8) instead of a spreadsheet.
-- "Self-hosting" here means deploying your own instance onto Vercel + PlanetScale + Tinybird + Upstash + R2 — the official guide has no Docker path, so don't expect a docker-compose stack like classic shorteners.
-- Open-core: AGPLv3 with a commercial `/ee` slice; on the hosted cloud, Partners is gated to the Business plan (~$75/mo) plus a 3–5% payout fee, and it's unclear how much of the payout rails works self-hosted — verify before committing.
-- Overkill if you only need short links (a lighter dedicated shortener is far less operational surface); as a bonus it's a large production Next.js App Router codebase worth reading alongside [vercel/next.js](https://github.com/vercel/next.js).
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues; each claim carries its source. Last gathered: 2026-07-09. -->
+
+- Docker / self-hosting is the loudest request on the tracker by a wide margin — the top-reacted open issue asks for a Docker self-host path ([dubinc/dub#25](https://github.com/dubinc/dub/issues/25), 102👍), reinforced by a Dockerfile request ([#378](https://github.com/dubinc/dub/issues/378)) and a self-hosting metathread ([#161](https://github.com/dubinc/dub/issues/161)). The supported path leans on managed services (Vercel/PlanetScale/Tinybird), not a docker-compose stack.
+- Dependence on external managed services is itself a friction point — [#598](https://github.com/dubinc/dub/issues/598) asks to eliminate the external-service dependency for self-hosters.
+- A public REST API was an early high-demand gap ([#73](https://github.com/dubinc/dub/issues/73), 20👍) that has since shipped (issue closed) — links and analytics are now exposed as APIs.
+- Actively developed but with a large backlog (~148 open issues) and no tagged GitHub releases, so track the changelog / pin a commit rather than a release tag.

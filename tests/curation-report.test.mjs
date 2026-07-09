@@ -39,3 +39,12 @@ test("succession: stale covered by shared-tag active sibling, archived uncovered
   ]);
   assert.deepEqual(report.succession.uncovered, ["alpha/dead-archived"]);
 });
+
+test("reception coverage passes through, null when not supplied", () => {
+  assert.equal(report.reception_review, null, "absent tracker => null");
+  const withCoverage = buildReport(listEntries(FIXTURE), loadCategories(FIXTURE), {
+    today: "2026-07-09",
+    receptionReview: { gathered: 2, total: 43 },
+  });
+  assert.deepEqual(withCoverage.reception_review, { gathered: 2, total: 43 });
+});

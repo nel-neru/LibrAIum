@@ -16,9 +16,13 @@ added_date: 2026-07-09
 
 Full-stack React framework from Vercel — file-based App Router, React Server Components, and per-route static/dynamic/streamed rendering in one build. Since v16 Turbopack is the default bundler and caching is fully opt-in via Cache Components.
 
-## Personal Notes
+## Reception
 
-- Default pick when a project is React-first and needs SSR/SEO; for content-heavy sites where shipping minimal JS matters more than the React ecosystem, [sveltejs/kit](https://github.com/sveltejs/kit) is the leaner alternative.
-- The caching model flipped in v16: everything is dynamic by default and you opt in with `use cache` — far saner than the implicit fetch caching of 13–14, but most tutorials and old codebases still assume the legacy behavior, so audit before upgrading.
-- Self-hosting works (`output: "standalone"` + Docker) but is second-class next to Vercel: `use cache` is in-memory per instance, so multi-replica deployments need a remote cache handler or ISR/cache behavior diverges between pods.
-- Don't gate auth solely in middleware — CVE-2025-29927 (the `x-middleware-subrequest` bypass) is the cautionary tale; enforce checks in route handlers too. Note `middleware.ts` is being renamed to `proxy.ts` in the v16 line.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The one still-open complaint among the most-reacted issues is the App Router breaking Framer Motion's shared-layout animations ([vercel/next.js#49279](https://github.com/vercel/next.js/issues/49279), 329👍) — an App-Router migration rough edge that remains unresolved.
+- Most of the tracker's top-reacted requests are historical and now closed — SSG improvements ([#9524](https://github.com/vercel/next.js/issues/9524), 1006👍), the "className did not match" hydration warning ([#7322](https://github.com/vercel/next.js/issues/7322), 780👍), transpiling node_modules ([#706](https://github.com/vercel/next.js/issues/706), 516👍), and first-class CSS support ([#8626](https://github.com/vercel/next.js/issues/8626), 356👍) — indicating the loudest early gaps have since shipped.
+- Maintenance is intensely active: 20 recent releases at a median one-day cadence (latest 2026-07-08), consistent with a near-daily canary channel.
+- The flip side of that pace is a very large tracker (~4,165 open issues and PRs), so pin exact versions and read the changelog rather than assume any single report reflects the current release.

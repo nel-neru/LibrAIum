@@ -25,9 +25,13 @@ act -l              # list jobs; `act push` replays the push event
 
 - Needs a running Docker daemon; first run prompts for a runner-image size (medium is the sane default).
 
-## Personal Notes
+## Reception
 
-- The default micro image is deliberately bare; most real workflows need `-P ubuntu-latest=catthehacker/ubuntu:act-latest` (put it in `.actrc`). The `full-*` parity images work but cost tens of GB of disk.
-- Nothing injects `GITHUB_TOKEN` locally — pass `-s GITHUB_TOKEN="$(gh auth token)"`; gate act-only divergence with `if: ${{ !env.ACT }}` steps.
-- Linux containers only: macOS/Windows jobs and anything needing systemd won't run faithfully. On Apple Silicon, add `--container-architecture linux/amd64`.
-- Keep workflow steps thin by delegating to [casey/just](https://github.com/casey/just) recipes — then act only has to reproduce the runner, not the logic.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The most-reacted items on the tracker are all early parity gaps with hosted GitHub Actions runners that have since shipped and closed — Actions v2 support ([nektos/act#74](https://github.com/nektos/act/issues/74), 221👍), working services ([#173](https://github.com/nektos/act/issues/173), 130👍), composite actions ([#339](https://github.com/nektos/act/issues/339), 73👍), and artifact support ([#169](https://github.com/nektos/act/issues/169), 70👍) — so most historic complaints reflect a tool that has closed the gap rather than open pain.
+- The loudest still-open request is Podman as an alternative to the Docker daemon ([#303](https://github.com/nektos/act/issues/303), 61👍), signalling friction for users who don't run Docker.
+- Maintenance looks steady and mature: 20 tagged releases at a ~31-day median interval, most recently 2026-06-01, though the tracker still carries a sizeable backlog (~344 open issues/PRs).
+- No adopters are named in the README (limited public signal on named users).

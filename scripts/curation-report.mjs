@@ -13,7 +13,7 @@ import { listEntries, loadCategories, resolveDataDir, today } from "../mcp-serve
 import { alternativesFor } from "../mcp-server/lib/suggest.js";
 import { editDistance } from "../mcp-server/lib/search.js";
 
-export function buildReport(entries, categories, { today: todayStr = today(), notesReview = null } = {}) {
+export function buildReport(entries, categories, { today: todayStr = today(), receptionReview = null } = {}) {
   const ageDays = (d) => (Date.parse(`${todayStr}T00:00:00Z`) - Date.parse(`${d}T00:00:00Z`)) / 86_400_000;
 
   const freshness = { fresh: [], d30: [], d90: [], missing: [] };
@@ -82,7 +82,7 @@ export function buildReport(entries, categories, { today: todayStr = today(), no
     singleton_tags,
     near_synonym_pairs,
     succession,
-    notes_review: notesReview,
+    reception_review: receptionReview,
   };
 }
 
@@ -106,7 +106,7 @@ function printHuman(r) {
   for (const u of r.succession.uncovered) console.log(`  UNCOVERED: ${u} — shelf hole, no active shared-tag alternative`);
   if (!r.succession.covered.length && !r.succession.uncovered.length) console.log("  (no stale/archived entries)");
   console.log(
-    `notes review: ${r.notes_review ? `${r.notes_review.confirmed}/${r.notes_review.total} confirmed` : "n/a (.claude/notes-review.md not found)"}`
+    `reception: ${r.reception_review ? `${r.reception_review.gathered}/${r.reception_review.total} gathered` : "n/a (.claude/reception-review.md not found)"}`
   );
 }
 
@@ -115,16 +115,16 @@ if (isMain) {
   const dataDir = resolveDataDir();
   const entries = listEntries(dataDir);
   const categories = loadCategories(dataDir);
-  const notesPath = join(dirname(fileURLToPath(import.meta.url)), "..", ".claude", "notes-review.md");
-  let notesReview = null;
-  if (existsSync(notesPath)) {
-    const txt = readFileSync(notesPath, "utf8");
-    notesReview = {
-      confirmed: (txt.match(/^- \[x\]/gim) ?? []).length,
+  const trackerPath = join(dirname(fileURLToPath(import.meta.url)), "..", ".claude", "reception-review.md");
+  let receptionReview = null;
+  if (existsSync(trackerPath)) {
+    const txt = readFileSync(trackerPath, "utf8");
+    receptionReview = {
+      gathered: (txt.match(/^- \[x\]/gim) ?? []).length,
       total: (txt.match(/^- \[[ x]\]/gim) ?? []).length,
     };
   }
-  const report = buildReport(entries, categories, { notesReview });
+  const report = buildReport(entries, categories, { receptionReview });
   if (process.argv.includes("--json")) console.log(JSON.stringify(report, null, 2));
   else printHuman(report);
 }

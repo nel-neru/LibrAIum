@@ -25,9 +25,13 @@ npm create tauri-app@latest
 
 - Needs the Rust toolchain (`rustup`) plus your OS's webview deps (Linux: WebKitGTK).
 
-## Personal Notes
+## Reception
 
-- The Electron alternative that actually stuck — LibrAIum's own GUI is Tauri v2 + Svelte 5. Any SPA frontend drops in; pairs naturally with [sveltejs/kit](https://github.com/sveltejs/kit) using the static adapter.
-- The system webview cuts both ways: you don't control the engine, and WebKitGTK on Linux lags Chrome/Safari with real compositing quirks — test Linux early instead of assuming Chrome-parity CSS.
-- IPC naming trips everyone once: command arguments become camelCase on the JS side, but struct fields inside payloads stay as declared in Rust (`min_stars`, not `minStars`). Also no cross-compilation — release builds need one CI runner per OS (tauri-action covers GitHub Actions).
-- Friction to budget for: v2's capability files require an explicit grant per plugin API, and the backend is Rust or sidecar binaries — a team that needs Node in-process is still better off on [electron/electron](https://github.com/electron/electron). For mobile-first, pixel-identical UI, [flutter/flutter](https://github.com/flutter/flutter) is the other shelf.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The loudest open request pushes back on Tauri's defining choice of rendering through the OS webview — it asks the project to bundle a Chromium renderer for cross-platform rendering consistency ([tauri-apps/tauri#14963](https://github.com/tauri-apps/tauri/issues/14963), 222👍).
+- Linux webview packaging is a recurring friction point: the missing libwebkit2gtk-4.0 on Ubuntu 24 / Debian 13 drew 150 reactions ([#9662](https://github.com/tauri-apps/tauri/issues/9662), since closed), and type-safe IPC remains a high-demand gap via TypeScript codegen for Rust commands ([#1514](https://github.com/tauri-apps/tauri/issues/1514), 142👍).
+- v2 resolved several of the tracker's biggest historical asks — Android/iOS support ([#3884](https://github.com/tauri-apps/tauri/issues/3884), 113👍; [#843](https://github.com/tauri-apps/tauri/issues/843), 134👍) and deep linking via custom URI schemes ([#323](https://github.com/tauri-apps/tauri/issues/323), 168👍) are now closed.
+- Actively released (20 recent releases, latest 2026-07-01) but carrying a large backlog (~1,429 open issues including PRs); no adopters are listed in the README.

@@ -16,9 +16,12 @@ added_date: 2026-07-09
 
 The canonical toolkit for decoding, encoding, transcoding, muxing, filtering, and streaming audio/video — the `ffmpeg`/`ffprobe`/`ffplay` CLIs plus the libav* C libraries nearly every media application builds on. This GitHub repo is a read-only mirror of git.ffmpeg.org: development happens on the ffmpeg-devel mailing list, so PRs and issues filed here go nowhere.
 
-## Personal Notes
+## Reception
 
-- The default answer to any batch media task — remux, transcode, extract audio, cut clips, generate thumbnails — and `ffprobe -print_format json` makes metadata scripting trivial. Also the mandatory preprocessing step for [openai/whisper](https://github.com/openai/whisper), which expects `ffmpeg` on PATH.
-- Sharp edge: CLI options are positional and bind to the *next* input/output. The classic trap is `-ss` — before `-i` it seeks the input (fast, but snaps to keyframes under `-c copy`); after `-i` it decodes up to the timestamp (frame-accurate, slow).
-- No two `ffmpeg` binaries are alike: features follow configure flags, so check `ffmpeg -buildconf` before assuming an encoder exists. Licensing follows the flags too — `--enable-gpl` (libx264/x265) makes the whole binary GPL and `--enable-nonfree` (FDK-AAC) makes it unredistributable, which bites when shipping ffmpeg inside a product. Distro packages also lag releases by years.
-- Hardware encoders (VideoToolbox, NVENC, QSV, VAAPI) run real-time but lose quality-per-bitrate to libx264/libx265 — use hardware for live/preview paths, software for archival encodes.
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- The GitHub tracker carries almost no reception signal because this repo is a read-only mirror — only 3 open issues and no highly-reacted threads (dossier), matching the summary's note that development happens on the ffmpeg-devel mailing list and issues/PRs filed here go nowhere.
+- No tagged GitHub releases are exposed on the mirror (release cadence unavailable in the dossier), so version cadence and changelogs must be tracked upstream at git.ffmpeg.org rather than here; the mirror was last pushed 2026-07-08.
+- With an empty issue backlog and no README-listed adopters, third-party reception on GitHub is limited public signal — the project's real discussion and review live off-platform.

@@ -105,7 +105,7 @@ pub struct Entry {
     /// Absolute path of the backing file
     pub path: String,
     pub meta: EntryMeta,
-    /// Markdown body (summary + `## Personal Notes`)
+    /// Markdown body (summary + `## Reception`, and any firsthand `## Personal Notes`)
     pub body: String,
 }
 
