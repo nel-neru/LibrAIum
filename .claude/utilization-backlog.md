@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P3 — Expose entries as MCP resources for @-mentions
-- **Deliverable**: `mcp-server/index.js` ResourceTemplate `entry://{category}/{slug}` + smoke assertions.
-- **Why**: '@libraium' autocomplete pulls full entry Markdown into context with zero tool-call round trips.
-- **Acceptance**: resources/list returns all entries with names "owner/repo — category"; resources/read of entry://ai-agent/qdrant-qdrant returns the exact on-disk Markdown.
-- **Build notes**: list via listEntries → {uri, name, mimeType: text/markdown}; read resolves via the entry id (never joins URI segments into paths — keep the traversal guard story intact) and returns the raw file.
-
 ### [ ] P4 — /bulk-add — batch intake from a URL list or GitHub stars
 - **Deliverable**: `scripts/bulk-add.mjs` + `.claude/commands/bulk-add.md`.
 - **Why**: shelving 10-15 harvested URLs means running /add-entry N times.
@@ -27,6 +21,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P3 Entries as MCP resources (@-mention) — 93e2abb (2026-07-09, iter 15). Proven: resources/list = 43 named entries, resources/read returns raw file, traversal URI 404s. All P3 tier done.
 - [x] P3 '## Setup' adoption steps — 5696d1b (2026-07-09, iter 14). Proven: qdrant how_to_adopt[0] is the real docker run; 8 flagship entries backfilled; Setup-wins/fallback-kept unit tests. Owner can add Setup to more entries via /add-entry or by hand.
 - [x] P3 CATALOG.md + README stats, drift-checked — 2082460 (2026-07-09, iter 13). Proven: entry edit → --check exit 1; regen → exit 0; verify-all now 7 stages. Post-edit hook auto-regenerates. Output timestamp-free so drift is real, not calendar noise.
 - [x] P3 /confirm-notes + seeded notes-review checklist — 634b49f (2026-07-09, iter 12). Proven: 36 AI-drafted entries enumerated (all on disk, 7 seeds excluded), curation-report reads 0/36, ticking advances the counter. Owner-facing action: run `/confirm-notes` to burn down the 36.
