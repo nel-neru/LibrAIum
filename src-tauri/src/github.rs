@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use chrono::{NaiveDate, Utc};
 use serde::Deserialize;
 
@@ -20,44 +22,55 @@ pub struct GhRepo {
 
 pub fn fetch_repo(full_name: &str, token: Option<&str>) -> Result<GhRepo> {
     let url = format!("https://api.github.com/repos/{full_name}");
-    let mut req = ureq::get(&url)
-        // Same 10s bound as the Node MCP server: a stalled connection must
-        // not hang a refresh (ureq has no overall timeout by default).
-        .timeout(std::time::Duration::from_secs(10))
-        .set("User-Agent", "LibrAIum/1.0")
-        .set("Accept", "application/vnd.github+json")
-        .set("X-GitHub-Api-Version", "2022-11-28");
+    // Same 10s bound as the Node MCP server: a stalled connection must not hang a
+    // refresh (ureq has no overall timeout by default). http_status_as_error is
+    // turned off so a 4xx/5xx comes back as Ok(resp) — ureq 3's Error::StatusCode
+    // carries no body, and we need GitHub's error text to build the message below.
+    let agent: ureq::Agent = ureq::Agent::config_builder()
+        .timeout_global(Some(Duration::from_secs(10)))
+        .http_status_as_error(false)
+        .build()
+        .into();
+    let mut req = agent
+        .get(url.as_str())
+        .header("User-Agent", "LibrAIum/1.0")
+        .header("Accept", "application/vnd.github+json")
+        .header("X-GitHub-Api-Version", "2022-11-28");
     if let Some(t) = token {
         if !t.is_empty() {
-            req = req.set("Authorization", &format!("Bearer {t}"));
+            req = req.header("Authorization", &format!("Bearer {t}"));
         }
     }
-    match req.call() {
-        Ok(resp) => resp
-            .into_json::<GhRepo>()
-            .map_err(|e| AppError::GitHub(format!("invalid response for {full_name}: {e}"))),
-        Err(ureq::Error::Status(code, resp)) => {
-            let body = resp.into_string().unwrap_or_default();
-            let msg = body
-                .lines()
-                .next()
-                .unwrap_or("")
-                .chars()
-                .take(200)
-                .collect::<String>();
-            match code {
-                // Typed so refresh_all can abort the sweep instead of
-                // collecting one identical error per remaining entry.
-                403 | 429 => Err(AppError::RateLimited(format!(
-                    "{full_name}: HTTP {code} (set a GitHub token in Settings) {msg}"
-                ))),
-                404 => Err(AppError::GitHub(format!(
-                    "{full_name}: HTTP 404 (repository not found — renamed or private?) {msg}"
-                ))),
-                _ => Err(AppError::GitHub(format!("{full_name}: HTTP {code} {msg}"))),
-            }
-        }
-        Err(e) => Err(AppError::GitHub(format!("{full_name}: {e}"))),
+    // With http_status_as_error(false), call() only errs on transport failures
+    // (DNS, connect, the 10s timeout); HTTP status is inspected on the response.
+    let mut resp = req
+        .call()
+        .map_err(|e| AppError::GitHub(format!("{full_name}: {e}")))?;
+    let code = resp.status().as_u16();
+    if (200..300).contains(&code) {
+        return resp
+            .body_mut()
+            .read_json::<GhRepo>()
+            .map_err(|e| AppError::GitHub(format!("invalid response for {full_name}: {e}")));
+    }
+    let body = resp.body_mut().read_to_string().unwrap_or_default();
+    let msg = body
+        .lines()
+        .next()
+        .unwrap_or("")
+        .chars()
+        .take(200)
+        .collect::<String>();
+    match code {
+        // Typed so refresh_all can abort the sweep instead of
+        // collecting one identical error per remaining entry.
+        403 | 429 => Err(AppError::RateLimited(format!(
+            "{full_name}: HTTP {code} (set a GitHub token in Settings) {msg}"
+        ))),
+        404 => Err(AppError::GitHub(format!(
+            "{full_name}: HTTP 404 (repository not found — renamed or private?) {msg}"
+        ))),
+        _ => Err(AppError::GitHub(format!("{full_name}: HTTP {code} {msg}"))),
     }
 }
 
