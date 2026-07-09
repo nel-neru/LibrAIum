@@ -9,6 +9,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P1 rename-tag atomicity fix — 9376195 (2026-07-09, iter 20). A 3-lens adversarial convergence audit found (defect-hunter) + upheld (adjudicator) a live-reproduced data-safety bug: a refused (no --merge) rename half-renamed the library. Fixed with validate-all-then-write-all; regression test fails on the old code, passes on the fix.
 - [x] P2 refresh-metadata rewriter tests (data-safety) — 13386b7 (2026-07-09, iter 19). Proven: setScalar/rewriteEntry pinned (targeted scalars change, flow-style tags line byte-identical, idempotent, throws on no-frontmatter); CLI body guarded behind isMain so import is side-effect-free.
 - [x] P2 bulk-add proposeCategory test + hyphenated-tag fix — 7774851 (2026-07-09, iter 18). Proven: 5 cases green; writing the test surfaced a real bug (raw hyphenated tags never matched the hyphen-split haystack) — fixed by tokenizing tags into the descriptor.
 - [x] P4 /scout candidate sourcing — e1277d5 (2026-07-09, iter 17). Proven: audio-voice recipe returned a deduped shortlist (openai/whisper filtered as shelved; whisperX/FunASR/NeMo/vosk fresh with stars/push/license). Docs-only orchestration over gh search + findDuplicate.
