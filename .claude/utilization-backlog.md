@@ -1,11 +1,34 @@
 # Utilization Backlog
 
-PDCA loop state for `/utilize` — one iteration = one deliverable, proven useful (acceptance check exercised), verified (verify-all green), committed.
-Seeded 2026-07-09 from a 6-persona ideation workflow (new-project dev, maintainer/curator, Claude integration, batch automation, publisher, decision support): 30 proposals → 16 items after dedup/constraint checks.
+## LOOP COMPLETE (2026-07-09, after 20 iterations)
 
-Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic search, no project bootstrap generation; GitHub API only inside explicitly user-invoked actions; no new runtime deps; dual-implementation parity rules apply to any data-format change.
+The `/utilize` loop has converged. The seeded 16-item backlog plus 4 items
+surfaced by mid-loop convergence audits are all built, verified, and committed
+on `feat/utilization-tooling` (nothing pushed). Two independent adversarial
+audits gate this call: a 3-lens convergence audit (defect-hunter + workflow-gap
++ skeptic → adjudicator) surfaced exactly one real, live-reproduced data-safety
+defect (rename-tag non-atomic half-write), fixed in iter 20 with a regression
+test; a final focused defect sweep over every remaining data-mutating write
+path (bulk-add intake, refresh-metadata setScalar, build-catalog write) came
+back clean. What remains is owner-driven CONTENT work — confirming the 36
+doc-derived Personal Notes (`/confirm-notes`) and filling thin shelves
+(`/scout` → `/bulk-add`) — which uses the tooling built here, not more tooling
+to build. Restart anytime with `/loop /utilize` if new goals appear.
 
-## Pending  (ordered: highest value per effort first)
+Utilization surface delivered (20 iterations):
+- MCP: search_repos v2 (filters + zero-result diagnostics), suggest (inline
+  personal_notes + Setup-derived adoption steps), compare_repos,
+  get_library_overview, get_repo_details (+auto stale alternatives), entries as
+  `entry://` resources for @-mentions.
+- Scripts: refresh-metadata, curation-report, rename-tag, build-catalog
+  (CATALOG.md + README stats, drift-checked), register-mcp (+--doctor), bulk-add
+  (URL list + --from-stars).
+- Commands: /utilize, /refresh-metadata, /confirm-notes, /bulk-add, /scout.
+- Skill + docs: libraium-first (user-scope) + docs/library-first-setup.md.
+- Verify-all grew 6→7 stages (catalog drift); two real bugs found & fixed via
+  new tests (suggest tag-wildcard match; bulk-add hyphenated-tag matching).
+
+## Pending  (empty — loop converged)
 
 ## Done
 
