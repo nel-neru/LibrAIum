@@ -54,9 +54,15 @@ export function proposeCategory(repo, categories, tagsByCat) {
   let best = null;
   let bestScore = 0;
   for (const c of categories) {
-    const descriptor = new Set([...tokens(`${c.name} ${c.description ?? ""}`), ...(tagsByCat.get(c.id) ?? [])]);
+    // Tags must be tokenized into the descriptor too: the haystack splits on
+    // hyphens ("vector database" -> vector, database), so a raw hyphenated tag
+    // like "vector-db" could otherwise never match — most library tags are
+    // hyphenated, which would leave the shelf's tag vocabulary dead weight.
+    const descriptor = new Set(tokens(`${c.name} ${c.description ?? ""}`));
+    for (const tag of tagsByCat.get(c.id) ?? []) for (const t of tokens(tag)) descriptor.add(t);
     let score = 0;
     for (const t of descriptor) if (hay.has(t)) score++;
+    // Strict > keeps categories.yaml order on ties (first shelf wins).
     if (score > bestScore) {
       bestScore = score;
       best = c.id;
