@@ -1,16 +1,18 @@
-# Personal Notes review checklist
+# Reception coverage checklist
 
-The 36 entries below were drafted on 2026-07-09 from documentation, release notes,
-and issues — honest usage guidance, but **not** the owner's firsthand experience.
-`/confirm-notes` walks through them ~5 at a time, interviews the owner, and rewrites
-each `## Personal Notes` section in their real voice. Tick a box when its notes have
-been owner-confirmed.
+Each of the 43 entries below needs a sourced `## Reception` section — synthesized
+**third-party** signal (high-reaction GitHub issues, named adopters, known
+limitations, migration to/from, maturity/maintenance), **not** the owner's
+firsthand experience. `/reception` walks through them ~3 at a time: it runs
+`scripts/reception-scan.mjs` to gather evidence, drafts the section with a source
+per claim, and ticks the box here.
 
-The 7 reference-corpus seeds (qdrant, llama_index, langgraph, modelcontextprotocol/servers,
-swarm, casey/just, sveltejs/kit) are intentionally absent — their notes are already the
-owner's own.
+Reception is orthogonal to firsthand Personal Notes, so even the 7 reference seeds
+(qdrant, llama_index, langgraph, modelcontextprotocol/servers, swarm, casey/just,
+sveltejs/kit) — which keep their own `## Personal Notes` — still want a `## Reception`
+section (added above the Personal Notes, both retained).
 
-Progress is reported by `scripts/curation-report.mjs` (notes-review section).
+Coverage is reported by `scripts/curation-report.mjs` (reception line).
 
 ## Pending
 
@@ -21,8 +23,13 @@ Progress is reported by `scripts/curation-report.mjs` (notes-review section).
 
 ### ai-agent
 
+- [ ] ai-agent/langchain-ai-langgraph — langchain-ai/langgraph
 - [ ] ai-agent/langgenius-dify — langgenius/dify
+- [ ] ai-agent/modelcontextprotocol-servers — modelcontextprotocol/servers
 - [ ] ai-agent/ollama-ollama — ollama/ollama
+- [ ] ai-agent/openai-swarm — openai/swarm
+- [ ] ai-agent/qdrant-qdrant — qdrant/qdrant
+- [ ] ai-agent/run-llama-llama_index — run-llama/llama_index
 
 ### audio-voice
 
@@ -56,6 +63,7 @@ Progress is reported by `scripts/curation-report.mjs` (notes-review section).
 
 ### devops-infra
 
+- [ ] devops-infra/casey-just — casey/just
 - [ ] devops-infra/kubernetes-kubernetes — kubernetes/kubernetes
 - [ ] devops-infra/netdata-netdata — netdata/netdata
 
@@ -102,4 +110,5 @@ Progress is reported by `scripts/curation-report.mjs` (notes-review section).
 ### web-app
 
 - [ ] web-app/react-react — react/react
+- [ ] web-app/sveltejs-kit — sveltejs/kit
 - [ ] web-app/vercel-next.js — vercel/next.js
