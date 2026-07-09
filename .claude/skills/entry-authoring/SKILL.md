@@ -1,6 +1,6 @@
 ---
 name: entry-authoring
-description: Use when writing or editing LibrAIum data entries (data/entries/**/*.md) — house style for summaries, Personal Notes, tags, and metadata
+description: Use when writing or editing LibrAIum data entries (data/entries/**/*.md) — house style for summaries, Reception, Personal Notes, tags, and metadata
 ---
 
 # LibrAIum entry authoring — house style
@@ -42,17 +42,23 @@ Dates are plain unquoted scalars (`2026-07-08`). Omit optional fields entirely r
 
 - <optional step note>
 
-## Personal Notes
+## Reception
 
-- <bullet>
-- <bullet>
+<!-- Third-party reception, not the owner's firsthand experience. Last gathered: YYYY-MM-DD. -->
+
+- <attributive bullet — "Issues frequently cite…", with a source link>
+- <attributive bullet — "Adopters include…", with a source link>
+
+## Personal Notes            (optional — firsthand only)
+
+- <firsthand bullet, only where you have genuinely used the tool>
 ```
 
 The heading is the repo's short name only (`# qdrant`, `# kit`, `# just`) — not `owner/repo`.
 
 ## Setup section (optional)
 
-An optional `## Setup` between the summary and Personal Notes: 2-4 **verified** install/run commands (a fenced ```bash block) plus optional step bullets — the real first-hour path. The MCP server's `adoptionSteps` reads it, so a suggestion returns `docker run -p 6333:6333 qdrant/qdrant` instead of the generic "git clone … read the README". Rules: commands must come from the repo's README/docs at research time — **never invent flags, ports, or package names**. Keep it minimal (the happy path, not every install method); omit the section entirely rather than guess.
+An optional `## Setup` between the summary and Reception: 2-4 **verified** install/run commands (a fenced ```bash block) plus optional step bullets — the real first-hour path. The MCP server's `adoptionSteps` reads it, so a suggestion returns `docker run -p 6333:6333 qdrant/qdrant` instead of the generic "git clone … read the README". Rules: commands must come from the repo's README/docs at research time — **never invent flags, ports, or package names**. Keep it minimal (the happy path, not every install method); omit the section entirely rather than guess.
 
 ## Summary rules
 
@@ -60,9 +66,21 @@ An optional `## Setup` between the summary and Personal Notes: 2-4 **verified** 
 - Say what the thing *is* and the one trait that earned it a shelf spot. Em-dash asides fit the voice: "A command runner — like make, but without the build-system baggage."
 - Concrete over promotional. "gRPC + REST APIs, runs great locally via Docker" — yes. "Blazingly fast, feature-rich, production-ready" — never. If a sentence could appear in the repo's own marketing, cut it.
 
-## Personal Notes voice
+## Reception voice
 
-This section is LibrAIum's reason to exist — it's what the owner knows that the README doesn't say. 2–4 bullets, each carrying real signal:
+`## Reception` is the library's primary content layer: synthesized **third-party** signal about how a repo is received in the wild — *not* the owner's firsthand experience. The owner is a curator who hasn't personally used most entries, so honesty comes from **attribution**, not from confirmed personal history. 2–5 bullets, each a single claim carrying its source:
+
+- **Third-person, attributive, evidential.** Every claim names its source class: "Issues frequently cite…", "The most-upvoted open issue…", "Adopters include…", "Maintainers acknowledge…", "Teams commonly migrate to…". **Never first person** (no "I", "my", "we", "in my experience") — that fabricated-firsthand voice is exactly what this layer replaces.
+- **What belongs (each bullet = one claim + its source):** a recurring complaint from high-reaction issues (link the issue); a maintainer-acknowledged or frequently-hit limitation; **named** adopters (a real org/project with a link — never "many companies"); migration signal (what people move to/from, and why — cross-link other library entries as Markdown links); maturity/maintenance signal (release cadence, issue responsiveness, "in maintenance mode").
+- **What doesn't:** firsthand claims or invented experience, README/marketing paraphrase ("blazingly fast"), unsourced vibes ("people say it's buggy" — attribute it or cut it), values already in the frontmatter (stars/language/push date), speculation stated as fact.
+- **Sourcing rule.** Each bullet carries an attribution phrase plus a Markdown link to the concrete artifact when one exists — prefer linking the single highest-reaction issue over "many issues". Where public evidence is thin, write "limited public signal" rather than fabricate.
+- **Provenance.** Open the section with an HTML comment stamping the gather date, so staleness stays visible:
+  `<!-- Third-party reception, not the owner's firsthand experience. Synthesized from public GitHub issues/releases and adopter mentions; each claim carries its source. Last gathered: YYYY-MM-DD. -->`
+- Populate it with the `/reception` command (GitHub-first: high-reaction issues, releases, adopters; general-web signal is an explicit per-run opt-in) — never by guessing.
+
+## Personal Notes voice (optional — firsthand only)
+
+`## Personal Notes` is now **optional** and reserved for the rare entry the owner has **genuinely used** (the reference-corpus seeds). For everything else, use `## Reception` instead — **never draft doc-derived Personal Notes**, since laundering documentation into fake personal history is the exact dishonesty `## Reception` exists to replace. Where it does apply, it's what the owner knows firsthand that the README doesn't say. 2–4 bullets, each carrying real signal:
 
 - **Firsthand and specific.** "My default vector DB for RAG prototypes — single `docker run` and you're up." "Adopted in every new repo: a `justfile` beats a README full of copy-paste commands."
 - **When to use it** and, just as valuable, when *not* to: "Gets heavy fast — for small projects consider hand-rolling retrieval against qdrant directly."
@@ -114,7 +132,30 @@ High-performance vector database and similarity search engine with filtering, wr
 - Watch memory usage with large collections; enable on-disk payload storage beyond ~1M vectors.
 ```
 
-Why it's good: two-sentence summary with a concrete deployment fact; notes state a default choice, a comparative judgment (vs FAISS), a cross-link to another library entry, and a numeric gotcha; 4 reused tags mixing concept (`vector-db`, `rag`, `similarity-search`) and tech (`rust`); every frontmatter value came from the GitHub API.
+Why it's good: two-sentence summary with a concrete deployment fact; notes state a default choice, a comparative judgment (vs FAISS), a cross-link to another library entry, and a numeric gotcha; 4 reused tags mixing concept (`vector-db`, `rag`, `similarity-search`) and tech (`rust`); every frontmatter value came from the GitHub API. `qdrant` is one of the reference-corpus seeds the owner has genuinely used, which is why its `## Personal Notes` is firsthand and appropriate — most entries carry a `## Reception` section instead.
+
+### Reception example
+
+`## Reception` for a repo the owner has *not* used firsthand (drafted by `/reception`, every claim sourced, no first person):
+
+```markdown
+## Reception
+
+<!-- Third-party reception, not the owner's firsthand experience.
+     Synthesized from public GitHub issues/releases and adopter mentions;
+     each claim carries its source. Last gathered: 2026-07-09. -->
+
+- Concurrency and queuing is the most recurring complaint on the tracker — high-reaction
+  issues repeatedly ask for parallel request handling, addressed in part by the
+  `OLLAMA_NUM_PARALLEL` / `OLLAMA_MAX_LOADED_MODELS` env vars.
+- Adopters / integrations include Open WebUI, Continue, and LangChain's `ChatOllama`,
+  which cite it as the default local-model backend.
+- Teams commonly reach for it as the local-first alternative to hosted OpenAI-style APIs.
+- Maintenance signal is strong: frequent tagged releases and an active tracker; the sharp
+  edge users hit is GPU/VRAM sizing for larger models (limited public benchmarking).
+```
+
+Every bullet names who is saying it (issues, adopters, teams, release cadence) and links the concrete artifact where one exists; none claims firsthand use, none restates marketing.
 
 ## After writing
 
