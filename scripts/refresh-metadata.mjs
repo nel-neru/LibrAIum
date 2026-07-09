@@ -18,7 +18,7 @@
 // the user (mirrors guardRedirectedDuplicate semantics in both add paths).
 import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 import {
   listEntries,
@@ -60,7 +60,7 @@ const FIELD_ORDER = [
   "language", "last_github_push", "last_checked", "status", "source", "added_date",
 ];
 
-function setScalar(lines, key, value) {
+export function setScalar(lines, key, value) {
   const rendered = `${key}: ${value}`;
   const idx = lines.findIndex((l) => l.startsWith(`${key}:`));
   if (idx !== -1) {
@@ -78,7 +78,7 @@ function setScalar(lines, key, value) {
   return true;
 }
 
-function rewriteEntry(path, next) {
+export function rewriteEntry(path, next) {
   const raw = readFileSync(path, "utf8");
   const lines = raw.split("\n");
   const open = lines.findIndex((l) => l.trimEnd() === "---");
@@ -96,6 +96,9 @@ function rewriteEntry(path, next) {
   return changed;
 }
 
+// Only run the network/CLI body when invoked directly — importing the module
+// (e.g. for unit tests over setScalar/rewriteEntry) must not fire a refresh.
+async function runCli() {
 const args = parseArgs(process.argv);
 const dataDir = resolveDataDir(process.argv, process.env);
 let entries = listEntries(dataDir);
@@ -181,3 +184,7 @@ if (args.write) {
 }
 
 process.exit(errors.length ? 1 : 0);
+}
+
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) await runCli();
