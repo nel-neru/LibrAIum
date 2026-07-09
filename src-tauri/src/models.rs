@@ -14,8 +14,8 @@ fn default_source() -> String {
 // the Node twin (store.js validateMeta) rejects non-strings — so enforce
 // strictness here too and keep the reject contract identical on both sides.
 fn strict_string<'de, D: Deserializer<'de>>(d: D) -> Result<String, D::Error> {
-    match serde_yaml::Value::deserialize(d)? {
-        serde_yaml::Value::String(s) => Ok(s),
+    match serde_norway::Value::deserialize(d)? {
+        serde_norway::Value::String(s) => Ok(s),
         other => Err(D::Error::custom(format!(
             "expected a string, got {other:?}"
         ))),
@@ -23,9 +23,9 @@ fn strict_string<'de, D: Deserializer<'de>>(d: D) -> Result<String, D::Error> {
 }
 
 fn strict_opt_string<'de, D: Deserializer<'de>>(d: D) -> Result<Option<String>, D::Error> {
-    match serde_yaml::Value::deserialize(d)? {
-        serde_yaml::Value::Null => Ok(None),
-        serde_yaml::Value::String(s) => Ok(Some(s)),
+    match serde_norway::Value::deserialize(d)? {
+        serde_norway::Value::Null => Ok(None),
+        serde_norway::Value::String(s) => Ok(Some(s)),
         other => Err(D::Error::custom(format!(
             "expected a string or null, got {other:?}"
         ))),
@@ -33,11 +33,11 @@ fn strict_opt_string<'de, D: Deserializer<'de>>(d: D) -> Result<Option<String>, 
 }
 
 fn strict_string_vec<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<String>, D::Error> {
-    match serde_yaml::Value::deserialize(d)? {
-        serde_yaml::Value::Sequence(seq) => seq
+    match serde_norway::Value::deserialize(d)? {
+        serde_norway::Value::Sequence(seq) => seq
             .into_iter()
             .map(|v| match v {
-                serde_yaml::Value::String(s) => Ok(s),
+                serde_norway::Value::String(s) => Ok(s),
                 other => Err(D::Error::custom(format!(
                     "expected an array of strings, got element {other:?}"
                 ))),

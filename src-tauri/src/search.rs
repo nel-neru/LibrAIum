@@ -79,7 +79,7 @@ pub fn suggest_alternatives<'a>(
         })
         .filter(|(score, _)| *score >= 1000) // require at least one shared tag
         .collect();
-    candidates.sort_by(|a, b| b.0.cmp(&a.0));
+    candidates.sort_by_key(|c| std::cmp::Reverse(c.0));
     candidates.into_iter().take(max).map(|(_, e)| e).collect()
 }
 

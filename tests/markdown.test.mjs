@@ -36,6 +36,18 @@ test("no href ever carries an executable scheme, regardless of casing", () => {
   }
 });
 
+test("a scheme split by a control / C1 / Unicode-whitespace char is not mis-classified as relative", () => {
+  // isSafeHref strips these before reading the scheme; without it the scheme
+  // regex fails to reach the ':' and returns the (safe) relative verdict,
+  // rendering `<a href="java<sep>script:alert(1)">`.
+  for (const code of [0x09, 0x0a, 0x00, 0x85, 0xa0, 0x2028, 0x2029, 0xfeff]) {
+    const out = renderMarkdown(`[x](java${String.fromCharCode(code)}script:alert(1))`);
+    assert.ok(!/href="[^"]*script:/i.test(out), `U+${code.toString(16)} -> ${out}`);
+  }
+  // a legitimate https link is unaffected
+  assert.ok(/href="https:\/\/example\.com"/.test(renderMarkdown("[x](https://example.com)")));
+});
+
 test("image alt cannot break out of the attribute (handler injection)", () => {
   const out = renderMarkdown('![a" onerror="alert(1)" x=](https://example.com/real.png)');
   // The literal word survives only as escaped text; a real breakout would be

@@ -14,7 +14,12 @@ pub fn load(data_dir: &Path) -> Result<Vec<Category>> {
         return Ok(Vec::new());
     }
     let content = fs::read_to_string(&path)?;
-    let file: CategoryFile = serde_yaml::from_str(&content)?;
+    // Same plain-decimal restriction the entry parser applies to `stars`:
+    // category `order` is an i64 dual-implemented field, so hex/octal/float
+    // forms must be rejected identically on both sides (mirrors store.js
+    // loadCategories).
+    crate::frontmatter::reject_non_decimal_int(&content, "order")?;
+    let file: CategoryFile = serde_norway::from_str(&content)?;
     let mut cats = file.categories;
     cats.sort_by_key(|c| c.order);
     Ok(cats)
@@ -36,7 +41,7 @@ pub fn save(data_dir: &Path, categories: &[Category]) -> Result<()> {
     let file = CategoryFile {
         categories: categories.to_vec(),
     };
-    fs::write(&path, serde_yaml::to_string(&file)?)?;
+    fs::write(&path, serde_norway::to_string(&file)?)?;
     Ok(())
 }
 

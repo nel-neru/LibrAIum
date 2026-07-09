@@ -199,8 +199,14 @@ pub async fn refresh_all(state: State<'_, AppState>) -> CmdResult<RefreshReport>
             errors: Vec::new(),
         };
         for mut entry in entries {
-            match github::fetch_repo(&entry.meta.full_name, token.as_deref()) {
-                Ok(gh) => {
+            // classify_fetch encodes the break-vs-continue decision (RateLimited
+            // stops the whole sweep, any other error skips just this entry) as a
+            // pure function so it stays unit-tested (github::classify_fetch tests).
+            match github::classify_fetch(github::fetch_repo(
+                &entry.meta.full_name,
+                token.as_deref(),
+            )) {
+                github::FetchOutcome::Proceed(gh) => {
                     if github::apply_refresh(&mut entry, &gh, stale_days) {
                         report.became_stale += 1;
                     }
@@ -209,15 +215,11 @@ pub async fn refresh_all(state: State<'_, AppState>) -> CmdResult<RefreshReport>
                         Err(e) => report.errors.push(format!("{}: {e}", entry.id)),
                     }
                 }
-                Err(e @ crate::error::AppError::RateLimited(_)) => {
-                    // Every remaining request would fail the same way (60/hr
-                    // unauthenticated) — stop the sweep with ONE clear error.
-                    report.errors.push(format!(
-                        "{e} — aborted the remaining refreshes; retry after setting a token."
-                    ));
+                github::FetchOutcome::Skip(msg) => report.errors.push(msg),
+                github::FetchOutcome::Stop(msg) => {
+                    report.errors.push(msg);
                     break;
                 }
-                Err(e) => report.errors.push(e.to_string()),
             }
             // be polite to the API; also keeps unauthenticated bursts under control
             std::thread::sleep(std::time::Duration::from_millis(150));

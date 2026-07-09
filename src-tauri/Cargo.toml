@@ -21,7 +21,10 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9"
+# Maintained fork of the archived serde_yaml (same libyaml core, same 0.9 API);
+# it backs the parity-critical entry format, so byte-for-byte behavior is pinned
+# by scripts/conformance.mjs (parse + serialize + function corpus).
+serde_norway = "0.9"
 fuzzy-matcher = "0.3"
 chrono = "0.4"
 thiserror = "2"

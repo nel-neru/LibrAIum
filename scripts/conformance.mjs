@@ -22,7 +22,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC_TAURI = join(ROOT, "src-tauri");
 const BIN = join(SRC_TAURI, "target", "debug", "dump_entries");
 
-const { parseEntry, slugify, normalizeGithubUrl } = await import(
+const { parseEntry, slugify, normalizeGithubUrl, computeStatus } = await import(
   join(ROOT, "mcp-server", "lib", "store.js")
 );
 
@@ -131,6 +131,10 @@ function fieldDiffs(rustMeta, nodeMeta) {
 let mismatches = 0;
 let validAgreed = 0;
 let rejectedByBoth = 0;
+// Serialize-parity: every file both parsers accept is re-serialized by BOTH and
+// the bytes must match. Parse parity alone missed that the two serializers
+// emitted different frontmatter (block vs flow tags, null-omission).
+const serializeCases = [];
 
 for (const path of allFiles) {
   const rel = relative(ROOT, path);
@@ -174,6 +178,9 @@ for (const path of allFiles) {
     continue;
   }
 
+  // Both parsed and agree enough to round-trip: queue it for the serialize check.
+  serializeCases.push({ rel, meta: node.meta, body: node.body });
+
   const diffs = fieldDiffs(rust.meta, node.meta);
   // Both serializers always terminate the file with a single trailing newline
   // (serialize()/serializeEntry() emit `...${body.trimEnd()}\n`), so trailing
@@ -191,6 +198,44 @@ for (const path of allFiles) {
     validAgreed++;
     console.log(`OK       ${rel}`);
   }
+}
+
+// ---------------------------------------------------------------------------
+// 3b. Serialize parity: feed every parsed (meta, body) to BOTH serializers and
+//     require byte-identical output. dump_entries --serialize runs Rust
+//     frontmatter::serialize; serializeEntry is the Node twin.
+// ---------------------------------------------------------------------------
+
+const { serializeEntry } = await import(join(ROOT, "mcp-server", "lib", "store.js"));
+let serializeAgreed = 0;
+if (serializeCases.length > 0) {
+  const rustSer = JSON.parse(
+    execFileSync(BIN, ["--serialize", JSON.stringify(serializeCases.map((c) => ({ meta: c.meta, body: c.body })))], {
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    })
+  );
+  serializeCases.forEach((c, i) => {
+    const node = serializeEntry(c.meta, c.body);
+    if (rustSer[i] === node) {
+      serializeAgreed++;
+    } else {
+      mismatches++;
+      console.log(
+        `MISMATCH serialize ${c.rel}\n    rust and node produced different bytes (first diff shown)\n` +
+          diffFirstLine(rustSer[i], node)
+      );
+    }
+  });
+}
+
+function diffFirstLine(a, b) {
+  const al = a.split("\n");
+  const bl = b.split("\n");
+  for (let i = 0; i < Math.max(al.length, bl.length); i++) {
+    if (al[i] !== bl[i]) return `    line ${i + 1}: rust=${JSON.stringify(al[i])} node=${JSON.stringify(bl[i])}`;
+  }
+  return "    (differ in length only)";
 }
 
 // ---------------------------------------------------------------------------
@@ -243,6 +288,26 @@ if (existsSync(fnCorpusPath)) {
       console.log(lines.join("\n"));
     }
   });
+
+  // compute_status: the third dual-implemented function. Feed the shared corpus
+  // to Rust (github::compute_status via --compute-status) and Node computeStatus
+  // with the SAME fixed `today`, and require identical status strings.
+  if (Array.isArray(corpus.compute_status)) {
+    const rustStatuses = JSON.parse(
+      execFileSync(BIN, ["--compute-status", JSON.stringify(corpus.compute_status)], { encoding: "utf8" })
+    );
+    corpus.compute_status.forEach((c, i) => {
+      const node = computeStatus(c.archived, c.push, c.stale_days, c.today);
+      if (rustStatuses[i] === node) {
+        fnAgreed++;
+      } else {
+        mismatches++;
+        console.log(
+          `MISMATCH compute_status(${JSON.stringify(c)})\n    rust=${JSON.stringify(rustStatuses[i])} node=${JSON.stringify(node)}`
+        );
+      }
+    });
+  }
 } else {
   console.log(`note: ${relative(ROOT, fnCorpusPath)} not found — skipping function-level conformance`);
 }
@@ -256,5 +321,5 @@ if (mismatches > 0) {
   process.exit(1);
 }
 console.log(
-  `\n✓ conformance: ${allFiles.length} files agree (${validAgreed} valid, ${rejectedByBoth} rejected by both) + ${fnAgreed} function cases agree`
+  `\n✓ conformance: ${allFiles.length} files agree (${validAgreed} valid, ${rejectedByBoth} rejected by both) + ${serializeAgreed} serialize byte-identical + ${fnAgreed} function cases agree`
 );

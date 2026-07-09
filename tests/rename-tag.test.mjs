@@ -107,3 +107,27 @@ test("guard rails: no-op, unknown tag, non-kebab target, dry-run writes nothing"
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("block-style tags are refused (never corrupted) and the tree stays byte-identical", () => {
+  const dir = freshCopy();
+  try {
+    // A block-style entry: validate-data accepts it (flow is convention, not
+    // enforced), and parseEntry reads its tags fine, but a naive line rewrite
+    // would swap only the header and orphan the `- item` lines into invalid YAML.
+    const blockPath = join(dir, "entries", "alpha", "block.md");
+    const block =
+      "---\ngithub_url: https://github.com/blk/style\nfull_name: blk/style\ncategory: alpha\ntags:\n  - vectordb\n  - keep\nstars: 1\nstatus: active\nsource: manual\n---\n\n# style\n\nBody.\n";
+    writeFileSync(blockPath, block);
+
+    assert.throws(() => renameTag(dir, "vectordb", "vector-db"), /block style/);
+    // Atomic refusal: the block entry AND the flow entry are both untouched.
+    assert.equal(readFileSync(blockPath, "utf8"), block, "block-style file must be byte-identical");
+    assert.equal(
+      readFileSync(join(dir, "entries", "alpha", "syn.md"), "utf8").includes("tags: [vectordb]"),
+      true,
+      "the other carrier must not have been half-renamed"
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

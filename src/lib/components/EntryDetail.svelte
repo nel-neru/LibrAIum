@@ -124,6 +124,14 @@
 
   let cat = $derived(entry ? categoryOf(entry.meta.category) : null);
 
+  // Reconstruct the GitHub URL from full_name rather than trusting the stored
+  // github_url: a git-synced/hand-authored entry is untrusted and its
+  // github_url is loaded verbatim with no scheme/host check, so binding it into
+  // href / handing it to openUrl() could open an arbitrary URL (phishing) or a
+  // local file:// resource. full_name fully determines the URL and pins the
+  // host to github.com — the same reconstruction the add path uses.
+  let githubUrl = $derived(entry ? `https://github.com/${entry.meta.full_name}` : "");
+
   // Focus the drawer when it opens so keyboard users aren't stranded behind
   // the scrim (same convention as AddRepo focusing its first field).
   let drawerEl = $state(null);
@@ -162,7 +170,7 @@
         <span class="dot" style="background: {cat?.color ?? 'var(--ui-3)'};"></span>
         {cat?.name ?? entry.meta.category}
       </span>
-      <a href={entry.meta.github_url} onclick={(e) => { e.preventDefault(); openUrl(entry.meta.github_url); }}>
+      <a href={githubUrl} onclick={(e) => { e.preventDefault(); openUrl(githubUrl); }}>
         Open on GitHub ↗
       </a>
     </div>

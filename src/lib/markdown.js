@@ -15,13 +15,33 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch]);
 }
 
+// Strip the characters a scheme could be split with before the scheme is read,
+// so variants like "java\tscript:" or "java script:" cannot smuggle a
+// scheme past isSafeHref. Covers ASCII controls/space (0x00-0x20) and DEL/C1
+// (0x7f-0x9f, incl. NEL 0x85), plus the non-ASCII separators the browser's URL
+// parser does NOT strip: NBSP 0xA0, line/paragraph separators 0x2028/0x2029,
+// and BOM/ZWNBSP 0xFEFF. Done by code point (not a regex literal) so no
+// invisible character ever lives in this source file.
+function stripSchemeSeparators(value) {
+  let out = "";
+  for (const ch of String(value)) {
+    const c = ch.codePointAt(0);
+    const strip =
+      c <= 0x20 ||
+      (c >= 0x7f && c <= 0x9f) ||
+      c === 0xa0 ||
+      c === 0x2028 ||
+      c === 0x2029 ||
+      c === 0xfeff;
+    if (!strip) out += ch;
+  }
+  return out;
+}
+
 // Scheme-less (relative/anchor) hrefs pass; an explicit scheme must be
-// allowlisted. Control chars and whitespace are stripped first so variants
-// like "java\tscript:" cannot smuggle a scheme past the check.
+// allowlisted after the separators above are stripped.
 function isSafeHref(href) {
-  const match = String(href)
-    .replace(/[\x00-\x20\x7f]/g, "")
-    .match(/^([a-zA-Z][a-zA-Z0-9+.-]*):/);
+  const match = stripSchemeSeparators(href).match(/^([a-zA-Z][a-zA-Z0-9+.-]*):/);
   return match === null || ["http", "https", "mailto"].includes(match[1].toLowerCase());
 }
 

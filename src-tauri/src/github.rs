@@ -63,6 +63,15 @@ pub fn fetch_repo(full_name: &str, token: Option<&str>) -> Result<GhRepo> {
 
 /// Apply fresh GitHub metadata to an entry. Returns true if it became stale.
 pub fn apply_refresh(entry: &mut Entry, gh: &GhRepo, stale_days: u32) -> bool {
+    // Keep the entry in its authoritative (directory-derived) category. save_entry
+    // builds the destination path from meta.category, and the refresh commands pass
+    // the directory-derived id as previous_id — so if the frontmatter category has
+    // drifted from the on-disk directory, a metadata-only refresh would otherwise
+    // silently MOVE the file and change its id. Pin category to the id's directory
+    // (store.rs: "the directory the file lives in is authoritative for the id").
+    if let Some((dir_category, _)) = entry.id.split_once('/') {
+        entry.meta.category = dir_category.to_string();
+    }
     let today = Utc::now().date_naive();
     entry.meta.stars = gh.stargazers_count;
     entry.meta.language = gh.language.clone();
@@ -95,10 +104,50 @@ pub fn compute_status(
     "active".into()
 }
 
+/// The refresh sweep's per-entry decision from one fetch result. A rate limit
+/// means every remaining request would fail identically (60/hr unauthenticated),
+/// so the whole sweep stops; any other error is per-entry and the sweep goes on.
+/// Extracting this makes the break-vs-continue decision testable without the
+/// real network call + inter-request sleep that refresh_all otherwise embeds.
+pub enum FetchOutcome {
+    Proceed(GhRepo),
+    Skip(String),
+    Stop(String),
+}
+
+pub fn classify_fetch(result: Result<GhRepo>) -> FetchOutcome {
+    match result {
+        Ok(gh) => FetchOutcome::Proceed(gh),
+        Err(e @ AppError::RateLimited(_)) => FetchOutcome::Stop(format!(
+            "{e} — aborted the remaining refreshes; retry after setting a token."
+        )),
+        Err(e) => FetchOutcome::Skip(e.to_string()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::models::EntryMeta;
+
+    #[test]
+    fn classify_fetch_stops_only_on_rate_limit() {
+        // Ok -> Proceed with the payload.
+        match classify_fetch(Ok(gh(None, false))) {
+            FetchOutcome::Proceed(g) => assert_eq!(g.full_name, "owner/repo"),
+            _ => panic!("Ok must Proceed"),
+        }
+        // 403/429 -> Stop the whole sweep (one clear aborted-message).
+        match classify_fetch(Err(AppError::RateLimited("owner/repo: HTTP 429".into()))) {
+            FetchOutcome::Stop(msg) => assert!(msg.contains("aborted the remaining"), "{msg}"),
+            _ => panic!("RateLimited must Stop"),
+        }
+        // Any other error -> Skip this entry, continue the sweep.
+        match classify_fetch(Err(AppError::GitHub("owner/repo: HTTP 404".into()))) {
+            FetchOutcome::Skip(msg) => assert!(msg.contains("404"), "{msg}"),
+            _ => panic!("non-rate-limit error must Skip"),
+        }
+    }
 
     #[test]
     fn status_logic() {
@@ -199,5 +248,22 @@ mod tests {
         let mut e = entry("active");
         assert!(!apply_refresh(&mut e, &gh(old, true), 180));
         assert_eq!(e.meta.status, "archived");
+    }
+
+    #[test]
+    fn apply_refresh_pins_category_to_the_id_directory() {
+        // Entry lives in directory "actual-dir" (id) but its frontmatter category
+        // has drifted to "claimed-cat". A metadata refresh must correct the
+        // frontmatter to the authoritative directory, NOT move the file — so
+        // save_entry (which builds the path from meta.category with previous_id =
+        // the id) keeps writing to entries/actual-dir/.
+        let mut e = entry("active");
+        e.id = "actual-dir/owner-repo".into();
+        e.meta.category = "claimed-cat".into();
+        apply_refresh(&mut e, &gh(Some("2026-07-01T00:00:00Z".into()), false), 180);
+        assert_eq!(
+            e.meta.category, "actual-dir",
+            "refresh must pin category to the id's directory, not leave the drift"
+        );
     }
 }

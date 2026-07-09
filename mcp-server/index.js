@@ -84,41 +84,48 @@ server.registerTool(
     inputSchema: { id_or_url: z.string() },
   },
   async ({ id_or_url }) => {
-    const entries = listEntries(DATA_DIR);
-    const needle = id_or_url.trim().toLowerCase();
-    let fullName = null;
+    // Wrap the body like every other tool handler: an unreadable entries/ root
+    // (or any other throw from listEntries) must surface as the standard
+    // {error} JSON envelope, not a bare SDK-level error string.
     try {
-      fullName = normalizeGithubUrl(id_or_url).fullName.toLowerCase();
-    } catch {
-      /* not a URL — fall through to id / name matching */
+      const entries = listEntries(DATA_DIR);
+      const needle = id_or_url.trim().toLowerCase();
+      let fullName = null;
+      try {
+        fullName = normalizeGithubUrl(id_or_url).fullName.toLowerCase();
+      } catch {
+        /* not a URL — fall through to id / name matching */
+      }
+      const entry = entries.find(
+        (e) =>
+          e.id.toLowerCase() === needle ||
+          e.meta.full_name.toLowerCase() === needle ||
+          (fullName && e.meta.full_name.toLowerCase() === fullName)
+      );
+      if (!entry) return jsonError(`no entry found for "${id_or_url}"`);
+      const result = {
+        ...summarize(entry),
+        meta: entry.meta,
+        body: entry.body,
+        // Convenience projection of the '## Reception' section so callers need
+        // not parse the Markdown body; null when none has been gathered yet.
+        reception: bodySection(entry.body, "reception"),
+      };
+      // Parity with the GUI's "what replaces this stale repo?" — attached at
+      // exactly the decision moment; an empty array means no successor shelved.
+      const status = entry.meta.status ?? "active";
+      if (status === "stale" || status === "archived") {
+        result.alternatives = alternativesFor(entries, entry, 3).map((a) => ({
+          ...summarize(a),
+          shared_tags: (a.meta.tags ?? []).filter((t) =>
+            (entry.meta.tags ?? []).some((tt) => tt.toLowerCase() === t.toLowerCase())
+          ),
+        }));
+      }
+      return json(result);
+    } catch (e) {
+      return jsonError(e.message);
     }
-    const entry = entries.find(
-      (e) =>
-        e.id.toLowerCase() === needle ||
-        e.meta.full_name.toLowerCase() === needle ||
-        (fullName && e.meta.full_name.toLowerCase() === fullName)
-    );
-    if (!entry) return jsonError(`no entry found for "${id_or_url}"`);
-    const result = {
-      ...summarize(entry),
-      meta: entry.meta,
-      body: entry.body,
-      // Convenience projection of the '## Reception' section so callers need
-      // not parse the Markdown body; null when none has been gathered yet.
-      reception: bodySection(entry.body, "reception"),
-    };
-    // Parity with the GUI's "what replaces this stale repo?" — attached at
-    // exactly the decision moment; an empty array means no successor shelved.
-    const status = entry.meta.status ?? "active";
-    if (status === "stale" || status === "archived") {
-      result.alternatives = alternativesFor(entries, entry, 3).map((a) => ({
-        ...summarize(a),
-        shared_tags: (a.meta.tags ?? []).filter((t) =>
-          (entry.meta.tags ?? []).some((tt) => tt.toLowerCase() === t.toLowerCase())
-        ),
-      }));
-    }
-    return json(result);
   }
 );
 

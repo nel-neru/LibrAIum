@@ -2,7 +2,7 @@ pub mod categories;
 mod commands;
 pub mod error;
 pub mod frontmatter;
-mod github;
+pub mod github;
 mod gitops;
 pub mod models;
 pub mod search;
@@ -23,7 +23,10 @@ pub fn run() {
             let loaded = settings::load(&config_dir);
             let data_dir = settings::resolve_data_dir(&loaded);
             if let Err(e) = settings::bootstrap_data_dir(&data_dir) {
-                eprintln!("[libraium] failed to bootstrap data dir {}: {e}", data_dir.display());
+                eprintln!(
+                    "[libraium] failed to bootstrap data dir {}: {e}",
+                    data_dir.display()
+                );
             }
             app.manage(commands::AppState {
                 config_dir,

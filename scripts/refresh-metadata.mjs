@@ -136,7 +136,13 @@ for (const e of entries) {
     continue;
   }
   if (gh.full_name.toLowerCase() !== e.meta.full_name.toLowerCase()) {
+    // Header contract (lines 16-18): a renamed repo (GitHub 301s to a new
+    // full_name) is NEVER rewritten automatically — the new name changes
+    // slug/id, so the file move is left to the user. Report it and skip; do
+    // not rewrite scalars under the stale name (which also silently cleared a
+    // legitimate `stale` flag off the renamed repo's fresh push date).
     renames.push(`${e.id}: ${e.meta.full_name} -> ${gh.full_name}`);
+    continue;
   }
   const next = {
     stars: gh.stargazers_count,

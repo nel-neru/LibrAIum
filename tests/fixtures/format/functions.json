@@ -1,5 +1,5 @@
 {
-  "comment": "Function-level conformance corpus: scripts/conformance.mjs feeds every input to BOTH implementations (Rust store.rs via dump_entries --slugify/--normalize-url, Node mcp-server/lib/store.js) and fails on any divergence. Confirmed historical divergences pinned here: 'github.com:a/b' (Node's old regex accepted, Rust rejects), astral emoji in slugify (Node's old split('') emitted two dashes per surrogate pair).",
+  "comment": "Function-level conformance corpus: scripts/conformance.mjs feeds every input to BOTH implementations (Rust store.rs via dump_entries --slugify/--normalize-url, Rust github::compute_status via --compute-status, Node mcp-server/lib/store.js) and fails on any divergence. Confirmed historical divergences pinned here: 'github.com:a/b' (Node's old regex accepted, Rust rejects), astral emoji in slugify (Node's old split('') emitted two dashes per surrogate pair). compute_status takes a DATE-ONLY push (its real callers pre-slice); it is the third dual-implemented function, cross-checked here so a future boundary/arithmetic change on one side can't drift unnoticed.",
   "slugify": [
     "Owner/Repo.js",
     "a b/c@d",
@@ -31,5 +31,18 @@
     "https://github.com//repo",
     "  https://github.com/owner/repo  ",
     ""
+  ],
+  "compute_status": [
+    { "archived": true, "push": "2026-07-01", "today": "2026-07-08", "stale_days": 180 },
+    { "archived": true, "push": null, "today": "2026-07-08", "stale_days": 180 },
+    { "archived": false, "push": "2026-07-01", "today": "2026-07-08", "stale_days": 180 },
+    { "archived": false, "push": "2025-01-01", "today": "2026-07-08", "stale_days": 180 },
+    { "archived": false, "push": null, "today": "2026-07-08", "stale_days": 180 },
+    { "archived": false, "push": "2026-01-09", "today": "2026-07-08", "stale_days": 180 },
+    { "archived": false, "push": "2026-01-08", "today": "2026-07-08", "stale_days": 180 },
+    { "archived": false, "push": "not-a-date", "today": "2026-07-08", "stale_days": 180 },
+    { "archived": false, "push": "", "today": "2026-07-08", "stale_days": 180 },
+    { "archived": false, "push": "2026-07-07", "today": "2026-07-08", "stale_days": 0 },
+    { "archived": false, "push": "2026-07-08", "today": "2026-07-08", "stale_days": 0 }
   ]
 }

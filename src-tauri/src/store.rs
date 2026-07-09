@@ -129,10 +129,29 @@ pub fn list_entries(data_dir: &Path) -> Result<Vec<Entry>> {
     Ok(entries)
 }
 
-pub fn get_entry(data_dir: &Path, id: &str) -> Result<Entry> {
+/// Split "<category>/<slug>" and reject any component that could escape
+/// data/entries. An entry id is exactly `<category-dir>/<file-stem>` — neither
+/// component may be empty, `.`/`..`, or contain a path separator or NUL. This
+/// mirrors the guard the Node MCP resource read already enforces (it resolves
+/// ids by scanning entries and matching e.id, never by joining URI segments,
+/// index.js) and the ^[a-z0-9-]+$ category guard save_entry applies on writes,
+/// so a crafted id like "ai-agent/../../secret" can never read or delete a file
+/// outside the library.
+fn split_entry_id(id: &str) -> Result<(&str, &str)> {
     let (category, slug) = id
         .split_once('/')
         .ok_or_else(|| AppError::msg(format!("invalid entry id: {id}")))?;
+    let safe = |c: &str| !c.is_empty() && c != "." && c != ".." && !c.contains(['/', '\\', '\0']);
+    if !safe(category) || !safe(slug) {
+        return Err(AppError::msg(format!(
+            "invalid entry id (path traversal): {id}"
+        )));
+    }
+    Ok((category, slug))
+}
+
+pub fn get_entry(data_dir: &Path, id: &str) -> Result<Entry> {
+    let (category, slug) = split_entry_id(id)?;
     let path = entries_dir(data_dir)
         .join(category)
         .join(format!("{slug}.md"));
@@ -205,13 +224,21 @@ pub fn save_entry(
     fs::create_dir_all(&dir)?;
     let path = dir.join(format!("{slug}.md"));
 
-    let old = previous_id
-        .and_then(|prev| prev.split_once('/'))
-        .map(|(prev_cat, prev_slug)| {
-            entries_dir(data_dir)
-                .join(prev_cat)
-                .join(format!("{prev_slug}.md"))
-        });
+    // Validate previous_id the same way get_entry does: it becomes the
+    // deletion source below, so a crafted "x/../../secret" must not let an
+    // update delete a file outside the library. An invalid previous_id is a
+    // hard error, never a silent "nothing to move".
+    let old = match previous_id {
+        Some(prev) => {
+            let (prev_cat, prev_slug) = split_entry_id(prev)?;
+            Some(
+                entries_dir(data_dir)
+                    .join(prev_cat)
+                    .join(format!("{prev_slug}.md")),
+            )
+        }
+        None => None,
+    };
 
     // Refuse to overwrite a file that belongs to a different entry — both on
     // create and on update, when a category change / rename targets a path
@@ -253,7 +280,7 @@ pub fn export_awesome_list(entries: &[Entry], categories: &[Category]) -> String
         if in_cat.is_empty() {
             continue;
         }
-        in_cat.sort_by(|a, b| b.meta.stars.cmp(&a.meta.stars));
+        in_cat.sort_by_key(|e| std::cmp::Reverse(e.meta.stars));
         out.push_str(&format!("\n## {}\n\n", cat.name));
         for e in in_cat {
             listed.push(&e.meta.full_name);
@@ -413,6 +440,57 @@ mod tests {
         }
         // The rejection must happen before any file/dir is created.
         assert!(!dir.join("entries").join("..").join("evil").exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn get_and_delete_reject_traversal_ids() {
+        let dir = tmp();
+        // A real, valid-frontmatter file living OUTSIDE data/entries — the kind
+        // a traversal id would try to reach.
+        let outside = dir.join("outside.md");
+        fs::write(
+            &outside,
+            frontmatter::serialize(&meta("owner/repo", "ai-agent"), "# x\n\nbody.").unwrap(),
+        )
+        .unwrap();
+
+        for bad in [
+            "../../outside",
+            "..",
+            "ai-agent/../../outside",
+            "ai-agent/..",
+            "/etc/passwd",
+            "ai-agent/foo/bar",
+            "no-slash",
+        ] {
+            assert!(
+                get_entry(&dir, bad).is_err(),
+                "get_entry must reject traversal id {bad:?}"
+            );
+            assert!(
+                delete_entry(&dir, bad).is_err(),
+                "delete_entry must reject traversal id {bad:?}"
+            );
+        }
+        // The outside file must survive every rejected delete attempt.
+        assert!(
+            outside.exists(),
+            "traversal delete must not escape the library"
+        );
+
+        // A save whose previous_id traverses is refused before any fs mutation.
+        assert!(
+            save_entry(
+                &dir,
+                &meta("owner/repo", "ai-agent"),
+                "# x",
+                Some("ai-agent/../../outside")
+            )
+            .is_err(),
+            "save_entry must reject a traversing previous_id"
+        );
+        assert!(outside.exists(), "outside file must survive a refused move");
         let _ = fs::remove_dir_all(&dir);
     }
 

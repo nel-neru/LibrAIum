@@ -68,6 +68,19 @@ export function renameTag(dataDir, oldTag, newTag, { merge = false, dryRun = fal
     if (open === -1 || close === -1 || idx === -1) {
       throw new Error(`${e.id}: no tags line inside the frontmatter block — refusing to touch the file`);
     }
+    // Refuse block-style tags. This tool replaces ONLY the `tags:` line with a
+    // reassembled flow list; a block-style value (`tags:` header, then `  - item`
+    // lines) would keep the header swap but orphan the sequence items, writing
+    // unparseable frontmatter to disk. validate-data accepts block style (flow
+    // is convention, not enforced), so this state is reachable. Throw in pass 1
+    // — before any write — so the run stays atomic and byte-identical on refusal.
+    const inlineValue = lines[idx].slice("tags:".length).trim();
+    const nextInBlock = idx + 1 < close ? lines[idx + 1] : "";
+    if (inlineValue === "" || /^\s*-\s/.test(nextInBlock)) {
+      throw new Error(
+        `${e.id}: tags are in block style (\`tags:\` then \`- item\` lines) — this tool only rewrites flow-style \`tags: [a, b]\`. Convert the entry to flow style first; rewriting block style would orphan the sequence items and corrupt the frontmatter.`
+      );
+    }
     lines[idx] = `tags: [${next.join(", ")}]`;
     plan.push({ id: e.id, path: e.path, before: tags, after: next, content: lines.join("\n") });
   }

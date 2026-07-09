@@ -31,6 +31,8 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
       - name: Setup Node
         uses: actions/setup-node@v5
@@ -53,5 +55,60 @@ jobs:
         run: npm ci
         working-directory: mcp-server
 
+      # dist/ must exist before any cargo compile: generate_context! embeds it.
+      - name: Build frontend (dist for generate_context!)
+        run: npm run build
+
+      # rustfmt runs locally only as a best-effort post-edit hook — enforce it
+      # in CI so a contributor (or agent) without that hook cannot merge
+      # unformatted Rust.
+      - name: Rust format check
+        run: cargo fmt --check
+        working-directory: src-tauri
+
+      - name: Clippy (deny warnings)
+        run: cargo clippy --all-targets --locked -- -D warnings
+        working-directory: src-tauri
+
       - name: Run verification suite
         run: bash scripts/verify-all.sh
+
+  # Build + test on macOS, the primary target platform: this is the only leg
+  # that compiles and exercises the OS-keychain integration (keyring crate) and
+  # the git-CLI gitops path on macOS/Windows-family code. ubuntu-only CI would
+  # ship a keychain or credential-helper regression undetected.
+  macos-build:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Build frontend (dist for generate_context!)
+        run: npm run build
+
+      - name: Rust unit tests
+        run: cargo test --locked
+        working-directory: src-tauri
+
+      - name: Build the app binary
+        run: cargo build --locked --bin libraium
+        working-directory: src-tauri

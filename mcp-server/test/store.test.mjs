@@ -109,6 +109,51 @@ test("bodySection extracts a '## <heading>' block verbatim, case-insensitively, 
   assert.equal(bodySection("# x\n\n## Reception\n\n\n", "reception"), null);
 });
 
+test("bodySection stays aligned when a length-expanding Unicode char precedes the heading", () => {
+  // 'İ' (U+0130) lowercases to two code units; a lowercased-index-then-slice-
+  // original approach would drift +1 per char and silently drop the section.
+  const pre = "İ".repeat(40);
+  const body = `# x\n\n${pre}\n\n## Reception\n\n- Real signal here.\n`;
+  assert.equal(bodySection(body, "reception"), "- Real signal here.");
+});
+
+test("parseEntry rejects non-decimal integer forms for stars (parity with Rust)", () => {
+  const doc = (stars) =>
+    `---\ngithub_url: https://github.com/a/b\nfull_name: a/b\ncategory: web-app\nstars: ${stars}\n---\nbody\n`;
+  // Both implementations reject every exotic form; the raw-token guard catches
+  // most with "plain decimal integer", while a form the JS yaml lib parses to a
+  // string (0b…) is caught one step earlier by the number-type check. Either
+  // way it must throw — that's the parity contract conformance also pins.
+  for (const bad of ["1e3", "1000.0", "0x3e8", "0o1750", "0b1000", "01750", "007"]) {
+    assert.throws(() => parseEntry(doc(bad)), `stars: ${bad} must be rejected`);
+  }
+  for (const ok of ["0", "1000", "+1000"]) {
+    assert.equal(parseEntry(doc(ok)).meta.stars >= 0, true, `stars: ${ok} must be accepted`);
+  }
+});
+
+test("serializeEntry emits canonical flow tags and omits null optionals (byte-parity with Rust)", () => {
+  const meta = {
+    github_url: "https://github.com/a/b",
+    full_name: "a/b",
+    category: "web-app",
+    tags: ["rag", "vector-db"],
+    stars: 100,
+    language: null,
+    last_github_push: null,
+    last_checked: "2026-07-08",
+    status: "active",
+    source: "mcp",
+    added_date: null,
+  };
+  const out = serializeEntry(meta, "# b\n\nsummary");
+  assert.match(out, /\ntags: \[rag, vector-db\]\n/, "tags must be flow style");
+  assert.equal(/\nlanguage:/.test(out), false, "null optionals must be omitted, not written as null");
+  assert.equal(/\nadded_date:/.test(out), false, "null added_date must be omitted");
+  // empty tags render as flow []
+  assert.match(serializeEntry({ ...meta, tags: [] }, "b"), /\ntags: \[\]\n/);
+});
+
 test("normalizeTags trims and drops empty tags like the desktop AddRepo path", () => {
   assert.deepEqual(normalizeTags([" rag ", "", "   ", "vector-db"]), ["rag", "vector-db"]);
   assert.deepEqual(normalizeTags(undefined), []);
@@ -236,6 +281,20 @@ test("loadCategories: absent => [], corrupt/malformed => actionable error naming
 
     writeFileSync(join(dir, "master", "categories.yaml"), "categories: not-a-list\n");
     assert.throws(() => loadCategories(dir), /'categories' must be a list/);
+
+    // Fail CLOSED on a malformed root, matching Rust categories::load (which
+    // errors when the required `categories` field is missing/null/non-mapping)
+    // instead of the old silent `?? []` that served zero categories.
+    for (const malformed of ["title: hello\n", "categories: null\n", "- a\n- b\n", "\n"]) {
+      writeFileSync(join(dir, "master", "categories.yaml"), malformed);
+      assert.throws(() => loadCategories(dir), /malformed/, `root ${JSON.stringify(malformed)} must fail closed`);
+    }
+    // …but a valid empty list is fine.
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories: []\n");
+    assert.deepEqual(loadCategories(dir), []);
+    // order must also be a plain decimal token (parity with Rust i64 + stars).
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: x\n    name: X\n    order: 1e3\n");
+    assert.throws(() => loadCategories(dir), /plain decimal integer/);
 
     // A hand-edit slip inside a valid list (trailing '-' → null item, or a
     // bare string) must fail closed naming the file — not crash the sort

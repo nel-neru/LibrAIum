@@ -1,0 +1,25 @@
+# Dependency update / advisory surface for both halves of the codebase. Chosen
+# over a blocking `cargo audit` / `npm audit` CI step so an unmaintained-crate
+# or transitive dev-dep advisory raises a PR instead of turning CI red on
+# something unrelated to the change under review.
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /src-tauri
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: npm
+    directory: /mcp-server
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

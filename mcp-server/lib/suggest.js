@@ -120,10 +120,13 @@ const CAUTION_CUES = ["gotcha", "caveat", "avoid", "superseded", "don't", "inste
 // so callers can tell "no experience recorded" from "nothing matched".
 export function extractNotes(entry, tokens = []) {
   const body = entry.body ?? "";
-  const idx = body.toLowerCase().indexOf("## personal notes");
-  if (idx === -1) return null;
+  // Case-insensitive line-start match on the ORIGINAL body — never a
+  // lowercased index into the original, which misaligns on length-expanding
+  // Unicode (e.g. Turkish 'İ') and silently drops the notes (see bodySection).
+  const head = /^##\s+personal notes[^\n]*\n?/im.exec(body);
+  if (head === null) return null;
   const bullets = [];
-  for (const line of body.slice(idx).split("\n").slice(1)) {
+  for (const line of body.slice(head.index + head[0].length).split("\n")) {
     if (/^#{1,6}\s/.test(line)) break; // next heading ends the section
     const m = line.match(/^-\s+(.*\S)\s*$/);
     if (m) bullets.push(m[1]);
@@ -149,11 +152,12 @@ export function extractNotes(entry, tokens = []) {
 // so adoptionSteps knows to fall back to the generic clone/README pointer.
 export function extractSetup(entry) {
   const body = entry.body ?? "";
-  const idx = body.toLowerCase().indexOf("## setup");
-  if (idx === -1) return null;
+  // Same case-insensitive original-body match as extractNotes/bodySection.
+  const head = /^##\s+setup[^\n]*\n?/im.exec(body);
+  if (head === null) return null;
   const steps = [];
   let inFence = false;
-  for (const line of body.slice(idx).split("\n").slice(1)) {
+  for (const line of body.slice(head.index + head[0].length).split("\n")) {
     if (/^#{1,6}\s/.test(line)) break; // next heading ends the section
     if (/^\s*```/.test(line)) {
       inFence = !inFence;
