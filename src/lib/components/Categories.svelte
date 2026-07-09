@@ -196,7 +196,7 @@
             ondragstart={(e) => onDragStart(i, e)}
             onkeydown={(e) => onGripKey(i, e)}
           >
-            <Icon name="grip" />
+            <Icon name="grip" size={20} />
           </button>
         </td>
         <td>
@@ -307,7 +307,9 @@
     box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--tx);
   }
 
-  /* Drag handle — grip dots, grab cursor, focusable for keyboard reordering. */
+  /* Drag handle — grip dots. It's an operable control, not decoration, so it
+     sits at --tx-2 (never --tx-3, which fails AA), with a button-like hover so
+     "grabbable" reads at rest. Grab cursor; focusable for keyboard reordering. */
   .grip {
     display: flex;
     align-items: center;
@@ -317,12 +319,13 @@
     padding: 0;
     background: transparent;
     border: none;
-    color: var(--tx-3);
+    color: var(--tx-2);
+    border-radius: var(--radius-control);
     cursor: grab;
   }
   .grip:active { cursor: grabbing; }
   @media (hover: hover) {
-    .grip:hover { color: var(--tx-2); }
+    .grip:hover { color: var(--tx); background: var(--ui); }
   }
 
   tr.dragging { opacity: 0.4; }
