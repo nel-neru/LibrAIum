@@ -207,8 +207,12 @@ test("saveNewEntry + findDuplicate: case-insensitive dup detection, duplicate cr
 });
 
 test("listEntries skips an unreadable category dir instead of failing the whole library", (t) => {
-  // chmod 000 is a no-op for root, so the EACCES this test relies on never fires.
+  // chmod 000 can't produce the EACCES this test relies on for root (mode bits
+  // ignored) nor on Windows (directory reads don't honor POSIX mode bits, and
+  // process.getuid is undefined there). The degradation path itself is covered
+  // on POSIX / CI, so skipping these platforms loses no real coverage.
   if (process.getuid?.() === 0) return t.skip("running as root");
+  if (process.platform === "win32") return t.skip("chmod 000 does not block dir reads on Windows");
   const dir = mkdtempSync(join(tmpdir(), "libraium-eacces-test-"));
   const lockedDir = join(dir, "entries", "web-app");
   try {

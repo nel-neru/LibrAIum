@@ -1,13 +1,32 @@
 # Improvement Backlog
 
-## Restarted 2026-07-10 — post-convergence feature audit
+## LOOP COMPLETE (3rd convergence)
 
-The 2nd convergence closed 2026-07-09 (history below). On 2026-07-10 the
-category-icons-dnd feature (PR #9 — line-icon marks + drag-and-drop reorder)
-landed: code the loop had never audited. A fresh audit of that surface found a
-drag-and-drop reorder off-by-one (fixed, iter-51) and, while verifying, a
-Windows path-separator bug in build-catalog.mjs (queued as the top Pending
-item). Loop reopened.
+Restarted and re-closed 2026-07-10. The 2nd convergence (2026-07-09) had settled
+the Rust core / MCP / dual-format. On 2026-07-10 the category-icons-dnd feature
+(PR #9) landed — code the loop had never seen — so the loop reopened and audited
+that new surface plus the repo's Windows-portability (the owner now develops on
+Windows, where several macOS/Linux-authored tools/tests misbehave). Three
+concrete findings, all fixed and verified:
+
+- iter-51 — Categories drag-and-drop reorder off-by-one: a downward drag landed
+  the row one slot BELOW the "insert above" drop indicator. Fixed via a pure,
+  unit-tested `reorder()` + live browser verification. — cff6f3a
+- iter-52 — build-catalog.mjs emitted `\`-separated CATALOG.md links on Windows:
+  broken GitHub links AND verify-all stage 6 red on any Windows checkout. Fixed
+  with a cross-platform `catalogLinkPath()` (normalizes backslashes, not
+  path.sep, so CI can catch regressions). — 336281e
+- iter-53 — MCP "unreadable category dir" test not Windows-portable (chmod 000
+  is a no-op for dir reads on Windows): now skips on win32, mirroring the root
+  guard. verify-all stage 4 green on Windows. — 01fa5f1
+
+A targeted re-audit found nothing further clearing the bar: the same OS-path /
+chmod class across every script + test is clean (conformance's `relative()` is
+display-only; other path uses are fs I/O or error labels); the new feature's
+other files are safe (Icon.svelte falls back to `folder` for any unknown/legacy
+icon name; the Sidebar/AddRepo/EntryDetail/Library changes are one-line Icon
+swaps). Considered-and-declined items are in Rejected. Pending is empty; the loop
+stopped rather than invent work. Restart anytime with `/improve`.
 
 ## LOOP COMPLETE (2nd convergence)
 
@@ -28,10 +47,11 @@ and the iter-42 mid-loop audit re-seeded 8 more after the 4dccdd6 UI redesign la
 ---
 
 ## Pending  (ordered: highest value first)
-- [ ] P5 MCP test "listEntries skips an unreadable category dir" is not Windows-portable: `mcp-server/test/store.test.mjs:226` simulates an unreadable dir with `chmodSync(lockedDir, 0o000)`, but on Windows chmod does not remove directory read access (and `process.getuid` is undefined, so the existing root-skip guard at :211 doesn't trigger) — `readdirSync` still succeeds, the entry is NOT skipped, and the assertion fails locally. Same Windows-portability class as the build-catalog item above; the behavior itself is fine (CI/Unix covers it). Fix: also skip on `process.platform === 'win32'` (chmod-based unreadable simulation is a Unix concept), mirroring the root guard. [found iter-51, during MCP-stage verification]
+- (EMPTY — loop closed at the 3rd convergence, see above)
 
 ## Done
 
+- [x] P5 MCP test "listEntries skips an unreadable category dir" not Windows-portable: it simulates an unreadable dir with `chmodSync(dir, 0o000)`, but on Windows directory reads ignore POSIX mode bits (and `process.getuid` is undefined, so the existing root-skip guard didn't trigger) — `readdirSync` still succeeded, the entry was NOT skipped, and the assert failed locally (verify-all stage 4 red on Windows). Now also skips on `process.platform === 'win32'`, mirroring the root guard; the degradation path stays covered on POSIX/CI. Full MCP suite green on Windows (52 pass, 1 skip, smoke ✓). — 01fa5f1 (2026-07-10) [iter-53]
 - [x] P3 build-catalog.mjs Windows path separators: on Windows the CATALOG.md entry links were emitted as `data\entries\…` (backslashes) — broken GitHub Markdown links, and verify-all stage 6 (catalog drift) failed locally. Extracted a pure `catalogLinkPath()` (scripts/build-catalog.mjs) that normalizes with `.replace(/\\/g, "/")` — deliberately NOT `path.sep`, since sep is `/` on CI's Linux and a sep-based split would let this Windows-only bug slip past both `--check` and any test. Pinned by tests/build-catalog.test.mjs (4 cross-platform cases feeding literal backslashes). `--check` now green on Windows and CATALOG.md is byte-identical (content was already current — separators were the only drift). — 336281e (2026-07-10) [iter-52]
 - [x] P3 Categories drag-and-drop reorder off-by-one: dropping a row while dragging DOWNWARD landed it one slot BELOW the top-line drop indicator (`splice(from,1)` shifts every later index down, so `splice(i,0,…)` overshoots). Extracted a pure `reorder(list, from, to)` with insert-above semantics (src/lib/reorder.js, mirrors the markdown.js pure-module pattern), used by onDrop; pinned by tests/reorder.test.mjs (9 cases: both directions, edges, no-ops, immutability, out-of-range guard). Live-verified in browser preview (downward drop now lands above the target; no console errors). libraium-reviewer approved; added the defensive `to` range guard per its one nit. — cff6f3a (2026-07-10) [iter-51, post-convergence feature audit]
 
@@ -93,4 +113,5 @@ throughout (see 3f771cb); the loop restarted the same day and re-seeded from a f
 - [x] P1 `save_entry` silently overwrote a DIFFERENT entry when an update moved/renamed onto an occupied path (category change → destination already owned by another repo → occupant destroyed, then source deleted; reachable from EntryDetail edit). Unified the create/update guard: any write to an existing path that is not the entry's own file is refused as Duplicate. Regression test `update_move_refuses_to_overwrite_other_entry`. — 8ba3a19 (2026-07-08)
 
 ## Rejected
-- (none yet)
+- Categories.svelte `save()` has no in-flight/`saving` guard (the Save button is only `disabled={!dirty}`, and `dirty` clears only after the await), so a double-click can fire two `saveCategories` calls — considered at the 3rd convergence (iter-53) and DECLINED: unlike the EntryDetail/AddRepo guards the loop added (which create/move entries), this write is an idempotent full-replace of categories.yaml with the same payload, so the only effect of a double-submit is a duplicate toast. It survived two prior convergences on the same reasoning; adding a guard now would be defensive churn below the bar. Revisit only if category save gains non-idempotent side effects.
+- CLAUDE.md's `npm test` note ("markdown-renderer hardening") is now non-exhaustive (there are also reorder + build-catalog tests) — left as-is: the parenthetical was always illustrative, not an inventory, and a daily-churning test list isn't worth pinning.
