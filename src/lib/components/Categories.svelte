@@ -1,6 +1,7 @@
 <script>
   import { api } from "../api.js";
   import { app, showToast, fail } from "../state.svelte.js";
+  import Icon from "./Icon.svelte";
 
   // Local editable copy. The id lock must be per ROW PERSISTENCE, not by
   // value: matching row.id against the persisted-id set disabled a NEW row's
@@ -10,6 +11,15 @@
     structuredClone($state.snapshot(app.categories)).map((r) => ({ ...r, locked: true }))
   );
   let dirty = $state(false);
+
+  // The category marks a picker can assign (line icons in Icon.svelte). The old
+  // free-text emoji field is gone — DESIGN.md §9/§11: line icons only, no emoji
+  // in chrome. `folder` is the neutral fallback for a category with no mark.
+  const ICONS = [
+    "cpu", "globe", "phone", "monitor", "gamepad", "server",
+    "chart", "shield", "blocks", "mic", "film", "nib",
+    "pencil", "tag", "bolt", "cap", "trending-up", "package", "folder",
+  ];
 
   // Category colors must come from Flexoki accent scales (DESIGN.md §2/§11) so
   // data-driven color never reintroduces neon. A constrained swatch replaces
@@ -26,6 +36,10 @@
     row.color = c;
     touch();
   }
+  function setIcon(row, ic) {
+    row.icon = ic;
+    touch();
+  }
 
   let counts = $derived.by(() => {
     const m = {};
@@ -37,12 +51,16 @@
     dirty = true;
   }
 
+  function renumber() {
+    rows.forEach((r, idx) => (r.order = idx + 1));
+  }
+
   function addRow() {
     rows.push({
       id: "",
       name: "",
       color: "#24837B",
-      icon: "📁",
+      icon: "folder",
       description: "",
       order: (rows.at(-1)?.order ?? 0) + 1,
       locked: false,
@@ -57,15 +75,59 @@
       return;
     }
     rows.splice(i, 1);
+    renumber();
     touch();
   }
 
+  // Keyboard reordering (accessible counterpart to drag-and-drop): the grip
+  // handle takes ArrowUp/ArrowDown so the table is operable without a pointer.
   function move(i, delta) {
     const j = i + delta;
     if (j < 0 || j >= rows.length) return;
     [rows[i], rows[j]] = [rows[j], rows[i]];
-    rows.forEach((r, idx) => (r.order = idx + 1));
+    renumber();
     touch();
+  }
+
+  // Drag-and-drop reordering. dragFrom/dragOver drive the row highlight; on drop
+  // the dragged row is spliced into the target slot and every order renumbered.
+  let dragFrom = $state(null);
+  let dragOver = $state(null);
+
+  function onDragStart(i, e) {
+    dragFrom = i;
+    e.dataTransfer.effectAllowed = "move";
+    // Firefox requires data to be set for a drag to start.
+    e.dataTransfer.setData("text/plain", String(i));
+  }
+  function onDragOver(i, e) {
+    if (dragFrom === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    dragOver = i;
+  }
+  function onDrop(i) {
+    if (dragFrom !== null && dragFrom !== i) {
+      const [moved] = rows.splice(dragFrom, 1);
+      rows.splice(i, 0, moved);
+      renumber();
+      touch();
+    }
+    dragFrom = null;
+    dragOver = null;
+  }
+  function onDragEnd() {
+    dragFrom = null;
+    dragOver = null;
+  }
+  function onGripKey(i, e) {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      move(i, -1);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      move(i, 1);
+    }
   }
 
   async function save() {
@@ -96,7 +158,7 @@
 <header class="row" style="margin-bottom: 24px;">
   <div class="grow">
     <h2 style="font-size: 26px; line-height: 32px;">Categories</h2>
-    <span class="muted mono" style="font-size: 11px;">data/master/categories.yaml — ids become entry directories</span>
+    <span class="muted mono" style="font-size: 11px;">data/master/categories.yaml — ids become entry directories · drag ⠿ to reorder</span>
   </div>
   <button onclick={addRow}>+ Add category</button>
   <button class="primary" onclick={save} disabled={!dirty}>Save changes</button>
@@ -106,7 +168,7 @@
 <table class="grid">
   <thead>
     <tr>
-      <th style="width: 60px;">Order</th>
+      <th style="width: 34px;"><span class="sr-only">Reorder</span></th>
       <th>Icon</th>
       <th>Id</th>
       <th>Name</th>
@@ -117,13 +179,44 @@
     </tr>
   </thead>
   <tbody>
-    {#each rows as row, i}
-      <tr>
+    {#each rows as row, i (row)}
+      <tr
+        class:drag-over={dragOver === i && dragFrom !== i}
+        class:dragging={dragFrom === i}
+        ondragover={(e) => onDragOver(i, e)}
+        ondrop={() => onDrop(i)}
+        ondragend={onDragEnd}
+      >
         <td>
-          <button class="small" onclick={() => move(i, -1)} disabled={i === 0}>↑</button>
-          <button class="small" onclick={() => move(i, 1)} disabled={i === rows.length - 1}>↓</button>
+          <button
+            class="grip"
+            draggable="true"
+            title="Drag to reorder — or focus and use ↑ / ↓"
+            aria-label={`Reorder ${row.name || row.id || "category"} (position ${i + 1} of ${rows.length})`}
+            ondragstart={(e) => onDragStart(i, e)}
+            onkeydown={(e) => onGripKey(i, e)}
+          >
+            <Icon name="grip" />
+          </button>
         </td>
-        <td><input style="width: 52px;" bind:value={row.icon} oninput={touch} /></td>
+        <td>
+          <div class="swatches icons" role="group" aria-label="Category icon">
+            {#each ICONS as ic}
+              <button
+                type="button"
+                class="swatch iconsw"
+                class:sel={row.icon === ic}
+                title={ic}
+                aria-label={ic}
+                aria-pressed={row.icon === ic}
+                style={row.icon === ic ? `color: ${row.color}` : ""}
+                onclick={() => setIcon(row, ic)}
+              >
+                <Icon name={ic} size={15} />
+              </button>
+            {/each}
+          </div>
+        </td>
         <td>
           <input
             style="width: 150px;"
@@ -166,11 +259,22 @@
   .table-scroll {
     overflow-x: auto;
   }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
   .swatches {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
     width: 132px;
+  }
+  .swatches.icons {
+    width: 180px;
   }
   .swatch {
     width: 16px;
@@ -183,4 +287,44 @@
   .swatch.sel {
     box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--tx);
   }
+  /* Icon picker: square cells that host a 15px mark instead of a color fill. */
+  .iconsw {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: var(--paper);
+    color: var(--tx-2);
+    border-radius: var(--radius-control);
+  }
+  @media (hover: hover) {
+    .iconsw:hover { border-color: var(--ui-3); color: var(--tx); }
+  }
+  .iconsw.sel {
+    border-color: var(--ui-3);
+    /* color set inline to the category color; ring marks the selection */
+    box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--tx);
+  }
+
+  /* Drag handle — grip dots, grab cursor, focusable for keyboard reordering. */
+  .grip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--tx-3);
+    cursor: grab;
+  }
+  .grip:active { cursor: grabbing; }
+  @media (hover: hover) {
+    .grip:hover { color: var(--tx-2); }
+  }
+
+  tr.dragging { opacity: 0.4; }
+  tr.drag-over td { box-shadow: inset 0 2px 0 var(--accent); }
 </style>

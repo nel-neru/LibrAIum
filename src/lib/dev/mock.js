@@ -9,14 +9,14 @@
 // deliberately stale openai/swarm entry used to demo stale detection.
 
 const categories = [
-  { id: "ai-agent", name: "AI Agents", color: "#5E409D", icon: "🤖", description: "AI agent development", order: 1 },
-  { id: "web-app", name: "Web Apps", color: "#205EA6", icon: "🌐", description: "Web application frameworks", order: 2 },
-  { id: "mobile-app", name: "Mobile Apps", color: "#3AA99F", icon: "📱", description: "Mobile development", order: 3 },
-  { id: "desktop-app", name: "Desktop Apps", color: "#4385BE", icon: "🖥️", description: "Desktop applications", order: 4 },
-  { id: "game-dev", name: "Game Dev", color: "#A02F6F", icon: "🎮", description: "Game development", order: 5 },
-  { id: "devops-infra", name: "DevOps & Infra", color: "#BC5215", icon: "⚙️", description: "CI/CD and infrastructure", order: 6 },
-  { id: "data-science", name: "Data Science", color: "#AD8301", icon: "📊", description: "Data analysis and ML", order: 7 },
-  { id: "security", name: "Security", color: "#AF3029", icon: "🔐", description: "Security tooling", order: 8 },
+  { id: "ai-agent", name: "AI Agents", color: "#5E409D", icon: "cpu", description: "AI agent development", order: 1 },
+  { id: "web-app", name: "Web Apps", color: "#205EA6", icon: "globe", description: "Web application frameworks", order: 2 },
+  { id: "mobile-app", name: "Mobile Apps", color: "#3AA99F", icon: "phone", description: "Mobile development", order: 3 },
+  { id: "desktop-app", name: "Desktop Apps", color: "#4385BE", icon: "monitor", description: "Desktop applications", order: 4 },
+  { id: "game-dev", name: "Game Dev", color: "#A02F6F", icon: "gamepad", description: "Game development", order: 5 },
+  { id: "devops-infra", name: "DevOps & Infra", color: "#BC5215", icon: "server", description: "CI/CD and infrastructure", order: 6 },
+  { id: "data-science", name: "Data Science", color: "#AD8301", icon: "chart", description: "Data analysis and ML", order: 7 },
+  { id: "security", name: "Security", color: "#AF3029", icon: "shield", description: "Security tooling", order: 8 },
 ];
 
 const now = "2026-07-08";
