@@ -7,12 +7,6 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P4 — /bulk-add — batch intake from a URL list or GitHub stars
-- **Deliverable**: `scripts/bulk-add.mjs` + `.claude/commands/bulk-add.md`.
-- **Why**: shelving 10-15 harvested URLs means running /add-entry N times.
-- **Acceptance**: three URLs (one already shelved) → two added + one duplicate skip, validate-data green.
-- **Build notes**: lines "url[,category]" from args/file/stdin; per URL: normalizeGithubUrl → findDuplicate → fetchGithubRepo → guardRedirectedDuplicate → computeStatus → saveNewEntry; continue past failures; summary table. --from-stars: `gh api user/starred --paginate` + filters (--min-stars/--language/--pushed-within), category proposal by lexical overlap with categories.yaml, triage table (no writes). Command drafts honest notes for accepted skeletons; never commits. Network only inside this user-invoked command.
-
 ### [ ] P4 — /scout — candidate sourcing for thin shelves and stale successions
 - **Deliverable**: `.claude/commands/scout.md`.
 - **Why**: 15 of 18 categories hold <3 entries; scouting without leaving Claude Code gives thin shelves succession plans.
@@ -21,6 +15,7 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Done
 
+- [x] P4 /bulk-add (URL list + --from-stars) — 48931af (2026-07-09, iter 16). Proven on a temp data copy: 3 URLs → 2 added + 1 dedup skip, validate green; --from-stars --user sharkdp → 56-row triage table, 4 shelved skipped, zero writes. Real library untouched.
 - [x] P3 Entries as MCP resources (@-mention) — 93e2abb (2026-07-09, iter 15). Proven: resources/list = 43 named entries, resources/read returns raw file, traversal URI 404s. All P3 tier done.
 - [x] P3 '## Setup' adoption steps — 5696d1b (2026-07-09, iter 14). Proven: qdrant how_to_adopt[0] is the real docker run; 8 flagship entries backfilled; Setup-wins/fallback-kept unit tests. Owner can add Setup to more entries via /add-entry or by hand.
 - [x] P3 CATALOG.md + README stats, drift-checked — 2082460 (2026-07-09, iter 13). Proven: entry edit → --check exit 1; regen → exit 0; verify-all now 7 stages. Post-edit hook auto-regenerates. Output timestamp-free so drift is real, not calendar noise.
