@@ -112,3 +112,45 @@ jobs:
       - name: Build the app binary
         run: cargo build --locked --bin libraium
         working-directory: src-tauri
+
+  # Build on Windows: the only leg that compiles the Windows Resource step in
+  # tauri-build (which requires icons/icon.ico) and the windows-native keyring
+  # backend. A missing .ico or an MSVC-only regression would otherwise ship
+  # undetected — ubuntu/macOS never touch the Windows RC path. `--bin libraium`
+  # builds bin+rlib only (not the iOS staticlib archive), so it is fast and
+  # avoids the antivirus file-lock that a full `tauri build` can hit on Windows.
+  windows-build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Build frontend (dist for generate_context!)
+        run: npm run build
+
+      - name: Rust unit tests
+        run: cargo test --locked
+        working-directory: src-tauri
+
+      - name: Build the app binary
+        run: cargo build --locked --bin libraium
+        working-directory: src-tauri
