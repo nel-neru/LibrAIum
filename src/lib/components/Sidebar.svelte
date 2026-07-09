@@ -61,7 +61,7 @@
     {#each app.categories as cat}
       {#if counts.byCat[cat.id]}
         <button class="cat-item" onclick={() => openLibraryWith({ category: cat.id })}>
-          <span class="dot" style="background: {cat.color}"></span>
+          <span class="cat-ic" style="color: {cat.color}"><Icon name={cat.icon} size={15} /></span>
           <span class="grow">{cat.name}</span>
           <span class="muted num">{counts.byCat[cat.id]}</span>
         </button>
@@ -170,7 +170,7 @@
     color: var(--tx);
   }
   .cat-item:hover { background: var(--ui); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .cat-ic { display: flex; align-items: center; flex-shrink: 0; }
   .grow { flex: 1; }
 
   /* Ambient "uncommitted changes" reminder — calm, not alarming: a hairline

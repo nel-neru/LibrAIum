@@ -40,7 +40,7 @@
     <select bind:value={app.filters.category} onchange={onFilterChange}>
       <option value="">All categories</option>
       {#each app.categories as c}
-        <option value={c.id}>{c.icon} {c.name}</option>
+        <option value={c.id}>{c.name}</option>
       {/each}
     </select>
     <select bind:value={app.filters.tag} onchange={onFilterChange} aria-label="Filter by tag">

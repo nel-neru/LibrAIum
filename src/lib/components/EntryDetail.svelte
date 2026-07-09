@@ -237,7 +237,7 @@
         <div>
           <label for="edit-category">Category</label>
           <select id="edit-category" bind:value={editCategory}>
-            {#each app.categories as c}<option value={c.id}>{c.icon} {c.name}</option>{/each}
+            {#each app.categories as c}<option value={c.id}>{c.name}</option>{/each}
           </select>
         </div>
         <div>

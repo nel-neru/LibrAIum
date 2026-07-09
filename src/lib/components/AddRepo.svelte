@@ -85,7 +85,7 @@
       <div class="grow">
         <label for="add-category">Category</label>
         <select id="add-category" style="width: 100%;" bind:value={category}>
-          {#each app.categories as c}<option value={c.id}>{c.icon} {c.name}</option>{/each}
+          {#each app.categories as c}<option value={c.id}>{c.name}</option>{/each}
         </select>
       </div>
       <div class="grow">
