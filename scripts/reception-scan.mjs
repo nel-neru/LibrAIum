@@ -174,7 +174,10 @@ function ghTopIssues(fullName) {
 }
 
 function ghReleases(fullName) {
-  return JSON.parse(gh(["api", `repos/${fullName}/releases`, "-f", "per_page=20"]))
+  // Query param goes in the URL, NOT via `-f`: `gh api -f` flips the method to
+  // POST (→ POST /releases = "create a release", which 422s on the missing
+  // tag_name). Keep it a plain GET.
+  return JSON.parse(gh(["api", `repos/${fullName}/releases?per_page=20`]))
     .map((r) => r.published_at)
     .filter(Boolean);
 }
