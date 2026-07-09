@@ -7,14 +7,15 @@ Hard constraints (see `/utilize`): no X auto-collection, no embeddings/semantic 
 
 ## Pending  (ordered: highest value per effort first)
 
-### [ ] P4 — /scout — candidate sourcing for thin shelves and stale successions
-- **Deliverable**: `.claude/commands/scout.md`.
-- **Why**: 15 of 18 categories hold <3 entries; scouting without leaving Claude Code gives thin shelves succession plans.
-- **Acceptance**: /scout audio-voice produces a deduped shortlist (stars, last push, license, why-it-fits, how-it-differs) ending with /add-entry offers; network only during the invocation.
-- **Build notes**: derive 2-3 lexical queries from category name/description + dominant tags; `gh search repos` with star/recency floors, archived:false; dedupe via findDuplicate; succession mode seeds queries from a stale entry's tags.
+### [ ] P2 — Unit-test bulk-add's proposeCategory (untested user-facing pure logic)
+- **Deliverable**: `mcp-server`-style node:test over `proposeCategory` from `scripts/bulk-add.mjs` (new `tests/bulk-add.test.mjs`), wired into the frontend test glob (already `tests/*.test.mjs`).
+- **Why**: found in the iter-17 convergence audit — `proposeCategory` drives the `/bulk-add --from-stars` category triage and is currently exercised only by a live network run; a silent regression there mis-shelves every harvested candidate.
+- **Acceptance**: `npm test` covers cases pinning the lexical scorer — a "vector database for RAG" repo proposes `ai-agent`, a "React CSS component library" proposes `web-app`/`design-ui`, an unmatchable repo returns `{category: null}`; tie-breaking keeps categories.yaml order.
+- **Build notes**: `proposeCategory` is already exported. Build a small fake categories list + tagsByCat map (no real data dir needed). Pure function, no network, no data-format change.
 
 ## Done
 
+- [x] P4 /scout candidate sourcing — e1277d5 (2026-07-09, iter 17). Proven: audio-voice recipe returned a deduped shortlist (openai/whisper filtered as shelved; whisperX/FunASR/NeMo/vosk fresh with stars/push/license). Docs-only orchestration over gh search + findDuplicate.
 - [x] P4 /bulk-add (URL list + --from-stars) — 48931af (2026-07-09, iter 16). Proven on a temp data copy: 3 URLs → 2 added + 1 dedup skip, validate green; --from-stars --user sharkdp → 56-row triage table, 4 shelved skipped, zero writes. Real library untouched.
 - [x] P3 Entries as MCP resources (@-mention) — 93e2abb (2026-07-09, iter 15). Proven: resources/list = 43 named entries, resources/read returns raw file, traversal URI 404s. All P3 tier done.
 - [x] P3 '## Setup' adoption steps — 5696d1b (2026-07-09, iter 14). Proven: qdrant how_to_adopt[0] is the real docker run; 8 flagship entries backfilled; Setup-wins/fallback-kept unit tests. Owner can add Setup to more entries via /add-entry or by hand.
