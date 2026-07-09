@@ -30,6 +30,19 @@ function anchor(text) {
 
 const STATUS_MARK = { active: "", stale: " ⚠ stale", archived: " ⛔ archived" };
 
+// Repo-relative POSIX link path for an entry's Markdown link. `entryPath` comes
+// from a node:path join, so it carries '\' separators on Windows — which break
+// GitHub Markdown links AND make the --check drift guard fail locally. We
+// normalize backslashes explicitly (NOT via path.sep): path.sep is '/' on CI's
+// Linux, so a sep-based split would silently no-op there and let the Windows
+// regression slip past both --check (no backslashes on Linux) and any test.
+export function catalogLinkPath(entryPath, root, categoryId, entryId) {
+  const rel = entryPath.startsWith(root)
+    ? entryPath.slice(root.length + 1)
+    : `data/entries/${categoryId}/${entryId.split("/").pop()}.md`;
+  return rel.replace(/\\/g, "/");
+}
+
 export function buildCatalog(entries, categories) {
   const byCat = new Map(categories.map((c) => [c.id, []]));
   for (const e of entries) {
@@ -68,7 +81,7 @@ export function buildCatalog(entries, categories) {
     lines.push("| Repo | Stars | Language | Tags |");
     lines.push("| --- | --- | --- | --- |");
     for (const e of inCat) {
-      const link = `[${e.meta.full_name}](${e.path.startsWith(ROOT) ? e.path.slice(ROOT.length + 1) : `data/entries/${c.id}/${e.id.split("/").pop()}.md`})`;
+      const link = `[${e.meta.full_name}](${catalogLinkPath(e.path, ROOT, c.id, e.id)})`;
       const lang = e.meta.language ?? "—";
       const tags = (e.meta.tags ?? []).join(", ");
       lines.push(`| ${link}${STATUS_MARK[e.meta.status] ?? ""} | ${e.meta.stars ?? 0} | ${lang} | ${tags} |`);
