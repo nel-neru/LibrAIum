@@ -38,7 +38,12 @@ export function renameTag(dataDir, oldTag, newTag, { merge = false, dryRun = fal
     );
   }
 
-  const touched = [];
+  // Pass 1 — validate every affected entry and stage its rewritten content.
+  // NOTHING is written here: a refused run (a both-tag entry without --merge,
+  // or a malformed frontmatter block) must leave the whole working tree
+  // byte-identical, which is the "atomic … in one run" promise. Writing as we
+  // go would half-rename the library up to the first conflict.
+  const plan = [];
   for (const e of affected) {
     const tags = e.meta.tags ?? [];
     const hasNew = tags.some((t) => t.toLowerCase() === newTag.toLowerCase());
@@ -56,20 +61,22 @@ export function renameTag(dataDir, oldTag, newTag, { merge = false, dryRun = fal
         seen.add(k);
         return true;
       });
-    touched.push({ id: e.id, path: e.path, before: tags, after: next });
-    if (!dryRun) {
-      const lines = readFileSync(e.path, "utf8").split("\n");
-      const open = lines.findIndex((l) => l.trimEnd() === "---");
-      const close = lines.findIndex((l, i) => i > open && l.trimEnd() === "---");
-      const idx = lines.findIndex((l, i) => i > open && i < close && l.startsWith("tags:"));
-      if (open === -1 || close === -1 || idx === -1) {
-        throw new Error(`${e.id}: no tags line inside the frontmatter block — refusing to touch the file`);
-      }
-      lines[idx] = `tags: [${next.join(", ")}]`;
-      writeFileSync(e.path, lines.join("\n"));
+    const lines = readFileSync(e.path, "utf8").split("\n");
+    const open = lines.findIndex((l) => l.trimEnd() === "---");
+    const close = lines.findIndex((l, i) => i > open && l.trimEnd() === "---");
+    const idx = lines.findIndex((l, i) => i > open && i < close && l.startsWith("tags:"));
+    if (open === -1 || close === -1 || idx === -1) {
+      throw new Error(`${e.id}: no tags line inside the frontmatter block — refusing to touch the file`);
     }
+    lines[idx] = `tags: [${next.join(", ")}]`;
+    plan.push({ id: e.id, path: e.path, before: tags, after: next, content: lines.join("\n") });
   }
-  return touched;
+
+  // Pass 2 — flush. Reached only once the whole set validated.
+  if (!dryRun) {
+    for (const p of plan) writeFileSync(p.path, p.content);
+  }
+  return plan.map(({ id, path, before, after }) => ({ id, path, before, after }));
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;

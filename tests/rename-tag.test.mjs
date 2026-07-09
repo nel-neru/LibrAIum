@@ -3,7 +3,7 @@
 // demand --merge, and the guard rails refuse junk.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -54,6 +54,38 @@ test("duplicate-producing rename demands --merge, then de-duplicates keeping ord
     assert.deepEqual(fresh.after, ["vector-db"]);
     const solo = touched.find((t) => t.id === "beta/solo");
     assert.deepEqual(solo.after, ["vector-db"]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// A refused run must leave the working tree byte-identical — the atomicity
+// promise. Regression for the non-atomic partial write: a non-conflicting
+// carrier that sorts BEFORE the conflicting one used to be rewritten on disk
+// before the conflict threw (the shared fixture masked it by ordering the
+// conflicting entry first).
+function entryFile(tags, name) {
+  return `---\ngithub_url: https://github.com/x/${name}\nfull_name: x/${name}\ncategory: x\ntags: [${tags.join(", ")}]\nstars: 1\nstatus: active\nsource: manual\n---\n\n# ${name}\n\nSummary.\n`;
+}
+
+test("a refused (no --merge) rename leaves every non-conflicting file byte-identical", () => {
+  const dir = mkdtempSync(join(tmpdir(), "libraium-rename-atomic-"));
+  try {
+    mkdirSync(join(dir, "entries", "x"), { recursive: true });
+    mkdirSync(join(dir, "master"), { recursive: true });
+    writeFileSync(join(dir, "master", "categories.yaml"), "categories:\n  - id: x\n    name: X\n    order: 1\n");
+    // aaa (no conflict) sorts before zzz (carries both tags → conflict).
+    const aaaPath = join(dir, "entries", "x", "aaa.md");
+    const zzzPath = join(dir, "entries", "x", "zzz.md");
+    writeFileSync(aaaPath, entryFile(["rag", "python"], "aaa"));
+    writeFileSync(zzzPath, entryFile(["rag", "vector-db"], "zzz"));
+    const aaaBefore = readFileSync(aaaPath, "utf8");
+    const zzzBefore = readFileSync(zzzPath, "utf8");
+
+    assert.throws(() => renameTag(dir, "rag", "vector-db"), /Re-run with --merge/);
+
+    assert.equal(readFileSync(aaaPath, "utf8"), aaaBefore, "non-conflicting file must be untouched on a refused run");
+    assert.equal(readFileSync(zzzPath, "utf8"), zzzBefore, "conflicting file untouched too");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
