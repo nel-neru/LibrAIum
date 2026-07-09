@@ -81,6 +81,18 @@ if (touchesData) {
       process.exit(2); // stderr is fed back to Claude for correction
     }
   }
+  // Regenerate the derived catalog so CATALOG.md / README never drift (the
+  // verify-all catalog stage would otherwise fail). Outputs live OUTSIDE
+  // data/, so this cannot retrigger the hook. Best-effort: a generation
+  // failure must not block the edit that just validated.
+  const builder = resolve(projectDir, "scripts/build-catalog.mjs");
+  if (existsSync(builder)) {
+    try {
+      execFileSync(process.execPath, [builder], { stdio: "ignore", cwd: projectDir, env });
+    } catch {
+      /* catalog regen is best-effort; verify-all's drift stage is the backstop */
+    }
+  }
 }
 
 if (messages.length > 0) {

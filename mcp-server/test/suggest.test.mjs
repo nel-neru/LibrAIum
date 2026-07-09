@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { tokenize, scoreEntry, suggest } from "../lib/suggest.js";
+import { tokenize, scoreEntry, suggest, extractNotes, alternativesFor, adoptionSteps, extractSetup } from "../lib/suggest.js";
 
 function entry(fullName, { tags = [], stars = 0, status = "active", language, category = "ai-agent", body = "" } = {}) {
   const slug = fullName.replace("/", "-");
@@ -78,6 +78,100 @@ test("scoreEntry: stale/archived discount and warn even when relevant", () => {
   const archived = scoreEntry(entry("a/c", { tags: ["rag"], status: "archived" }), ["rag"], CATEGORIES);
   assert.ok(archived.reasons.some((r) => r.includes("archived")));
   assert.ok(archived.score < stale.score, "archived must rank below stale at equal relevance");
+});
+
+test("extractNotes: token bullets outrank caution cues outrank body order, capped at 3", () => {
+  const body = [
+    "# x",
+    "",
+    "Summary.",
+    "",
+    "## Personal Notes",
+    "",
+    "- Plain first bullet.",
+    "- Second bullet about latency.",
+    "- Gotcha: breaks on empty input.",
+    "- Fourth bullet, plain.",
+    "",
+  ].join("\n");
+  const e = entry("a/b", { body });
+
+  const noTok = extractNotes(e, []);
+  assert.equal(noTok.length, 3, "capped at 3");
+  assert.match(noTok[0], /^Gotcha/, "caution cue wins without token hits");
+  assert.match(noTok[1], /^Plain first/, "remaining bullets keep body order");
+
+  const tok = extractNotes(e, ["latency"]);
+  assert.match(tok[0], /latency/, "a query-token bullet outranks the cue bullet");
+});
+
+test("extractNotes: placeholder stubs and missing section return null", () => {
+  assert.equal(extractNotes(entry("a/b", { body: "# x\n\nSummary only.\n" }), []), null);
+  assert.equal(extractNotes(entry("a/c", { body: "# x\n\n## Personal Notes\n- \n-   \n" }), []), null);
+});
+
+test("suggest: suggestions inline personal_notes from the entry body", () => {
+  const entries = [
+    entry("acme/rag-lib", {
+      tags: ["rag"],
+      body: "# rag-lib\n\nA lib.\n\n## Personal Notes\n- Watch memory on big corpora.\n",
+    }),
+  ];
+  const res = suggest(entries, CATEGORIES, "a RAG pipeline");
+  assert.deepEqual(res.suggestions[0].personal_notes, ["Watch memory on big corpora."]);
+});
+
+test("alternativesFor mirrors Rust suggest_alternatives: shared tag + active + same category", () => {
+  // Fixture mirrors search.rs alternatives_share_tags_and_are_active.
+  const entries = [
+    entry("old/thing", { tags: ["vector-db"], stars: 50, status: "stale" }),
+    entry("qdrant/qdrant", { tags: ["vector-db", "rag"], stars: 20_000 }),
+    entry("unrelated/x", { tags: ["prompt"], stars: 90_000 }),
+  ];
+  const alts = alternativesFor(entries, entries[0], 3);
+  assert.equal(alts.length, 1, "no shared tag = excluded regardless of stars");
+  assert.equal(alts[0].meta.full_name, "qdrant/qdrant");
+
+  // two shared tags outrank one, stars only break ties below the 999 cap
+  const richer = [
+    entries[0],
+    entry("one/tag", { tags: ["vector-db"], stars: 999_999 }),
+    entry("two/tags", { tags: ["vector-db", "rust"], stars: 10 }),
+  ];
+  const target = { ...entries[0], meta: { ...entries[0].meta, tags: ["vector-db", "rust"] } };
+  const ranked = alternativesFor(richer, target, 3);
+  assert.equal(ranked[0].meta.full_name, "two/tags", "tag overlap dominates stars (min 999 cap)");
+
+  // different category never qualifies
+  const otherCat = [entries[0], entry("web/kit", { tags: ["vector-db"], category: "web-app" })];
+  assert.equal(alternativesFor(otherCat, entries[0], 3).length, 0);
+});
+
+test("extractSetup collects fenced commands and step bullets, null when absent", () => {
+  const withSetup = entry("q/db", {
+    body: "# db\n\nA store.\n\n## Setup\n\n```bash\ndocker run -p 6333:6333 q/db\n```\n\n- Then hit http://localhost:6333/dashboard\n\n## Personal Notes\n- fast\n",
+  });
+  assert.deepEqual(extractSetup(withSetup), [
+    "docker run -p 6333:6333 q/db",
+    "Then hit http://localhost:6333/dashboard",
+  ]);
+  assert.equal(extractSetup(entry("n/o", { body: "# o\n\nNo setup here.\n\n## Personal Notes\n- x\n" })), null);
+});
+
+test("adoptionSteps: Setup commands win over the clone fallback; tag hints only without Setup", () => {
+  const withSetup = entry("q/db", {
+    tags: ["vector-db"],
+    body: "# db\n\nA store.\n\n## Setup\n\n```bash\ndocker run -p 6333:6333 q/db\n```\n\n## Personal Notes\n- fast\n",
+  });
+  const steps = adoptionSteps(withSetup);
+  assert.equal(steps[0], "docker run -p 6333:6333 q/db", "real command leads");
+  assert.ok(!steps.some((s) => s.startsWith("git clone")), "no generic clone when Setup exists");
+  assert.ok(!steps.some((s) => s.includes("infrastructure")), "tag hint suppressed when Setup is authoritative");
+  assert.ok(steps.at(-1).includes("Personal Notes"));
+
+  const noSetup = adoptionSteps(entry("a/b", { tags: ["vector-db"] }));
+  assert.ok(noSetup[0].startsWith("git clone"));
+  assert.ok(noSetup.some((s) => s.includes("infrastructure")), "tag hint kept as fallback");
 });
 
 test("suggest: irrelevant query returns ZERO suggestions despite active high-star entries", () => {

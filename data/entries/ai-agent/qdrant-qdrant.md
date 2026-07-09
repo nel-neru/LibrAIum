@@ -3,9 +3,9 @@ github_url: https://github.com/qdrant/qdrant
 full_name: qdrant/qdrant
 category: ai-agent
 tags: [vector-db, rag, similarity-search, rust]
-stars: 21400
+stars: 33051
 language: Rust
-last_github_push: 2026-07-05
+last_github_push: 2026-07-08
 last_checked: 2026-07-08
 status: active
 source: manual
@@ -15,6 +15,14 @@ added_date: 2026-06-20
 # qdrant
 
 High-performance vector database and similarity search engine with filtering, written in Rust. gRPC + REST APIs, runs great locally via Docker.
+
+## Setup
+
+```bash
+docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
+```
+
+- REST + web dashboard on `:6333/dashboard`, gRPC on `:6334`.
 
 ## Personal Notes
 

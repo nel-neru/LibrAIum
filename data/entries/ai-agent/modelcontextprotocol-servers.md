@@ -16,6 +16,14 @@ added_date: 2026-06-21
 
 Official reference implementations of MCP servers — filesystem, fetch, git, memory and more.
 
+## Setup
+
+```bash
+claude mcp add filesystem -- npx -y @modelcontextprotocol/server-filesystem /path/to/allowed/dir
+```
+
+- Each server is standalone; swap `server-filesystem` for `server-git`, `server-memory`, etc.
+
 ## Personal Notes
 
 - The canonical place to learn MCP server patterns; the `filesystem` server is the best-annotated example.

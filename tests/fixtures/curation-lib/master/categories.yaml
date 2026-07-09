@@ -1,0 +1,7 @@
+categories:
+  - id: alpha
+    name: Alpha
+    order: 1
+  - id: beta
+    name: Beta
+    order: 2

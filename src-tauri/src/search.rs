@@ -22,7 +22,9 @@ pub fn search(entries: &[Entry], q: &SearchQuery) -> Vec<Entry> {
                     e.meta.language.as_deref().unwrap_or(""),
                     first_summary_line(&e.body),
                 );
-                matcher.fuzzy_match(&haystack, needle).map(|score| (score, e))
+                matcher
+                    .fuzzy_match(&haystack, needle)
+                    .map(|score| (score, e))
             }
         })
         .collect();
@@ -48,11 +50,19 @@ fn passes_filters(e: &Entry, q: &SearchQuery) -> bool {
         }
     }
     // Every requested tag must be present (AND semantics).
-    q.tags.iter().all(|t| e.meta.tags.iter().any(|et| et.eq_ignore_ascii_case(t)))
+    q.tags
+        .iter()
+        .all(|t| e.meta.tags.iter().any(|et| et.eq_ignore_ascii_case(t)))
 }
 
 /// Alternatives for a stale entry: same category, overlapping tags, active, fresher.
-pub fn suggest_alternatives<'a>(entries: &'a [Entry], target: &Entry, max: usize) -> Vec<&'a Entry> {
+/// Logic twin: `alternativesFor` in mcp-server/lib/suggest.js (attached to the
+/// MCP get_repo_details response) — keep the formula identical on both sides.
+pub fn suggest_alternatives<'a>(
+    entries: &'a [Entry],
+    target: &Entry,
+    max: usize,
+) -> Vec<&'a Entry> {
     let mut candidates: Vec<(i64, &Entry)> = entries
         .iter()
         .filter(|e| e.id != target.id)
@@ -103,14 +113,23 @@ mod tests {
     #[test]
     fn filters_and_fuzzy() {
         let entries = vec![
-            entry("qdrant/qdrant", "ai-agent", &["vector-db", "rag"], 20000, "active"),
+            entry(
+                "qdrant/qdrant",
+                "ai-agent",
+                &["vector-db", "rag"],
+                20000,
+                "active",
+            ),
             entry("chroma/chroma", "ai-agent", &["vector-db"], 15000, "active"),
             entry("sveltejs/kit", "web-app", &["framework"], 19000, "active"),
             entry("old/thing", "ai-agent", &["vector-db"], 50, "stale"),
         ];
 
         // fuzzy query hits the vector dbs
-        let q = SearchQuery { query: Some("qdrnt".into()), ..Default::default() };
+        let q = SearchQuery {
+            query: Some("qdrnt".into()),
+            ..Default::default()
+        };
         let r = search(&entries, &q);
         assert_eq!(r[0].meta.full_name, "qdrant/qdrant");
 
@@ -124,7 +143,10 @@ mod tests {
         assert_eq!(search(&entries, &q).len(), 2);
 
         // tag AND semantics
-        let q = SearchQuery { tags: vec!["vector-db".into(), "rag".into()], ..Default::default() };
+        let q = SearchQuery {
+            tags: vec!["vector-db".into(), "rag".into()],
+            ..Default::default()
+        };
         let r = search(&entries, &q);
         assert_eq!(r.len(), 1);
         assert_eq!(r[0].meta.full_name, "qdrant/qdrant");
@@ -138,7 +160,13 @@ mod tests {
     fn alternatives_share_tags_and_are_active() {
         let entries = vec![
             entry("old/thing", "ai-agent", &["vector-db"], 50, "stale"),
-            entry("qdrant/qdrant", "ai-agent", &["vector-db", "rag"], 20000, "active"),
+            entry(
+                "qdrant/qdrant",
+                "ai-agent",
+                &["vector-db", "rag"],
+                20000,
+                "active",
+            ),
             entry("unrelated/x", "ai-agent", &["prompt"], 90000, "active"),
         ];
         let alts = suggest_alternatives(&entries, &entries[0], 3);

@@ -16,6 +16,15 @@ added_date: 2026-07-09
 
 Desktop (and, since v2, iOS/Android) app framework that pairs a web frontend with a Rust backend and renders through the OS's own webview instead of bundling Chromium — installers land in single-digit MB where Electron ships ~100 MB. v2 adds a capability-based permission system that gates every IPC and plugin surface.
 
+## Setup
+
+```bash
+npm create tauri-app@latest
+# then: cd <app> && npm install && npm run tauri dev
+```
+
+- Needs the Rust toolchain (`rustup`) plus your OS's webview deps (Linux: WebKitGTK).
+
 ## Personal Notes
 
 - The Electron alternative that actually stuck — LibrAIum's own GUI is Tauri v2 + Svelte 5. Any SPA frontend drops in; pairs naturally with [sveltejs/kit](https://github.com/sveltejs/kit) using the static adapter.

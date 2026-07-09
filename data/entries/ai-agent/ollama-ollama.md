@@ -16,6 +16,16 @@ added_date: 2026-07-09
 
 The de facto standard for running open-weight LLMs (Llama, Gemma, Qwen, DeepSeek) locally — one CLI to pull quantized models and serve them behind an OpenAI-compatible API on port 11434. Go binary over llama.cpp/GGML with Modelfile-based model packaging.
 
+## Setup
+
+```bash
+# macOS: brew install ollama   |   Linux: curl -fsSL https://ollama.com/install.sh | sh
+ollama serve &
+ollama run llama3.2
+```
+
+- OpenAI-compatible endpoint at `http://localhost:11434/v1`.
+
 ## Personal Notes
 
 - The default offline backend for agent development: point any OpenAI SDK at `http://localhost:11434/v1` and swap models without touching app code.

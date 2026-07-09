@@ -16,6 +16,15 @@ added_date: 2026-06-24
 
 A command runner — like make, but without the build-system baggage. Cross-platform, great error messages.
 
+## Setup
+
+```bash
+brew install just    # or: cargo install just
+just --list          # in a repo with a justfile
+```
+
+- Drop a `justfile` at the repo root; recipes are invoked as `just <recipe>`.
+
 ## Personal Notes
 
 - Adopted in every new repo: a `justfile` beats a README full of copy-paste commands.

@@ -45,6 +45,7 @@ House-style essentials:
 
 - Frontmatter fields exactly as in `EntryMeta` (`src-tauri/src/models.rs`) — no invented keys. Set `last_checked` and `added_date` to today, `source: manual`, `status: active` unless GitHub reports the repo archived.
 - Body starts with `# <repo-short-name>`, then a **summary of at most 2 sentences** — what it is and why it earns a shelf spot. No marketing copy.
+- Optional `## Setup` section (after the summary): 2-4 real install/run commands captured from the README while you're already reading it — a fenced ```bash block. The MCP `adoptionSteps` surfaces these instead of a generic clone. Never invent flags/ports; omit the section rather than guess.
 - `## Personal Notes` — 2–4 concrete, firsthand-style bullets: when to reach for it, gotchas discovered in the docs/issues, and pairings with existing library entries (as Markdown links). Honest about weaknesses. Never restate the README.
 - Tags: 3–6, kebab-case, reuse-first — check what already exists with `grep -rh "^tags:" data/entries` and only mint a new tag when nothing fits. Mix technology tags (`rust`, `python`) with concept tags (`rag`, `task-runner`).
 

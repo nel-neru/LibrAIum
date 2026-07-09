@@ -21,6 +21,7 @@ cd src-tauri && cargo test       # Rust unit tests — all core logic lives here
 cd src-tauri && cargo test store # run one module's tests (store/search/gitops/github/…)
 cd mcp-server && npm test        # store.js unit tests + MCP stdio smoke test (all 4 tools)
 bash scripts/make-icons.sh       # regenerate icons from scripts/generate-icons.mjs (macOS)
+node scripts/register-mcp.mjs    # user-scope MCP registration plan (--yes to apply, --doctor to diagnose)
 ```
 
 Rust was installed via Homebrew; if `cargo` is missing from PATH: `export PATH="/opt/homebrew/bin:$PATH"`.
@@ -49,7 +50,7 @@ Frontend (`src/`): Svelte 5 **runes** (no stores); shared state in `lib/state.sv
 
 **UI styling is governed by `DESIGN.md`** (Flexoki paper-and-ink tokens in `src/styles.css`, light+dark). Before touching any UI file, read DESIGN.md and use only its tokens — do not invent colors, fonts, radii, or shadows, and never reintroduce emoji into chrome. In a plain browser, `npm run dev` auto-installs `src/lib/dev/mock.js` (Tauri IPC mock with seeded data) so the UI can be previewed and screenshotted without the Rust backend.
 
-MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` (lexical scoring in `lib/suggest.js`), `add_repo` (source: `mcp`). Data dir resolution mirrors the Rust order (plus `--data-dir` flag).
+MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` (lexical scoring in `lib/suggest.js`, inlines `personal_notes`), `compare_repos` (decision matrix in `lib/compare.js`), `get_library_overview` (shelf map/tag vocabulary in `lib/overview.js`), `add_repo` (source: `mcp`). Entries are also MCP **resources** (`entry://{category}/{slug}` template) for `@libraium` @-mention autocomplete — the read callback resolves by entry id, never by joining URI segments into a path (traversal guard). Data dir resolution mirrors the Rust order (plus `--data-dir` flag).
 
 ## Data Model
 
@@ -60,12 +61,14 @@ MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` 
 
 ## Repo automation & AI infrastructure
 
-- **`bash scripts/verify-all.sh`** is the single verification entry point (also run by CI): data validation → cargo test → vite build + frontend unit tests → MCP unit+smoke tests → Rust⇔Node conformance → app binary build (`cargo build --bin libraium` — the only stage that builds the real binary; a broken bare `cargo run` once passed everything else). Run it before any commit; `/verify` wraps it.
+- **`bash scripts/verify-all.sh`** is the single verification entry point (also run by CI): data validation → cargo test → vite build + frontend unit tests → MCP unit+smoke tests → Rust⇔Node conformance → catalog drift check → app binary build (`cargo build --bin libraium` — the only stage that builds the real binary; a broken bare `cargo run` once passed everything else). Run it before any commit; `/verify` wraps it.
 - **`node scripts/validate-data.mjs`** — schema-validates every entry + the category master. A PostToolUse hook runs it automatically after any `data/` edit and feeds failures back for self-correction.
 - **`node scripts/conformance.mjs`** — proves the Rust and Node data-format implementations agree, over `tests/fixtures/format/` (valid/ must parse identically, invalid/ must be rejected by BOTH), all real entries, and a function-level corpus (`functions.json`: `slugify` + `normalizeGithubUrl`, via `dump_entries --slugify/--normalize-url`). When you change the format or these functions: update both implementations, add a fixture/corpus case, keep this green (`/format-sync` walks through it).
+- **`node scripts/build-catalog.mjs`** — regenerates `CATALOG.md` (browsable per-category index + tag index) and the README `<!-- library-stats -->` block from `data/`. The post-edit hook runs it after any `data/` edit; `--check` (a verify-all stage) fails on drift. Output carries no timestamp on purpose (a daily-changing line would break the drift check). Never hand-edit CATALOG.md or the README stats block.
 - **Hooks** (`.claude/hooks/post-edit.mjs`): rustfmt on edited `.rs`; parity reminder when either half of the dual implementation is edited; data validation as above.
-- **Commands**: `/verify`, `/add-entry <github-url>`, `/curate-review`, `/format-sync`. **Agents**: `entry-curator`, `conformance-auditor`, `libraium-reviewer`. **Skill**: `entry-authoring` (house style for entries — consult it before writing any `data/entries/**/*.md`).
-- Known flake guard: the MCP smoke test uses a 30s handshake timeout because server boot can exceed 10s right after cargo/vite stages on a loaded machine.
+- **Commands**: `/verify`, `/add-entry <github-url>`, `/curate-review`, `/format-sync`, `/utilize` (one PDCA iteration of the utilization loop — state in `.claude/utilization-backlog.md`), `/refresh-metadata` (headless GitHub metadata refresh via `scripts/refresh-metadata.mjs`; dry-run first), `/confirm-notes` (interview the owner to convert AI-drafted Personal Notes into firsthand ones; progress tracked in `.claude/notes-review.md`), `/bulk-add` (batch intake from a URL list or GitHub stars via `scripts/bulk-add.mjs`; writes skeletons, then the command drafts honest notes), `/scout` (source vetted GitHub candidates for a thin shelf or a stale entry's successor via `gh search repos`, deduped against the library). **Agents**: `entry-curator`, `conformance-auditor`, `libraium-reviewer`. **Skill**: `entry-authoring` (house style for entries — consult it before writing any `data/entries/**/*.md`).
+- **Integrations** (`integrations/`, `docs/`): `integrations/claude/skills/libraium-first/` is the user-scope skill that makes Claude Code sessions in OTHER repos consult this library before dependency decisions; `docs/library-first-setup.md` is its setup page (user-scope MCP registration + paste-in CLAUDE.md block). Keep the skill's tool names in sync with `mcp-server/index.js`.
+- Known flake guard: the MCP smoke test uses a 30s handshake timeout because server boot can exceed 10s right after cargo/vite stages on a loaded machine. Stale-dependent smoke scenarios run against `mcp-server/test/fixtures/stale-lib/` (a checked-in mini-library with a guaranteed-stale entry), never against refreshable real entries.
 
 ## Constraints from the design doc
 

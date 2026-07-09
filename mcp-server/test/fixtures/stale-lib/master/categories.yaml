@@ -1,0 +1,4 @@
+categories:
+  - id: agents
+    name: Agents
+    order: 1

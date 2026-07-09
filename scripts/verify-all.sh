@@ -6,8 +6,9 @@
 #   [2/6] Rust unit tests      (cd src-tauri && cargo test --quiet)
 #   [3/6] frontend build+tests npm run build && npm test  (vite + node --test)
 #   [4/6] MCP tests            (cd mcp-server && npm test)  unit + stdio smoke
-#   [5/6] conformance          node scripts/conformance.mjs
-#   [6/6] app binary build     (cd src-tauri && cargo build --bin libraium)
+#   [5/7] conformance          node scripts/conformance.mjs
+#   [6/7] catalog drift        node scripts/build-catalog.mjs --check
+#   [7/7] app binary build     (cd src-tauri && cargo build --bin libraium)
 #
 # If dist/ is missing (fresh clone / CI), the frontend build runs BEFORE
 # cargo test, because Tauri's generate_context! embeds dist/ at compile time.
@@ -32,7 +33,7 @@ for dir in . mcp-server; do
   fi
 done
 
-STAGE_TOTAL=6
+STAGE_TOTAL=7
 
 stage() {
   local num="$1" name="$2"
@@ -52,6 +53,7 @@ cargo_tests()    { (cd src-tauri && cargo test --quiet --locked); }
 frontend_build() { npm run build && npm test; }
 mcp_smoke()      { (cd mcp-server && npm test); }
 conformance()    { node scripts/conformance.mjs; }
+catalog_drift()  { node scripts/build-catalog.mjs --check; }
 app_build()      { (cd src-tauri && cargo build --quiet --locked --bin libraium); }
 
 overall_start=$(date +%s)
@@ -69,7 +71,8 @@ fi
 
 stage 4 "MCP server tests (npm test)" mcp_smoke
 stage 5 "Rust<->Node conformance (conformance.mjs)" conformance
-stage 6 "app binary build (cargo build --bin libraium)" app_build
+stage 6 "catalog drift (build-catalog.mjs --check)" catalog_drift
+stage 7 "app binary build (cargo build --bin libraium)" app_build
 
 overall_end=$(date +%s)
 printf '\n\033[1;32m✓ All %s verification stages passed in %ss.\033[0m\n' "$STAGE_TOTAL" "$((overall_end - overall_start))"

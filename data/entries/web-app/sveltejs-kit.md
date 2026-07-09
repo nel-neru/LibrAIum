@@ -16,6 +16,15 @@ added_date: 2026-06-23
 
 Full-stack Svelte framework — filesystem routing, SSR/SSG, adapters for every platform.
 
+## Setup
+
+```bash
+npx sv create my-app
+cd my-app && npm install && npm run dev
+```
+
+- The `sv` CLI scaffolds SvelteKit; pick `adapter-static` in the prompts for a pure SSG/SPA build.
+
 ## Personal Notes
 
 - Default choice for content-heavy sites; pairs with Svelte 5 runes cleanly since v2.

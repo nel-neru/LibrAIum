@@ -82,16 +82,103 @@ export function scoreEntry(entry, tokens, categories) {
   return { score: Math.round(score * 10) / 10, lexical, reasons };
 }
 
+// Mirror of Rust search::suggest_alternatives (src-tauri/src/search.rs) —
+// keep the formula identical on BOTH sides: candidates share the target's
+// category, are active, and are not the target; score = sharedTagCount * 1000
+// + min(stars, 999); require >= 1000 (at least one shared tag); sort by score
+// desc (stable), take max. Tag comparison is ASCII-case-insensitive
+// (eq_ignore_ascii_case parity — tags are kebab-case ASCII by convention).
+export function alternativesFor(entries, target, max = 3) {
+  return entries
+    .filter((e) => e.id !== target.id)
+    .filter((e) => e.meta.category === target.meta.category)
+    .filter((e) => (e.meta.status ?? "active") === "active")
+    .map((e) => {
+      const overlap = (e.meta.tags ?? []).filter((t) =>
+        (target.meta.tags ?? []).some((tt) => tt.toLowerCase() === t.toLowerCase())
+      ).length;
+      return { score: overlap * 1000 + Math.min(e.meta.stars ?? 0, 999), e };
+    })
+    .filter(({ score }) => score >= 1000)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, max)
+    .map(({ e }) => e);
+}
+
+// Bullets whose wording signals a warning — surfaced ahead of neutral notes.
+const CAUTION_CUES = ["gotcha", "caveat", "avoid", "superseded", "don't", "instead", "deprecated", "watch", "⚠"];
+
+// The owner's firsthand notes are the library's core value; inline up to 3
+// bullets so the single suggest call carries them without a get_repo_details
+// follow-up. Query-token bullets first, then caution cues, then body order.
+// Returns null when the entry has no real bullets (bare "- " stubs excluded)
+// so callers can tell "no experience recorded" from "nothing matched".
+export function extractNotes(entry, tokens = []) {
+  const body = entry.body ?? "";
+  const idx = body.toLowerCase().indexOf("## personal notes");
+  if (idx === -1) return null;
+  const bullets = [];
+  for (const line of body.slice(idx).split("\n").slice(1)) {
+    if (/^#{1,6}\s/.test(line)) break; // next heading ends the section
+    const m = line.match(/^-\s+(.*\S)\s*$/);
+    if (m) bullets.push(m[1]);
+  }
+  if (!bullets.length) return null;
+  return bullets
+    .map((text, i) => {
+      const lower = text.toLowerCase();
+      return {
+        text,
+        i,
+        tokenHit: tokens.some((tok) => lower.includes(tok)) ? 1 : 0,
+        cueHit: CAUTION_CUES.some((cue) => lower.includes(cue)) ? 1 : 0,
+      };
+    })
+    .sort((a, b) => b.tokenHit - a.tokenHit || b.cueHit - a.cueHit || a.i - b.i)
+    .slice(0, 3)
+    .map((b) => b.text);
+}
+
+// The owner-authored '## Setup' section: verified install/run commands (fenced
+// code lines) and step bullets, in body order. Null when the section is absent
+// so adoptionSteps knows to fall back to the generic clone/README pointer.
+export function extractSetup(entry) {
+  const body = entry.body ?? "";
+  const idx = body.toLowerCase().indexOf("## setup");
+  if (idx === -1) return null;
+  const steps = [];
+  let inFence = false;
+  for (const line of body.slice(idx).split("\n").slice(1)) {
+    if (/^#{1,6}\s/.test(line)) break; // next heading ends the section
+    if (/^\s*```/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) {
+      if (line.trim()) steps.push(line.trim());
+      continue;
+    }
+    const m = line.match(/^-\s+(.*\S)\s*$/);
+    if (m) steps.push(m[1]);
+  }
+  return steps.length ? steps : null;
+}
+
 export function adoptionSteps(entry) {
-  const steps = [
-    `git clone ${entry.meta.github_url}`,
-    `Read its README against your requirements — then check your Personal Notes in LibrAIum (${entry.id}) for firsthand gotchas.`,
-  ];
+  // Owner-verified Setup commands beat the generic clone/README dance — this is
+  // the first-hour friction the library exists to remove.
+  const setup = extractSetup(entry);
+  const steps = setup
+    ? [...setup, `Then check your Personal Notes in LibrAIum (${entry.id}) for firsthand gotchas.`]
+    : [
+        `git clone ${entry.meta.github_url}`,
+        `Read its README against your requirements — then check your Personal Notes in LibrAIum (${entry.id}) for firsthand gotchas.`,
+      ];
   const tags = entry.meta.tags ?? [];
-  if (tags.includes("mcp-server")) {
+  if (!setup && tags.includes("mcp-server")) {
     steps.push(`If it ships an MCP server: claude mcp add ${entry.meta.full_name.split("/")[1]} -- <its run command>`);
   }
-  if (tags.includes("vector-db")) {
+  if (!setup && tags.includes("vector-db")) {
     steps.push("Runs as infrastructure — check for a docker-compose.yml or a hosted option before embedding.");
   }
   return steps;
@@ -118,6 +205,7 @@ export function suggest(entries, categories, projectDescription, goals = "", max
       stars: entry.meta.stars ?? 0,
       status: entry.meta.status,
       summary: firstSummaryLine(entry.body),
+      personal_notes: extractNotes(entry, tokens),
       relevance_score: score,
       why: reasons,
       how_to_adopt: adoptionSteps(entry),
