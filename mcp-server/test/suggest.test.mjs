@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { tokenize, scoreEntry, suggest, extractNotes, alternativesFor, adoptionSteps, extractSetup } from "../lib/suggest.js";
+import { tokenize, scoreEntry, suggest, extractNotes, alternativesFor, tagAlternatives, adoptionSteps, extractSetup } from "../lib/suggest.js";
 
 function entry(fullName, { tags = [], stars = 0, status = "active", language, category = "ai-agent", body = "" } = {}) {
   const slug = fullName.replace("/", "-");
@@ -163,6 +163,34 @@ test("alternativesFor mirrors Rust suggest_alternatives: shared tag + active + s
   // different category never qualifies
   const otherCat = [entries[0], entry("web/kit", { tags: ["vector-db"], category: "web-app" })];
   assert.equal(alternativesFor(otherCat, entries[0], 3).length, 0);
+});
+
+test("alternativesFor puts an authored superseded_by successor first, even cross-category / zero shared tag", () => {
+  // Mirrors search.rs suggest_alternatives_prefers_authored_successor.
+  const old = entry("openai/swarm", { tags: ["agents"], stars: 50, status: "stale" });
+  old.meta.superseded_by = ["langchain-ai/langgraph"];
+  const entries = [
+    old,
+    entry("langchain-ai/langgraph", { tags: ["workflow"], stars: 12_000, category: "orchestration" }),
+    entry("some/agent", { tags: ["agents"], stars: 9_000 }),
+  ];
+  const alts = alternativesFor(entries, entries[0], 3);
+  assert.equal(alts[0].meta.full_name, "langchain-ai/langgraph", "authored successor leads");
+  assert.equal(alts[1].meta.full_name, "some/agent", "then the tag heuristic");
+
+  // An unshelved authored target is skipped here (get_related surfaces it as
+  // unshelved); the heuristic still fills in.
+  const old2 = entry("legacy/x", { tags: ["agents"], stars: 10, status: "stale" });
+  old2.meta.superseded_by = ["not/shelved"];
+  const entries2 = [old2, entry("some/agent", { tags: ["agents"], stars: 9_000 })];
+  assert.deepEqual(alternativesFor(entries2, entries2[0], 3).map((a) => a.meta.full_name), ["some/agent"]);
+});
+
+test("tagAlternatives is the pure heuristic — authored edges are ignored", () => {
+  const old = entry("old/thing", { tags: ["vector-db"], stars: 50, status: "stale" });
+  old.meta.superseded_by = ["some/successor"]; // must NOT influence the pure heuristic
+  const entries = [old, entry("qdrant/qdrant", { tags: ["vector-db", "rag"], stars: 20_000 })];
+  assert.deepEqual(tagAlternatives(entries, entries[0], 3).map((a) => a.meta.full_name), ["qdrant/qdrant"]);
 });
 
 test("extractSetup collects fenced commands and step bullets, null when absent", () => {
