@@ -158,6 +158,10 @@ pub async fn add_repo_from_url(
             // Reception is not synthesized at add time (the body gets a
             // placeholder ## Reception); /reception fills it and stamps the date.
             reception_gathered: None,
+            // Relationships are authored later by hand (or via /curate-review),
+            // never inferred at add time.
+            superseded_by: vec![],
+            pairs_with: vec![],
         };
         let repo_name = gh.full_name.split('/').next_back().unwrap_or(&gh.full_name);
         let body = format!(

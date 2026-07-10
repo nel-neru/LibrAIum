@@ -83,26 +83,33 @@ pub fn reject_non_decimal_int(yaml: &str, key: &str) -> Result<()> {
 }
 
 pub fn serialize(meta: &EntryMeta, body: &str) -> Result<String> {
-    let yaml = flow_tags(&serde_norway::to_string(meta)?, &meta.tags);
+    let mut yaml = serde_norway::to_string(meta)?;
+    yaml = flow_seq(&yaml, "tags", &meta.tags);
+    yaml = flow_seq(&yaml, "superseded_by", &meta.superseded_by);
+    yaml = flow_seq(&yaml, "pairs_with", &meta.pairs_with);
     let body = body.trim_end();
     Ok(format!("---\n{yaml}---\n\n{body}\n"))
 }
 
-/// Rewrite serde_yaml's block-style `tags:` sequence into the canonical flow
-/// style `tags: [a, b]` the shipped library uses, so the Rust and Node
+/// Rewrite serde_yaml's block-style `<key>:` sequence into the canonical flow
+/// style `<key>: [a, b]` the shipped library uses, so the Rust and Node
 /// serializers emit byte-identical files (conformance --serialize / store.js
-/// serializeEntry). Tags are kebab-case by contract, so the flow form needs no
-/// quoting; an empty list is already emitted as `tags: []` and passes through.
-fn flow_tags(yaml: &str, tags: &[String]) -> String {
+/// serializeEntry). Values are kebab-case tags or `owner/repo` full_names, both
+/// of which need no quoting. An always-emitted empty list (`tags`) already reads
+/// `tags: []` and passes through; a skip-if-empty field (`superseded_by`,
+/// `pairs_with`) is simply absent when empty, so this is a no-op for it.
+fn flow_seq(yaml: &str, key: &str, values: &[String]) -> String {
+    let header = format!("{key}:");
     let mut out = String::with_capacity(yaml.len());
     let mut lines = yaml.lines().peekable();
     while let Some(line) = lines.next() {
-        if line == "tags:" {
+        if line == header {
             while matches!(lines.peek(), Some(l) if l.trim_start().starts_with("- ")) {
                 lines.next();
             }
-            out.push_str("tags: [");
-            out.push_str(&tags.join(", "));
+            out.push_str(&header);
+            out.push_str(" [");
+            out.push_str(&values.join(", "));
             out.push_str("]\n");
         } else {
             out.push_str(line);
@@ -171,6 +178,27 @@ mod tests {
         let mut empty = meta.clone();
         empty.tags = vec![];
         assert!(serialize(&empty, &body).unwrap().contains("tags: []\n"));
+    }
+
+    #[test]
+    fn serialize_emits_flow_relationship_edges() {
+        let (mut meta, body) = parse(SAMPLE).unwrap();
+        meta.superseded_by = vec!["langchain-ai/langgraph".into()];
+        meta.pairs_with = vec!["run-llama/llama_index".into(), "a/b".into()];
+        let out = serialize(&meta, &body).unwrap();
+        // Flow style, byte-identical to the Node twin (conformance --serialize).
+        assert!(out.contains("superseded_by: [langchain-ai/langgraph]\n"), "got:\n{out}");
+        assert!(out.contains("pairs_with: [run-llama/llama_index, a/b]\n"), "got:\n{out}");
+        assert!(!out.contains("\n- langchain-ai"), "must not emit block style:\n{out}");
+        // Round-trips.
+        let (meta2, _) = parse(&out).unwrap();
+        assert_eq!(meta, meta2);
+
+        // Empty edges are OMITTED entirely (skip_serializing_if), not `[]`.
+        let (bare, body2) = parse(SAMPLE).unwrap();
+        let out2 = serialize(&bare, &body2).unwrap();
+        assert!(!out2.contains("superseded_by"), "empty edges must be omitted:\n{out2}");
+        assert!(!out2.contains("pairs_with"), "empty edges must be omitted:\n{out2}");
     }
 
     #[test]

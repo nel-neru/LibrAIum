@@ -27,9 +27,13 @@ const STATUSES = new Set(["active", "stale", "archived"]);
 const SOURCES = new Set(["manual", "mcp", "x-collection"]);
 const REQUIRED = ["github_url", "full_name", "category"];
 const DATE_FIELDS = ["last_github_push", "last_checked", "added_date", "reception_gathered"];
+const REL_FIELDS = ["superseded_by", "pairs_with"];
+const OWNER_REPO_RE = /^[^/\s]+\/[^/\s]+$/;
 
 const dataDir = resolveDataDir(process.argv);
 const problems = [];
+const warnings = []; // non-failing: dangling relationship targets (may be shelved later)
+const relRefs = []; // {lbl, field, name} — existence checked after the full scan (forward refs)
 const problem = (file, msg) => problems.push(`${file}: ${msg}`);
 
 /** Print paths relative to cwd when they are inside it, absolute otherwise. */
@@ -150,6 +154,33 @@ if (existsSync(entriesRoot)) {
         }
       }
 
+      // Relationship edges (superseded_by / pairs_with). Shape errors are hard
+      // (always a bug); a reference to a repo not yet shelved is a lenient
+      // WARNING — a migration/pairing target may be recorded before it is added.
+      // An empty array is a hard error: it must be omitted entirely so it never
+      // reaches the serializer's skip-if-empty path (dual-format parity).
+      for (const field of REL_FIELDS) {
+        const v = meta[field];
+        if (v === undefined) continue;
+        if (!Array.isArray(v)) {
+          problem(lbl, `${field} is not an array (got ${typeof v})`);
+          continue;
+        }
+        if (v.length === 0) {
+          problem(lbl, `${field} is an empty array — omit the field entirely instead`);
+          continue;
+        }
+        v.forEach((name, i) => {
+          if (typeof name !== "string" || !OWNER_REPO_RE.test(name)) {
+            problem(lbl, `${field}[${i}] '${name}' is not a valid owner/repo full_name`);
+          } else if (typeof fullName === "string" && name.toLowerCase() === fullName.toLowerCase()) {
+            problem(lbl, `${field}[${i}] references itself`);
+          } else {
+            relRefs.push({ lbl, field, name });
+          }
+        });
+      }
+
       if (
         meta.stars !== undefined &&
         (typeof meta.stars !== "number" || !Number.isFinite(meta.stars) || meta.stars < 0)
@@ -182,10 +213,19 @@ if (existsSync(entriesRoot)) {
   }
 }
 
+// ---------- relationship existence (second pass — forward refs now resolvable) ----------
+for (const { lbl, field, name } of relRefs) {
+  if (!fullNames.has(name.toLowerCase())) {
+    warnings.push(`${lbl}: ${field} target '${name}' is not shelved yet (ok — a migration/pairing target may be recorded before it is added)`);
+  }
+}
+
 // ---------- report ----------
 for (const p of problems) console.log(p);
+for (const w of warnings) console.log(w);
+const warnSuffix = warnings.length ? `, ${warnings.length} warning(s)` : "";
 if (problems.length > 0) {
-  console.log(`✗ ${problems.length} problem(s) in ${entryCount} entries, ${categories.length} categories (${dataDir})`);
+  console.log(`✗ ${problems.length} problem(s)${warnSuffix} in ${entryCount} entries, ${categories.length} categories (${dataDir})`);
   process.exit(1);
 }
-console.log(`✓ ${entryCount} entries, ${categories.length} categories validated`);
+console.log(`✓ ${entryCount} entries, ${categories.length} categories validated${warnSuffix}`);

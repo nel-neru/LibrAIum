@@ -219,6 +219,8 @@ mod tests {
                 source: "manual".into(),
                 added_date: None,
                 reception_gathered: None,
+                superseded_by: vec![],
+                pairs_with: vec![],
             },
         }
     }

@@ -337,6 +337,8 @@ mod tests {
             source: "manual".into(),
             added_date: Some("2026-07-08".into()),
             reception_gathered: None,
+            superseded_by: vec![],
+            pairs_with: vec![],
         }
     }
 

@@ -71,6 +71,15 @@ function validateMeta(meta) {
   if (meta.tags !== undefined && (!Array.isArray(meta.tags) || meta.tags.some((t) => typeof t !== "string"))) {
     throw new Error("frontmatter field 'tags' must be an array of strings");
   }
+  // Relationship edges: same shape as tags (mirror of Rust strict_string_vec on
+  // superseded_by/pairs_with). An empty [] is type-valid here (Rust accepts it
+  // too); parseEntry coerces it to undefined so it matches Rust's skip-if-empty.
+  for (const key of ["superseded_by", "pairs_with"]) {
+    const v = meta[key];
+    if (v !== undefined && (!Array.isArray(v) || v.some((x) => typeof x !== "string"))) {
+      throw new Error(`frontmatter field '${key}' must be an array of strings`);
+    }
+  }
   const stars = meta.stars;
   if (stars !== undefined && (typeof stars !== "number" || !Number.isInteger(stars) || stars < 0)) {
     throw new Error(`frontmatter field 'stars' must be a non-negative integer (got ${JSON.stringify(stars)})`);
@@ -121,20 +130,30 @@ export function parseEntry(content) {
   meta.stars ??= 0;
   meta.status ??= "active";
   meta.source ??= "manual";
+  // Relationship edges use skip_serializing_if = Vec::is_empty on the Rust side,
+  // so absent OR empty is omitted from output (and from dump_entries → null in
+  // conformance). Never materialize [] here (unlike tags), and coerce an explicit
+  // empty [] to undefined, so absent/empty compare equal to Rust's null.
+  for (const key of ["superseded_by", "pairs_with"]) {
+    if (Array.isArray(meta[key]) && meta[key].length === 0) delete meta[key];
+  }
   return { meta, body };
 }
 
-// Convert YAML.stringify's block-style `tags:` (a bare `tags:` header then
-// 2-space-indented `- item` lines) into the canonical flow `tags: [a, b]` the
-// shipped library uses, matching Rust frontmatter::flow_tags. An empty list is
-// already `tags: []` and passes through. Tags are kebab-case, so no quoting.
-function flowTags(yaml, tags) {
+// Convert YAML.stringify's block-style `<key>:` (a bare `<key>:` header then
+// 2-space-indented `- item` lines) into the canonical flow `<key>: [a, b]` the
+// shipped library uses, matching Rust frontmatter::flow_seq. An always-emitted
+// empty list is already `<key>: []` and passes through; a skip-if-empty field is
+// simply absent when empty. Values are kebab-case tags or `owner/repo`
+// full_names, neither of which needs quoting.
+function flowSeq(yaml, key, values) {
+  const header = `${key}:`;
   const lines = yaml.split("\n");
   const out = [];
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i] === "tags:") {
+    if (lines[i] === header) {
       while (i + 1 < lines.length && /^\s*-\s/.test(lines[i + 1])) i++;
-      out.push(`tags: [${tags.join(", ")}]`);
+      out.push(`${header} [${values.join(", ")}]`);
     } else {
       out.push(lines[i]);
     }
@@ -162,8 +181,14 @@ export function serializeEntry(meta, body) {
     source: meta.source ?? "manual",
     ...(meta.added_date != null ? { added_date: meta.added_date } : {}),
     ...(meta.reception_gathered != null ? { reception_gathered: meta.reception_gathered } : {}),
+    // Relationship edges are omitted when empty (Rust skip_serializing_if), so an
+    // entry with no edges serializes byte-for-byte as before.
+    ...(meta.superseded_by?.length ? { superseded_by: meta.superseded_by } : {}),
+    ...(meta.pairs_with?.length ? { pairs_with: meta.pairs_with } : {}),
   };
-  const yaml = flowTags(YAML.stringify(ordered), ordered.tags);
+  let yaml = flowSeq(YAML.stringify(ordered), "tags", ordered.tags);
+  if (ordered.superseded_by) yaml = flowSeq(yaml, "superseded_by", ordered.superseded_by);
+  if (ordered.pairs_with) yaml = flowSeq(yaml, "pairs_with", ordered.pairs_with);
   return `---\n${yaml}---\n\n${(body ?? "").trimEnd()}\n`;
 }
 
