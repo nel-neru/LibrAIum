@@ -62,4 +62,5 @@ production and what people abandon.
 | `suggest_for_new_project` | "What should I use for X?" — returns ranked entries with reasons, adoption steps, each entry's `reception` (and `personal_notes` where recorded) |
 | `search_repos` | A specific technology or filter is already named (query, category, tags, min_stars, status) |
 | `get_repo_details` | Full entry — complete Reception (and any Personal Notes) — before committing to an adoption |
+| `get_related` | "What should I use instead of X?" / "What pairs with X?" — authored succession (`superseded_by`/`supersedes`), pairings, and tag-heuristic alternatives; unshelved migration targets come back as `{full_name, shelved:false}` |
 | `add_repo` | Shelving a newly adopted repo (rule 5) — pass sourced `reception`; `personal_notes` only for genuine firsthand |

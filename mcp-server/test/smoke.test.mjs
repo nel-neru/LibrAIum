@@ -151,6 +151,24 @@ try {
   for (const key of ["superseded_by", "supersedes", "pairs_with", "alternatives"]) {
     assert.ok(Array.isArray(related[key]), `get_related must return an array '${key}'`);
   }
+  // qdrant pairs_with run-llama/llama_index (authored, symmetric) on real data.
+  assert.ok(
+    related.pairs_with.some((p) => p.full_name === "run-llama/llama_index" && p.shelved),
+    "qdrant must surface its authored pairing with llama_index"
+  );
+
+  // get_related on the seeded stale entry: authored succession resolves to the
+  // shelved successor, and get_repo_details leads its alternatives with it.
+  const swarmRel = toolJson(
+    await main.request("tools/call", { name: "get_related", arguments: { id_or_url: "openai/swarm" } })
+  );
+  assert.equal(swarmRel.superseded_by[0].full_name, "langchain-ai/langgraph");
+  assert.equal(swarmRel.superseded_by[0].shelved, true);
+  const swarmDetails = toolJson(
+    await main.request("tools/call", { name: "get_repo_details", arguments: { id_or_url: "openai/swarm" } })
+  );
+  assert.equal(swarmDetails.alternatives[0].full_name, "langchain-ai/langgraph", "authored successor leads alternatives");
+  assert.equal(swarmDetails.superseded_by[0].full_name, "langchain-ai/langgraph");
 
   // details: by id and by full_name resolve to the same entry
   const byId = toolJson(
@@ -328,7 +346,7 @@ try {
   assert.deepEqual(relDormant.superseded_by, []);
   assert.equal(relDormant.alternatives[0].full_name, "new/active");
 
-  console.log("✓ MCP smoke test passed — 7 tools + entry resources, 27 scenarios (main + stale-fixture server)");
+  console.log("✓ MCP smoke test passed — 7 tools + entry resources, 30 scenarios (main + stale-fixture server)");
   process.exitCode = 0;
 } catch (e) {
   console.error("✗ MCP smoke test failed:", e);
