@@ -22,7 +22,7 @@ LibrAIum is a **local-first desktop app** for curating the best-practice public 
 - **Reception** — the primary layer. Every entry pairs structured metadata (stars, language, freshness) with synthesized **third-party** signal: what issues complain about, who adopts it, known limitations, and what people migrate to — each claim sourced, and stamped with a `reception_gathered` date so its freshness is tracked like metadata. Where you've used a repo firsthand, an optional **Personal Notes** section records your own take.
 - **Desktop GUI** (Tauri v2 + Svelte 5) — dashboard, instant fuzzy search with filters, entry editing, category master management, and a Git panel (status / commit / push).
 - **GitHub metadata refresh** — single or bulk refresh via the GitHub API; entries automatically flagged `stale` when a repo stops moving, with fresher alternatives suggested from your own shelves.
-- **MCP server for Claude Code** — six tools: `search_repos`, `get_repo_details`, `suggest_for_new_project`, `compare_repos`, `get_library_overview`, `add_repo`.
+- **MCP server for Claude Code** — seven tools: `search_repos`, `get_repo_details`, `get_related`, `suggest_for_new_project`, `compare_repos`, `get_library_overview`, `add_repo`.
 - **Awesome-list export** — publish your curation as a standard awesome-list Markdown document.
 - **Private by design** — your library data stays on your machine; the GitHub token lives in the OS keychain. Network access is explicit and on-demand only (metadata refresh, add, scouting, Reception collection), and outbound requests carry only public repo identifiers — no telemetry.
 
@@ -60,6 +60,7 @@ The script bakes in absolute paths from its own location and is idempotent — r
 | --- | --- |
 | `search_repos` | Filtered search: query, category, tags, min stars, status |
 | `get_repo_details` | Full entry incl. its Reception (and any Personal Notes), by id / name / URL |
+| `get_related` | Succession + pairings for one entry: `superseded_by`/`supersedes`, `pairs_with`, and tag-heuristic alternatives (unshelved targets flagged) |
 | `suggest_for_new_project` | Rank the library against a project description, with reasons, adoption steps + each entry's Reception |
 | `compare_repos` | Side-by-side decision matrix (2-5 entries or a whole shelf) with notes + decision hints |
 | `get_library_overview` | Shelf map: category ids + health counts, tag vocabulary with usage, resolved data dir |
