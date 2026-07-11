@@ -69,11 +69,20 @@ const staleLib = startServer(resolve(HERE, "fixtures", "stale-lib"));
 try {
   await main.handshake("smoke");
 
-  // all seven tools registered
+  // all eight tools registered
   const tools = await main.request("tools/list", {});
   assert.deepEqual(
     tools.result.tools.map((t) => t.name).sort(),
-    ["add_repo", "compare_repos", "get_library_overview", "get_related", "get_repo_details", "search_repos", "suggest_for_new_project"]
+    [
+      "add_repo",
+      "compare_repos",
+      "find_by_reception",
+      "get_library_overview",
+      "get_related",
+      "get_repo_details",
+      "search_repos",
+      "suggest_for_new_project",
+    ]
   );
 
   // overview: counts reconcile and the tag vocabulary is search-filterable
@@ -169,6 +178,22 @@ try {
   );
   assert.equal(swarmDetails.alternatives[0].full_name, "langchain-ai/langgraph", "authored successor leads alternatives");
   assert.equal(swarmDetails.superseded_by[0].full_name, "langchain-ai/langgraph");
+
+  // find_by_reception: query the moat. 'caution' surfaces at least one entry
+  // with a documented gotcha across the real library; every hit carries its
+  // evidence bullets, and a call with no query/signal is a tool error.
+  const caution = toolJson(
+    await main.request("tools/call", { name: "find_by_reception", arguments: { signal: "caution" } })
+  );
+  assert.ok(caution.count >= 1, "the library should have at least one caution bullet in Reception");
+  assert.ok(
+    caution.results.every((r) => Array.isArray(r.matches) && r.matches.length >= 1),
+    "each find_by_reception hit carries the matching Reception bullets"
+  );
+  const noCriteria = toolJson(
+    await main.request("tools/call", { name: "find_by_reception", arguments: {} })
+  );
+  assert.match(noCriteria.error, /query|signal/);
 
   // details: by id and by full_name resolve to the same entry
   const byId = toolJson(
@@ -346,7 +371,7 @@ try {
   assert.deepEqual(relDormant.superseded_by, []);
   assert.equal(relDormant.alternatives[0].full_name, "new/active");
 
-  console.log("✓ MCP smoke test passed — 7 tools + entry resources, 30 scenarios (main + stale-fixture server)");
+  console.log("✓ MCP smoke test passed — 8 tools + entry resources, 33 scenarios (main + stale-fixture server)");
   process.exitCode = 0;
 } catch (e) {
   console.error("✗ MCP smoke test failed:", e);
