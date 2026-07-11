@@ -20,6 +20,7 @@ import {
   slugify,
   normalizeGithubUrl,
 } from "../mcp-server/lib/store.js";
+import { loadRejected } from "../mcp-server/lib/rejected.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const KEBAB_RE = /^[a-z0-9-]+$/;
@@ -71,6 +72,30 @@ for (const cat of categories) {
   if (typeof cat?.name !== "string" || cat.name.trim() === "") {
     problem(catLabel, `category '${id ?? "?"}' has a missing or empty name`);
   }
+}
+
+// ---------- rejected.yaml (optional rejected-candidates memory) ----------
+const rejectedNames = new Map(); // lowercased full_name -> label (for the shelved contradiction pass)
+const rejectedPath = join(dataDir, "master", "rejected.yaml");
+if (existsSync(rejectedPath)) {
+  const rejLabel = label(rejectedPath);
+  let rejected = [];
+  try {
+    rejected = loadRejected(dataDir);
+  } catch (e) {
+    problem(rejLabel, e.message);
+  }
+  rejected.forEach((r, i) => {
+    const fn = r?.full_name;
+    if (typeof fn !== "string" || !OWNER_REPO_RE.test(fn)) {
+      problem(rejLabel, `rejected[${i}] full_name '${fn}' is not a valid owner/repo`);
+    } else {
+      rejectedNames.set(fn.toLowerCase(), rejLabel);
+    }
+    if (r?.date !== undefined && !(typeof r.date === "string" && DATE_RE.test(r.date))) {
+      problem(rejLabel, `rejected[${i}] date '${r?.date}' does not match YYYY-MM-DD`);
+    }
+  });
 }
 
 // ---------- entry files ----------
@@ -217,6 +242,13 @@ if (existsSync(entriesRoot)) {
 for (const { lbl, field, name } of relRefs) {
   if (!fullNames.has(name.toLowerCase())) {
     warnings.push(`${lbl}: ${field} target '${name}' is not shelved yet (ok — a migration/pairing target may be recorded before it is added)`);
+  }
+}
+
+// A rejected candidate that is also shelved is a contradiction.
+for (const [name, rejLabel] of rejectedNames) {
+  if (fullNames.has(name)) {
+    problem(rejLabel, `'${name}' is listed as rejected but is also shelved (${fullNames.get(name)}) — remove it from one`);
   }
 }
 

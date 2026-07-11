@@ -1,0 +1,6 @@
+# Rejected candidates — repos evaluated during curation (via /scout or bulk
+# triage) and consciously NOT shelved, recorded so they don't resurface and get
+# re-judged every run. Managed by `scripts/reject-candidate.mjs`; read by
+# bulk-add's --from-stars triage and by /scout to dedup discovery.
+# Each entry: { full_name: owner/repo, date: YYYY-MM-DD, reason: one line }.
+rejected: []

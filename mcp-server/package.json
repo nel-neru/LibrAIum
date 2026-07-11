@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "node --test test/store.test.mjs test/suggest.test.mjs test/related.test.mjs test/compare.test.mjs test/overview.test.mjs test/search.test.mjs && node test/smoke.test.mjs"
+    "test": "node --test test/store.test.mjs test/suggest.test.mjs test/related.test.mjs test/rejected.test.mjs test/compare.test.mjs test/overview.test.mjs test/search.test.mjs && node test/smoke.test.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
