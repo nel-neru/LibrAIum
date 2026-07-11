@@ -69,11 +69,11 @@ const staleLib = startServer(resolve(HERE, "fixtures", "stale-lib"));
 try {
   await main.handshake("smoke");
 
-  // all six tools registered
+  // all seven tools registered
   const tools = await main.request("tools/list", {});
   assert.deepEqual(
     tools.result.tools.map((t) => t.name).sort(),
-    ["add_repo", "compare_repos", "get_library_overview", "get_repo_details", "search_repos", "suggest_for_new_project"]
+    ["add_repo", "compare_repos", "get_library_overview", "get_related", "get_repo_details", "search_repos", "suggest_for_new_project"]
   );
 
   // overview: counts reconcile and the tag vocabulary is search-filterable
@@ -142,6 +142,33 @@ try {
   );
   assert.ok(details.body.includes("## Personal Notes"));
   assert.ok(!("alternatives" in details), "active entries must not carry an alternatives field");
+
+  // get_related: always returns the four relationship arrays (shape); authored
+  // succession is asserted on the fixture server below and on seeded openai/swarm.
+  const related = toolJson(
+    await main.request("tools/call", { name: "get_related", arguments: { id_or_url: "qdrant/qdrant" } })
+  );
+  for (const key of ["superseded_by", "supersedes", "pairs_with", "alternatives"]) {
+    assert.ok(Array.isArray(related[key]), `get_related must return an array '${key}'`);
+  }
+  // qdrant pairs_with run-llama/llama_index (authored, symmetric) on real data.
+  assert.ok(
+    related.pairs_with.some((p) => p.full_name === "run-llama/llama_index" && p.shelved),
+    "qdrant must surface its authored pairing with llama_index"
+  );
+
+  // get_related on the seeded stale entry: authored succession resolves to the
+  // shelved successor, and get_repo_details leads its alternatives with it.
+  const swarmRel = toolJson(
+    await main.request("tools/call", { name: "get_related", arguments: { id_or_url: "openai/swarm" } })
+  );
+  assert.equal(swarmRel.superseded_by[0].full_name, "langchain-ai/langgraph");
+  assert.equal(swarmRel.superseded_by[0].shelved, true);
+  const swarmDetails = toolJson(
+    await main.request("tools/call", { name: "get_repo_details", arguments: { id_or_url: "openai/swarm" } })
+  );
+  assert.equal(swarmDetails.alternatives[0].full_name, "langchain-ai/langgraph", "authored successor leads alternatives");
+  assert.equal(swarmDetails.superseded_by[0].full_name, "langchain-ai/langgraph");
 
   // details: by id and by full_name resolve to the same entry
   const byId = toolJson(
@@ -311,7 +338,15 @@ try {
   assert.equal(dormant.alternatives[0].full_name, "new/active");
   assert.deepEqual(dormant.alternatives[0].shared_tags, ["multi-agent"]);
 
-  console.log("✓ MCP smoke test passed — 6 tools + entry resources, 25 scenarios (main + stale-fixture server)");
+  // get_related on the stale entry: no authored edges in the fixture, so the
+  // tag-heuristic alternatives carry the successor (new/active).
+  const relDormant = toolJson(
+    await staleLib.request("tools/call", { name: "get_related", arguments: { id_or_url: "old/dormant" } })
+  );
+  assert.deepEqual(relDormant.superseded_by, []);
+  assert.equal(relDormant.alternatives[0].full_name, "new/active");
+
+  console.log("✓ MCP smoke test passed — 7 tools + entry resources, 30 scenarios (main + stale-fixture server)");
   process.exitCode = 0;
 } catch (e) {
   console.error("✗ MCP smoke test failed:", e);

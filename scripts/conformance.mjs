@@ -92,12 +92,15 @@ const rustByPath = new Map(JSON.parse(rustRaw).map((r) => [r.path, r]));
 // 3. Node side + comparison
 // ---------------------------------------------------------------------------
 
-// The 11 EntryMeta fields (models.rs / store.js contract), normalized ONLY so
+// The 14 EntryMeta fields (models.rs / store.js contract), normalized ONLY so
 // that absent and null Option fields compare equal (undefined→null — serde's
-// skip_serializing_if omits None). Deliberately NO default filling and NO type
-// coercion: both parsers materialize the serde defaults themselves (models.rs
-// default fns ⇔ parseEntry), and filling or coercing here would mask a
-// divergence — it DID mask the Node missing-defaults drift until iter-42.
+// skip_serializing_if omits None; the same applies to the two skip-if-empty Vec
+// fields superseded_by/pairs_with, whose empty case is omitted → null here, and
+// which parseEntry coerces empty→undefined for exactly this reason). Deliberately
+// NO default filling and NO type coercion: both parsers materialize the serde
+// defaults themselves (models.rs default fns ⇔ parseEntry), and filling or
+// coercing here would mask a divergence — it DID mask the Node missing-defaults
+// drift until iter-42.
 function normalizeMeta(meta) {
   const m = meta ?? {};
   const val = (k) => (m[k] === undefined || m[k] === null ? null : m[k]);
@@ -114,6 +117,8 @@ function normalizeMeta(meta) {
     source: val("source"),
     added_date: val("added_date"),
     reception_gathered: val("reception_gathered"),
+    superseded_by: val("superseded_by"),
+    pairs_with: val("pairs_with"),
   };
 }
 

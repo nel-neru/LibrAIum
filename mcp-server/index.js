@@ -21,10 +21,11 @@ import {
   today,
   computeStatus,
 } from "./lib/store.js";
-import { suggest, alternativesFor } from "./lib/suggest.js";
+import { suggest, alternativesFor, tagAlternatives } from "./lib/suggest.js";
 import { compare, resolveSelector } from "./lib/compare.js";
 import { overview } from "./lib/overview.js";
 import { searchRepos } from "./lib/search.js";
+import { getRelated, resolveNames } from "./lib/related.js";
 
 const DATA_DIR = resolveDataDir();
 
@@ -111,6 +112,15 @@ server.registerTool(
         // not parse the Markdown body; null when none has been gathered yet.
         reception: bodySection(entry.body, "reception"),
       };
+      // Authored relationship edges, resolved to shelved entries (or bare names
+      // for not-yet-shelved targets). Surfaced whenever present, independent of
+      // status — pairings and succession are useful on active entries too.
+      if (entry.meta.superseded_by?.length) {
+        result.superseded_by = resolveNames(entries, entry.meta.superseded_by);
+      }
+      if (entry.meta.pairs_with?.length) {
+        result.pairs_with = resolveNames(entries, entry.meta.pairs_with);
+      }
       // Parity with the GUI's "what replaces this stale repo?" — attached at
       // exactly the decision moment; an empty array means no successor shelved.
       const status = entry.meta.status ?? "active";
@@ -338,6 +348,44 @@ server.registerTool(
       }
       const entry = saveNewEntry(DATA_DIR, meta, body);
       return json({ added: entry.id, ...summarize(entry) });
+    } catch (e) {
+      return jsonError(e.message);
+    }
+  }
+);
+
+server.registerTool(
+  "get_related",
+  {
+    title: "Related repositories — succession and pairings",
+    description:
+      "The structured relationship graph for one library entry: authored succession " +
+      "(superseded_by → its replacement(s); supersedes → what it replaces, derived), " +
+      "symmetric pairings (pairs_with, derived union of both directions), and the " +
+      "tag-heuristic alternatives (active same-category entries sharing a tag). " +
+      "Targets not yet shelved come back as {full_name, shelved:false}. Use this to " +
+      "answer 'what should I use instead of X?' and 'what pairs with X?'. Accepts an " +
+      "entry id ('category/owner-repo'), an 'owner/repo' name, or a GitHub URL.",
+    inputSchema: { id_or_url: z.string() },
+  },
+  async ({ id_or_url }) => {
+    try {
+      const entries = listEntries(DATA_DIR);
+      const target = resolveSelector(entries, id_or_url);
+      if (!target) return jsonError(`no entry found for "${id_or_url}"`);
+      return json({
+        id: target.id,
+        full_name: target.meta.full_name,
+        ...getRelated(entries, target),
+        // Pure tag heuristic (distinct from authored superseded_by, which may be
+        // cross-category or name unshelved targets); shown for every entry.
+        alternatives: tagAlternatives(entries, target, 3).map((a) => ({
+          ...summarize(a),
+          shared_tags: (a.meta.tags ?? []).filter((t) =>
+            (target.meta.tags ?? []).some((tt) => tt.toLowerCase() === t.toLowerCase())
+          ),
+        })),
+      });
     } catch (e) {
       return jsonError(e.message);
     }

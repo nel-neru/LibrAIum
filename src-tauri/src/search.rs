@@ -55,14 +55,10 @@ fn passes_filters(e: &Entry, q: &SearchQuery) -> bool {
         .all(|t| e.meta.tags.iter().any(|et| et.eq_ignore_ascii_case(t)))
 }
 
-/// Alternatives for a stale entry: same category, overlapping tags, active, fresher.
-/// Logic twin: `alternativesFor` in mcp-server/lib/suggest.js (attached to the
-/// MCP get_repo_details response) — keep the formula identical on both sides.
-pub fn suggest_alternatives<'a>(
-    entries: &'a [Entry],
-    target: &Entry,
-    max: usize,
-) -> Vec<&'a Entry> {
+/// Pure tag heuristic: same category, active, sharing >=1 tag, scored
+/// sharedTags*1000 + min(stars, 999). Logic twin: `tagAlternatives` in
+/// mcp-server/lib/suggest.js — keep the formula identical on both sides.
+pub fn tag_alternatives<'a>(entries: &'a [Entry], target: &Entry, max: usize) -> Vec<&'a Entry> {
     let mut candidates: Vec<(i64, &Entry)> = entries
         .iter()
         .filter(|e| e.id != target.id)
@@ -81,6 +77,38 @@ pub fn suggest_alternatives<'a>(
         .collect();
     candidates.sort_by_key(|c| std::cmp::Reverse(c.0));
     candidates.into_iter().take(max).map(|(_, e)| e).collect()
+}
+
+/// Successors for a stale/archived entry, authored-first: any shelved
+/// `superseded_by` target leads (the curator's explicit call, outranking the
+/// heuristic even cross-category or lower-star), then the tag heuristic fills the
+/// rest, deduped by id. Logic twin: `alternativesFor` in mcp-server/lib/suggest.js
+/// (attached to the MCP get_repo_details response) — keep both sides identical.
+pub fn suggest_alternatives<'a>(
+    entries: &'a [Entry],
+    target: &Entry,
+    max: usize,
+) -> Vec<&'a Entry> {
+    let mut out: Vec<&Entry> = Vec::new();
+    let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    seen.insert(target.id.as_str());
+    for name in &target.meta.superseded_by {
+        if let Some(hit) = entries
+            .iter()
+            .find(|e| e.meta.full_name.eq_ignore_ascii_case(name))
+        {
+            if seen.insert(hit.id.as_str()) {
+                out.push(hit);
+            }
+        }
+    }
+    for e in tag_alternatives(entries, target, max) {
+        if seen.insert(e.id.as_str()) {
+            out.push(e);
+        }
+    }
+    out.truncate(max);
+    out
 }
 
 #[cfg(test)]
@@ -106,6 +134,8 @@ mod tests {
                 source: "manual".into(),
                 added_date: None,
                 reception_gathered: None,
+                superseded_by: vec![],
+                pairs_with: vec![],
             },
             body: format!("# {full_name}\n\nA tool for things."),
         }
@@ -173,5 +203,38 @@ mod tests {
         let alts = suggest_alternatives(&entries, &entries[0], 3);
         assert_eq!(alts.len(), 1);
         assert_eq!(alts[0].meta.full_name, "qdrant/qdrant");
+    }
+
+    #[test]
+    fn suggest_alternatives_prefers_authored_successor() {
+        // An authored successor that is in a DIFFERENT category and shares NO
+        // tags: the heuristic would never surface it, but the curator's explicit
+        // superseded_by must lead, then the tag heuristic fills the rest.
+        let mut old = entry("openai/swarm", "ai-agent", &["agents"], 50, "stale");
+        old.meta.superseded_by = vec!["langchain-ai/langgraph".into()];
+        let entries = vec![
+            old.clone(),
+            entry(
+                "langchain-ai/langgraph",
+                "orchestration",
+                &["workflow"],
+                12000,
+                "active",
+            ),
+            entry("some/agent", "ai-agent", &["agents"], 9000, "active"),
+        ];
+        let alts = suggest_alternatives(&entries, &entries[0], 3);
+        assert_eq!(alts[0].meta.full_name, "langchain-ai/langgraph");
+        assert_eq!(alts[1].meta.full_name, "some/agent");
+
+        // With no authored successor it is the pure tag heuristic (unchanged).
+        let bare = entry("legacy/x", "ai-agent", &["agents"], 10, "stale");
+        let entries2 = vec![
+            bare.clone(),
+            entry("some/agent", "ai-agent", &["agents"], 9000, "active"),
+        ];
+        let alts2 = suggest_alternatives(&entries2, &entries2[0], 3);
+        assert_eq!(alts2.len(), 1);
+        assert_eq!(alts2[0].meta.full_name, "some/agent");
     }
 }

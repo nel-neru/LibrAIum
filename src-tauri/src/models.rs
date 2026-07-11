@@ -103,6 +103,24 @@ pub struct EntryMeta {
         deserialize_with = "strict_opt_string"
     )]
     pub reception_gathered: Option<String>,
+    /// full_names this entry has been superseded by (stored on the stale/old
+    /// entry, pointing FORWARD to its replacement(s)). The inverse (`supersedes`)
+    /// is derived at read time, never stored, so the two directions cannot drift.
+    /// A target need not be shelved — a migration target may be recorded first.
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "strict_string_vec"
+    )]
+    pub superseded_by: Vec<String>,
+    /// full_names this entry pairs well with (symmetric affinity). Stored on one
+    /// side only; the effective set is unioned with entries that point back here.
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "strict_string_vec"
+    )]
+    pub pairs_with: Vec<String>,
 }
 
 /// A fully loaded entry: metadata + Markdown body + its location.

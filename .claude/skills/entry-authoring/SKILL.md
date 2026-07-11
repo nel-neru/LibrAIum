@@ -24,8 +24,11 @@ Fields are exactly `EntryMeta` (`src-tauri/src/models.rs`). **Never invent keys*
 | `status` | default `active` | Enum: `active` \| `stale` \| `archived`. Auto-managed by refresh (push older than the stale threshold ⇒ `stale`; GitHub `archived` ⇒ `archived`) — don't hand-set `stale` without reason |
 | `source` | default `manual` | Enum: `manual` \| `mcp` \| `x-collection`. Hand-authored entries are `manual`; the MCP `add_repo` tool writes `mcp` |
 | `added_date` | optional | `YYYY-MM-DD` the entry joined the library. Set once, never touched again |
+| `reception_gathered` | optional | `YYYY-MM-DD` the `## Reception` section was last synthesized. Stamped by `/reception`; drives freshness (an entry is `reception_stale` after 180 days) |
+| `superseded_by` | optional | Flow list of `owner/repo` full_names this entry has been superseded by, e.g. `superseded_by: [langchain-ai/langgraph]`. Store it on the stale/old entry, pointing FORWARD; the inverse (`supersedes`) is derived at read time, never stored. A target need not be shelved yet. **Omit entirely when empty** (never `[]`) |
+| `pairs_with` | optional | Flow list of `owner/repo` full_names this entry pairs well with (symmetric affinity). Store on ONE side only — it is unioned at read time with entries that point back. **Omit entirely when empty** |
 
-Dates are plain unquoted scalars (`2026-07-08`). Omit optional fields entirely rather than writing `null` or empty strings.
+Dates are plain unquoted scalars (`2026-07-08`). Omit optional fields entirely rather than writing `null` or empty strings. `superseded_by`/`pairs_with` are the last two fields, appended after `reception_gathered`, and power the `get_related` MCP tool (a stale entry's authored successor ranks above the tag heuristic in `get_repo_details` alternatives).
 
 ## Body layout
 
@@ -85,7 +88,7 @@ An optional `## Setup` between the summary and Reception: 2-4 **verified** insta
 - **Firsthand and specific.** "My default vector DB for RAG prototypes — single `docker run` and you're up." "Adopted in every new repo: a `justfile` beats a README full of copy-paste commands."
 - **When to use it** and, just as valuable, when *not* to: "Gets heavy fast — for small projects consider hand-rolling retrieval against qdrant directly."
 - **Gotchas** with numbers or names, not vibes: "Watch memory usage with large collections; enable on-disk payload storage beyond ~1M vectors." "Keep graphs shallow — deep conditional graphs get hard to debug; prefer subgraphs."
-- **Pairings and succession, linked to the library.** Reference related entries as Markdown links: "Pairs well with [run-llama/llama_index](https://github.com/run-llama/llama_index) for ingestion." For stale/archived entries, name the replacement: "Superseded in practice; use langgraph or the provider-native agent SDKs for real work."
+- **Pairings and succession, linked to the library.** Reference related entries as Markdown links in the prose (the "why": "Pairs well with [run-llama/llama_index](https://github.com/run-llama/llama_index) for ingestion"; "Superseded in practice; use langgraph…"), AND record the edge as a structured frontmatter field (`pairs_with` / `superseded_by`) so `get_related` can traverse it and the successor outranks the tag heuristic. Keep both — the prose carries the reasoning a bare full_name can't; only encode a relationship the source genuinely supports (never fabricate a succession).
 - **Honest about weaknesses.** An entry with only praise reads as untrustworthy; every mature tool has a sharp edge worth recording.
 - Never marketing copy, never a README restatement, never a bare `- ` placeholder. When drafting for the user, derive bullets from docs/issues and phrase them as usage guidance — don't fabricate personal history ("I ran this in prod for a year"); leave a question for the user to confirm or edit instead.
 

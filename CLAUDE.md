@@ -40,7 +40,7 @@ Two independent consumers share one data format:
 Rust core modules (`src-tauri/src/`):
 - `models.rs` — `EntryMeta` (the frontmatter schema), `Entry`, `Category`, `SearchQuery`
 - `store.rs` — entry CRUD; entry id = `<category-dir>/<slug>`, so a category change moves the file
-- `search.rs` — SkimMatcherV2 fuzzy search + filters; `suggest_alternatives` (same category + shared tag + active)
+- `search.rs` — SkimMatcherV2 fuzzy search + filters; `tag_alternatives` (same category + shared tag + active) and `suggest_alternatives` (authored `superseded_by` targets first, then the tag heuristic)
 - `github.rs` — metadata fetch (ureq) + stale logic: push older than `stale_days` ⇒ `stale`, GitHub `archived` ⇒ `archived`
 - `gitops.rs` — wraps the **git CLI**, not libgit2 (deliberate deviation from the design doc: push inherits the user's credential helpers/SSH agent)
 - `settings.rs` — settings.json in app config dir; data-dir resolution order: explicit setting > `LIBRAIUM_DATA_DIR` > `./data`|`../data` (dev) > `~/LibrAIum/data` (bootstrapped on first run); default categories embedded via `include_str!` from `data/master/categories.yaml`
@@ -50,11 +50,12 @@ Frontend (`src/`): Svelte 5 **runes** (no stores); shared state in `lib/state.sv
 
 **UI styling is governed by `DESIGN.md`** (Flexoki paper-and-ink tokens in `src/styles.css`, light+dark). Before touching any UI file, read DESIGN.md and use only its tokens — do not invent colors, fonts, radii, or shadows, and never reintroduce emoji into chrome. In a plain browser, `npm run dev` auto-installs `src/lib/dev/mock.js` (Tauri IPC mock with seeded data) so the UI can be previewed and screenshotted without the Rust backend.
 
-MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` (lexical scoring in `lib/suggest.js`, inlines `personal_notes`), `compare_repos` (decision matrix in `lib/compare.js`), `get_library_overview` (shelf map/tag vocabulary in `lib/overview.js`), `add_repo` (source: `mcp`). Entries are also MCP **resources** (`entry://{category}/{slug}` template) for `@libraium` @-mention autocomplete — the read callback resolves by entry id, never by joining URI segments into a path (traversal guard). Data dir resolution mirrors the Rust order (plus `--data-dir` flag).
+MCP server tools: `search_repos`, `get_repo_details`, `suggest_for_new_project` (lexical scoring in `lib/suggest.js`, inlines `personal_notes`), `compare_repos` (decision matrix in `lib/compare.js`), `get_library_overview` (shelf map/tag vocabulary in `lib/overview.js`), `get_related` (structured succession/pairing graph in `lib/related.js` — Node-only, no Rust twin), `add_repo` (source: `mcp`). Entries are also MCP **resources** (`entry://{category}/{slug}` template) for `@libraium` @-mention autocomplete — the read callback resolves by entry id, never by joining URI segments into a path (traversal guard). Data dir resolution mirrors the Rust order (plus `--data-dir` flag).
 
 ## Data Model
 
 - One repo = one file: `data/entries/<category>/<owner-repo>.md` — frontmatter fields are exactly `EntryMeta` in `models.rs`; body is a summary + a `## Reception` section (synthesized third-party signal), plus — only where the owner has firsthand experience — an optional `## Personal Notes`
+- Relationship edges `superseded_by`/`pairs_with` (flow lists of `owner/repo` full_names) are stored ONE-directionally — `superseded_by` on the stale/old entry, `pairs_with` on either side — and the inverse (`supersedes`, and the symmetric pairing) is derived at read time, never stored, so the two directions cannot drift. Empty ⇒ omitted (dual `skip_serializing_if`/omit); a target need not be shelved (validate warns, doesn't fail)
 - Category master: `data/master/categories.yaml`; category `id`s are entry directory names — renaming an id orphans its directory (the GUI locks persisted ids for this reason)
 - `status`: `active | stale | archived` (auto-managed by refresh); `source`: `manual | mcp | x-collection`
 - The repo's `data/` ships seeded sample entries (incl. one deliberately stale entry, `openai/swarm`, used to demo stale detection/alternatives)

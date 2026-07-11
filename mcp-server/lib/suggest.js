@@ -101,7 +101,10 @@ export function scoreEntry(entry, tokens, categories) {
 // + min(stars, 999); require >= 1000 (at least one shared tag); sort by score
 // desc (stable), take max. Tag comparison is ASCII-case-insensitive
 // (eq_ignore_ascii_case parity — tags are kebab-case ASCII by convention).
-export function alternativesFor(entries, target, max = 3) {
+// Pure tag heuristic: active, same-category entries sharing ≥1 tag, scored
+// sharedTags*1000 + min(stars,999). Logic twin: Rust search::tag_alternatives —
+// keep the formula identical on both sides.
+export function tagAlternatives(entries, target, max = 3) {
   return entries
     .filter((e) => e.id !== target.id)
     .filter((e) => e.meta.category === target.meta.category)
@@ -116,6 +119,29 @@ export function alternativesFor(entries, target, max = 3) {
     .sort((a, b) => b.score - a.score)
     .slice(0, max)
     .map(({ e }) => e);
+}
+
+// Successors for a stale/archived entry, authored-first: any shelved
+// `superseded_by` target leads (it is the curator's explicit call, and outranks
+// the heuristic even cross-category or lower-star), then the tag heuristic fills
+// the rest, deduped. Logic twin: Rust search::suggest_alternatives.
+export function alternativesFor(entries, target, max = 3) {
+  const out = [];
+  const seen = new Set([target.id]);
+  for (const name of target.meta.superseded_by ?? []) {
+    const hit = entries.find((e) => e.meta.full_name?.toLowerCase() === name.toLowerCase());
+    if (hit && !seen.has(hit.id)) {
+      out.push(hit);
+      seen.add(hit.id);
+    }
+  }
+  for (const e of tagAlternatives(entries, target, max)) {
+    if (!seen.has(e.id)) {
+      out.push(e);
+      seen.add(e.id);
+    }
+  }
+  return out.slice(0, max);
 }
 
 // Bullets whose wording signals a warning — surfaced ahead of neutral notes.
