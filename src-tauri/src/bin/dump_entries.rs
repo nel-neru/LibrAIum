@@ -10,6 +10,9 @@
 //!                                           is one array of {archived,push,today,stale_days}
 //!   dump_entries --serialize <json>         frontmatter::serialize per case; <json>
 //!                                           is one array of {meta,body} -> array of strings
+//!   dump_entries --alternatives <json>      search::suggest_alternatives per case; <json>
+//!                                           is one array of {entries,target_full_name,max}
+//!                                           -> array of (array of result full_names)
 //!
 //! --files prints one object per input file:
 //!   { "path": str, "ok": true,  "id": "<parent-dir>/<stem>", "meta": EntryMeta, "body": str }
@@ -40,6 +43,18 @@ struct ComputeStatusCase {
 struct SerializeCase {
     meta: libraium_lib::models::EntryMeta,
     body: String,
+}
+
+/// One suggest_alternatives input, fed by conformance so the authored-first
+/// ranking twins (Rust search::suggest_alternatives, Node alternativesFor) are
+/// cross-checked over a shared corpus, not just mirrored unit tests. Entries are
+/// given as EntryMeta; the id each side ranks/dedupes on is derived identically
+/// (`category/slugify(full_name)`), and the result is the ordered full_names.
+#[derive(Deserialize)]
+struct AlternativesCase {
+    entries: Vec<libraium_lib::models::EntryMeta>,
+    target_full_name: String,
+    max: usize,
 }
 
 fn main() {
@@ -92,6 +107,42 @@ fn main() {
                 })
                 .collect()
         }
+        "--alternatives" => {
+            let cases: Vec<AlternativesCase> = serde_json::from_str(&rest[0])
+                .expect("--alternatives expects one JSON array of cases");
+            cases
+                .iter()
+                .map(|c| {
+                    // Build Entry values the same way conformance.mjs does on the
+                    // Node side: id = category/slugify(full_name), everything else
+                    // irrelevant to ranking left empty.
+                    let built: Vec<libraium_lib::models::Entry> = c
+                        .entries
+                        .iter()
+                        .map(|m| {
+                            let slug = libraium_lib::store::slugify(&m.full_name);
+                            libraium_lib::models::Entry {
+                                id: format!("{}/{}", m.category, slug),
+                                slug,
+                                path: String::new(),
+                                meta: m.clone(),
+                                body: String::new(),
+                            }
+                        })
+                        .collect();
+                    let target = built
+                        .iter()
+                        .find(|e| e.meta.full_name.eq_ignore_ascii_case(&c.target_full_name))
+                        .expect("--alternatives: target_full_name not found in entries");
+                    let names: Vec<String> =
+                        libraium_lib::search::suggest_alternatives(&built, target, c.max)
+                            .iter()
+                            .map(|e| e.meta.full_name.clone())
+                            .collect();
+                    json!(names)
+                })
+                .collect()
+        }
         _ => usage(),
     };
     println!(
@@ -102,7 +153,7 @@ fn main() {
 
 fn usage() -> ! {
     eprintln!(
-        "usage: dump_entries --files <path>... | --slugify <string>... | --normalize-url <url>... | --compute-status <json> | --serialize <json>"
+        "usage: dump_entries --files <path>... | --slugify <string>... | --normalize-url <url>... | --compute-status <json> | --serialize <json> | --alternatives <json>"
     );
     std::process::exit(2);
 }

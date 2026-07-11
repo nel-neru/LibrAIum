@@ -44,5 +44,55 @@
     { "archived": false, "push": "", "today": "2026-07-08", "stale_days": 180 },
     { "archived": false, "push": "2026-07-07", "today": "2026-07-08", "stale_days": 0 },
     { "archived": false, "push": "2026-07-08", "today": "2026-07-08", "stale_days": 0 }
+  ],
+  "alternatives": [
+    {
+      "_comment": "authored cross-category/zero-shared-tag successor leads, then the tag heuristic",
+      "target_full_name": "openai/swarm",
+      "max": 3,
+      "entries": [
+        { "github_url": "https://github.com/openai/swarm", "full_name": "openai/swarm", "category": "ai-agent", "tags": ["multi-agent"], "stars": 50, "status": "stale", "superseded_by": ["langchain-ai/langgraph"] },
+        { "github_url": "https://github.com/langchain-ai/langgraph", "full_name": "langchain-ai/langgraph", "category": "orchestration", "tags": ["workflow"], "stars": 12000, "status": "active" },
+        { "github_url": "https://github.com/some/agent", "full_name": "some/agent", "category": "ai-agent", "tags": ["multi-agent"], "stars": 9000, "status": "active" }
+      ]
+    },
+    {
+      "_comment": "no superseded_by -> pure tag heuristic",
+      "target_full_name": "legacy/x",
+      "max": 3,
+      "entries": [
+        { "github_url": "https://github.com/legacy/x", "full_name": "legacy/x", "category": "ai-agent", "tags": ["agents"], "stars": 10, "status": "stale" },
+        { "github_url": "https://github.com/some/agent", "full_name": "some/agent", "category": "ai-agent", "tags": ["agents"], "stars": 9000, "status": "active" }
+      ]
+    },
+    {
+      "_comment": "authored target not shelved -> skipped, heuristic fills",
+      "target_full_name": "legacy/x",
+      "max": 3,
+      "entries": [
+        { "github_url": "https://github.com/legacy/x", "full_name": "legacy/x", "category": "ai-agent", "tags": ["agents"], "stars": 10, "status": "stale", "superseded_by": ["not/shelved"] },
+        { "github_url": "https://github.com/some/agent", "full_name": "some/agent", "category": "ai-agent", "tags": ["agents"], "stars": 9000, "status": "active" }
+      ]
+    },
+    {
+      "_comment": "authored target also matches the heuristic -> appears once (dedupe by id)",
+      "target_full_name": "legacy/x",
+      "max": 3,
+      "entries": [
+        { "github_url": "https://github.com/legacy/x", "full_name": "legacy/x", "category": "ai-agent", "tags": ["agents"], "stars": 10, "status": "stale", "superseded_by": ["some/agent"] },
+        { "github_url": "https://github.com/some/agent", "full_name": "some/agent", "category": "ai-agent", "tags": ["agents"], "stars": 9000, "status": "active" }
+      ]
+    },
+    {
+      "_comment": "authored first, then heuristic ranked by shared-tag count, truncated to max",
+      "target_full_name": "legacy/x",
+      "max": 2,
+      "entries": [
+        { "github_url": "https://github.com/legacy/x", "full_name": "legacy/x", "category": "ai-agent", "tags": ["agents", "loop"], "stars": 10, "status": "stale", "superseded_by": ["a/one"] },
+        { "github_url": "https://github.com/a/one", "full_name": "a/one", "category": "orchestration", "tags": ["workflow"], "stars": 5, "status": "active" },
+        { "github_url": "https://github.com/b/two", "full_name": "b/two", "category": "ai-agent", "tags": ["agents", "loop"], "stars": 9000, "status": "active" },
+        { "github_url": "https://github.com/c/three", "full_name": "c/three", "category": "ai-agent", "tags": ["agents"], "stars": 8000, "status": "active" }
+      ]
+    }
   ]
 }
