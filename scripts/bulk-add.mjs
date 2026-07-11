@@ -31,6 +31,7 @@ import {
   computeStatus,
   today,
 } from "../mcp-server/lib/store.js";
+import { findRejected } from "../mcp-server/lib/rejected.js";
 
 const STOPWORDS = new Set(
   "a an and are as at be by for from has have in is it of on or that the to with your you their its via app apps tool tools library libraries framework frameworks".split(" ")
@@ -165,6 +166,7 @@ function fromStars(dataDir, opts) {
 
   const rows = [];
   let skippedShelved = 0;
+  let skippedRejected = 0;
   for (const r of repos) {
     if (r.archived) continue;
     if (opts.minStars && (r.stars ?? 0) < opts.minStars) continue;
@@ -174,12 +176,19 @@ function fromStars(dataDir, opts) {
       skippedShelved++;
       continue;
     }
+    // Don't re-surface a repo already evaluated and consciously declined —
+    // rejected-candidates memory (data/master/rejected.yaml).
+    if (findRejected(dataDir, r.full_name)) {
+      skippedRejected++;
+      continue;
+    }
     const { category, score } = proposeCategory(r, categories, tagsByCat);
     rows.push({ ...r, category, score });
   }
   rows.sort((a, b) => (b.stars ?? 0) - (a.stars ?? 0));
 
-  console.log(`# ${rows.length} candidates (${skippedShelved} already shelved, skipped). Paste the url,category lines you want into bulk-add intake:\n`);
+  const skipNote = `${skippedShelved} already shelved${skippedRejected ? `, ${skippedRejected} previously rejected` : ""}, skipped`;
+  console.log(`# ${rows.length} candidates (${skipNote}). Paste the url,category lines you want into bulk-add intake:\n`);
   for (const r of rows) {
     const cat = r.category ?? "UNMATCHED";
     console.log(`https://github.com/${r.full_name},${cat}    # ★${r.stars} ${r.language ?? "-"} — ${(r.description ?? "").slice(0, 70)}`);
