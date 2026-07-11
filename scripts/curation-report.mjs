@@ -2,10 +2,14 @@
 // Deterministic library health report feeding /curate-review: the audit
 // checks that used to be re-invented as ad-hoc greps every session, computed
 // offline in one pass. Human-readable sections by default, --json for
-// tooling. Read-only, no network.
+// tooling. Read-only EXCEPT --snapshot (appends one line to health-log.jsonl).
+// No network.
 //
 //   node scripts/curation-report.mjs [--json] [--data-dir <dir>]
-import { existsSync, readFileSync } from "node:fs";
+//   node scripts/curation-report.mjs --snapshot   # append today's metrics to
+//                                                  # data/master/health-log.jsonl
+//   node scripts/curation-report.mjs --trend       # show the trend over snapshots
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -99,6 +103,73 @@ export function buildReport(entries, categories, { today: todayStr = today(), re
   };
 }
 
+// A compact, trend-worthy snapshot of the report — scalar COUNTS only, so the
+// health log stays small no matter how long it accumulates. The full id lists
+// live in the live report; the log answers "is drift getting better or worse?".
+export function snapshotOf(r) {
+  return {
+    date: r.generated_for,
+    entries: r.totals.entries,
+    categories: r.totals.categories,
+    thin_shelves: r.thin_shelves.length,
+    singleton_tags: r.singleton_tags.length,
+    near_synonyms: r.near_synonym_pairs.length,
+    succession_uncovered: r.succession.uncovered.length,
+    reception_missing: r.reception_freshness.missing.length,
+    reception_stale: r.reception_freshness.stale.length,
+    stale: r.status_counts.stale ?? 0,
+    archived: r.status_counts.archived ?? 0,
+  };
+}
+
+// Append a snapshot to the JSONL log, keeping ONE per date (a same-date rerun
+// replaces its line) so a burst of runs on one day doesn't flood the trend.
+export function appendSnapshot(existingText, snap) {
+  const kept = (existingText ?? "")
+    .split("\n")
+    .filter((l) => l.trim())
+    .filter((l) => {
+      try {
+        return JSON.parse(l).date !== snap.date;
+      } catch {
+        return true; // keep unparseable lines untouched rather than dropping data
+      }
+    });
+  kept.push(JSON.stringify(snap));
+  return kept.join("\n") + "\n";
+}
+
+const TREND_COLS = [
+  "date",
+  "entries",
+  "thin_shelves",
+  "singleton_tags",
+  "near_synonyms",
+  "succession_uncovered",
+  "reception_missing",
+  "reception_stale",
+];
+
+export function formatTrend(snaps, limit = 12) {
+  if (!snaps.length) {
+    return "no snapshots yet — run `node scripts/curation-report.mjs --snapshot` to start the health log.";
+  }
+  const rows = snaps.slice(-limit);
+  const w = TREND_COLS.map((c) => Math.max(c.length, ...rows.map((s) => String(s[c] ?? "-").length)));
+  const fmt = (vals) => vals.map((v, i) => String(v).padEnd(w[i])).join("  ");
+  const lines = [`curation health trend (last ${rows.length} of ${snaps.length} snapshots):`, fmt(TREND_COLS)];
+  for (const s of rows) lines.push(fmt(TREND_COLS.map((c) => s[c] ?? "-")));
+  if (rows.length >= 2) {
+    const [a, b] = [rows[0], rows[rows.length - 1]];
+    const delta = TREND_COLS.slice(1).map((c) => {
+      const d = (b[c] ?? 0) - (a[c] ?? 0);
+      return `${c} ${d > 0 ? "+" : ""}${d}`;
+    });
+    lines.push(`Δ ${a.date}→${b.date}: ${delta.join("  ")}`);
+  }
+  return lines.join("\n");
+}
+
 function printHuman(r) {
   const ids = (xs) => (xs.length ? xs.join(", ") : "(none)");
   console.log(`LibrAIum curation report — ${r.generated_for} (${r.totals.entries} entries, ${r.totals.categories} categories)\n`);
@@ -132,6 +203,20 @@ function printHuman(r) {
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const dataDir = resolveDataDir();
+  const logPath = join(dataDir, "master", "health-log.jsonl");
+
+  // --trend reads the log only; no report needed.
+  if (process.argv.includes("--trend")) {
+    const snaps = existsSync(logPath)
+      ? readFileSync(logPath, "utf8")
+          .split("\n")
+          .filter((l) => l.trim())
+          .map((l) => JSON.parse(l))
+      : [];
+    console.log(formatTrend(snaps));
+    process.exit(0);
+  }
+
   const entries = listEntries(dataDir);
   const categories = loadCategories(dataDir);
   const trackerPath = join(dirname(fileURLToPath(import.meta.url)), "..", ".claude", "reception-review.md");
@@ -144,6 +229,17 @@ if (isMain) {
     };
   }
   const report = buildReport(entries, categories, { receptionReview });
+
+  if (process.argv.includes("--snapshot")) {
+    const snap = snapshotOf(report);
+    const existing = existsSync(logPath) ? readFileSync(logPath, "utf8") : "";
+    const next = appendSnapshot(existing, snap);
+    writeFileSync(logPath, next);
+    const total = next.split("\n").filter((l) => l.trim()).length;
+    console.log(`snapshot written for ${snap.date} → data/master/health-log.jsonl (${total} total)`);
+    process.exit(0);
+  }
+
   if (process.argv.includes("--json")) console.log(JSON.stringify(report, null, 2));
   else printHuman(report);
 }
