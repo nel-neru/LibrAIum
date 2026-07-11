@@ -104,6 +104,16 @@ An optional `## Setup` between the summary and Reception: 2-4 **verified** insta
 
 **Category = shelf, tags = facets.** An entry lives in exactly one category directory — the single place a librarian would shelve it, matching its *primary* use case. Everything else about it is a tag. `qdrant` is written in Rust and could serve web backends, but its shelf is `ai-agent` (that's why it's in the library); `rust` is a tag. If you're torn between two categories, pick the one answering "why did I save this?" and encode the loser as a tag. Never invent a category on the fly — categories come from `data/master/categories.yaml` (managed in the GUI; ids are locked once persisted because the id is the directory name).
 
+## Category lifecycle
+
+Keep the shelf list small and deep, not broad and thin (`docs/content-strategy.md`: "a mile deep in the genres you actually consult" beats "an inch deep across 18 genres").
+
+- **Add a category only for a space you'll genuinely track** — realistically ≥3 entries. A lone repo in a space you don't otherwise curate belongs as a well-tagged entry on the nearest existing shelf, not in a category of one.
+- **Don't invent a category to fit one repo.** Reaching for a new shelf to hold a single entry is a signal the repo either fits an existing shelf (tag the difference) or doesn't clear the "does this tell an agent something it doesn't already know cold?" bar.
+- **ids are permanent.** A category `id` is the entry directory name; renaming it orphans the directory (the GUI locks persisted ids for this reason). Pick the id once, kebab-case, and live with it — change the display `name` freely, never the `id`.
+- **Thin shelves** (<3 entries, surfaced by `scripts/curation-report.mjs` and the `library-auditor` agent) are a prompt to either deepen (`/scout` → `/add-entry`) or fold their entries into a broader adjacent shelf — not to leave as permanent one-offs.
+- Category master is `data/master/categories.yaml` (GUI-managed). Never leave a category id with no backing entry directory, or an entry directory with no category id — `validate-data` catches the mismatch.
+
 ## Complete good entry (verbatim from the corpus)
 
 `data/entries/ai-agent/qdrant-qdrant.md`:
