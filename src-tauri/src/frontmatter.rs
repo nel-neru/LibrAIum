@@ -187,9 +187,18 @@ mod tests {
         meta.pairs_with = vec!["run-llama/llama_index".into(), "a/b".into()];
         let out = serialize(&meta, &body).unwrap();
         // Flow style, byte-identical to the Node twin (conformance --serialize).
-        assert!(out.contains("superseded_by: [langchain-ai/langgraph]\n"), "got:\n{out}");
-        assert!(out.contains("pairs_with: [run-llama/llama_index, a/b]\n"), "got:\n{out}");
-        assert!(!out.contains("\n- langchain-ai"), "must not emit block style:\n{out}");
+        assert!(
+            out.contains("superseded_by: [langchain-ai/langgraph]\n"),
+            "got:\n{out}"
+        );
+        assert!(
+            out.contains("pairs_with: [run-llama/llama_index, a/b]\n"),
+            "got:\n{out}"
+        );
+        assert!(
+            !out.contains("\n- langchain-ai"),
+            "must not emit block style:\n{out}"
+        );
         // Round-trips.
         let (meta2, _) = parse(&out).unwrap();
         assert_eq!(meta, meta2);
@@ -197,8 +206,14 @@ mod tests {
         // Empty edges are OMITTED entirely (skip_serializing_if), not `[]`.
         let (bare, body2) = parse(SAMPLE).unwrap();
         let out2 = serialize(&bare, &body2).unwrap();
-        assert!(!out2.contains("superseded_by"), "empty edges must be omitted:\n{out2}");
-        assert!(!out2.contains("pairs_with"), "empty edges must be omitted:\n{out2}");
+        assert!(
+            !out2.contains("superseded_by"),
+            "empty edges must be omitted:\n{out2}"
+        );
+        assert!(
+            !out2.contains("pairs_with"),
+            "empty edges must be omitted:\n{out2}"
+        );
     }
 
     #[test]

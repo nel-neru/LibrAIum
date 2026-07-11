@@ -214,7 +214,13 @@ mod tests {
         old.meta.superseded_by = vec!["langchain-ai/langgraph".into()];
         let entries = vec![
             old.clone(),
-            entry("langchain-ai/langgraph", "orchestration", &["workflow"], 12000, "active"),
+            entry(
+                "langchain-ai/langgraph",
+                "orchestration",
+                &["workflow"],
+                12000,
+                "active",
+            ),
             entry("some/agent", "ai-agent", &["agents"], 9000, "active"),
         ];
         let alts = suggest_alternatives(&entries, &entries[0], 3);
@@ -223,7 +229,10 @@ mod tests {
 
         // With no authored successor it is the pure tag heuristic (unchanged).
         let bare = entry("legacy/x", "ai-agent", &["agents"], 10, "stale");
-        let entries2 = vec![bare.clone(), entry("some/agent", "ai-agent", &["agents"], 9000, "active")];
+        let entries2 = vec![
+            bare.clone(),
+            entry("some/agent", "ai-agent", &["agents"], 9000, "active"),
+        ];
         let alts2 = suggest_alternatives(&entries2, &entries2[0], 3);
         assert_eq!(alts2.len(), 1);
         assert_eq!(alts2[0].meta.full_name, "some/agent");
