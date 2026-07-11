@@ -1,5 +1,5 @@
 // End-to-end smoke test: spawns the MCP server over stdio and exercises all
-// five tools against the repository's seeded data/ directory, plus a second
+// eight tools against the repository's seeded data/ directory, plus a second
 // server over test/fixtures/stale-lib — a tiny checked-in library with a
 // GUARANTEED stale entry. Stale-dependent scenarios live there, so refreshing
 // the real library (which may legitimately flip a dormant repo back to

@@ -182,17 +182,14 @@ if (existsSync(entriesRoot)) {
       // Relationship edges (superseded_by / pairs_with). Shape errors are hard
       // (always a bug); a reference to a repo not yet shelved is a lenient
       // WARNING — a migration/pairing target may be recorded before it is added.
-      // An empty array is a hard error: it must be omitted entirely so it never
-      // reaches the serializer's skip-if-empty path (dual-format parity).
+      // (An empty array on disk needs no check here: parseEntry coerces it to
+      // undefined and Rust's skip_serializing_if omits it, so both parsers
+      // normalize empty→absent identically — it never reaches this loop.)
       for (const field of REL_FIELDS) {
         const v = meta[field];
         if (v === undefined) continue;
         if (!Array.isArray(v)) {
           problem(lbl, `${field} is not an array (got ${typeof v})`);
-          continue;
-        }
-        if (v.length === 0) {
-          problem(lbl, `${field} is an empty array — omit the field entirely instead`);
           continue;
         }
         v.forEach((name, i) => {

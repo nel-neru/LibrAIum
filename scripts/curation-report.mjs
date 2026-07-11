@@ -211,7 +211,15 @@ if (isMain) {
       ? readFileSync(logPath, "utf8")
           .split("\n")
           .filter((l) => l.trim())
-          .map((l) => JSON.parse(l))
+          // Skip an unparseable line rather than crash — mirrors appendSnapshot,
+          // which deliberately preserves (never drops) lines it can't parse.
+          .flatMap((l) => {
+            try {
+              return [JSON.parse(l)];
+            } catch {
+              return [];
+            }
+          })
       : [];
     console.log(formatTrend(snaps));
     process.exit(0);
