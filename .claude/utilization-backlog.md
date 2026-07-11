@@ -38,7 +38,7 @@ Utilization surface delivered (20 iterations):
 - Scripts: refresh-metadata, curation-report, rename-tag, build-catalog
   (CATALOG.md + README stats, drift-checked), register-mcp (+--doctor), bulk-add
   (URL list + --from-stars).
-- Commands: /utilize, /refresh-metadata, /confirm-notes, /bulk-add, /scout.
+- Commands: /utilize, /refresh-metadata, /confirm-notes (later retired → /reception), /bulk-add, /scout.
 - Skill + docs: libraium-first (user-scope) + docs/library-first-setup.md.
 - Verify-all grew 6→7 stages (catalog drift); two real bugs found & fixed via
   new tests (suggest tag-wildcard match; bulk-add hyphenated-tag matching).
@@ -55,7 +55,7 @@ Utilization surface delivered (20 iterations):
 - [x] P3 Entries as MCP resources (@-mention) — 93e2abb (2026-07-09, iter 15). Proven: resources/list = 43 named entries, resources/read returns raw file, traversal URI 404s. All P3 tier done.
 - [x] P3 '## Setup' adoption steps — 5696d1b (2026-07-09, iter 14). Proven: qdrant how_to_adopt[0] is the real docker run; 8 flagship entries backfilled; Setup-wins/fallback-kept unit tests. Owner can add Setup to more entries via /add-entry or by hand.
 - [x] P3 CATALOG.md + README stats, drift-checked — 2082460 (2026-07-09, iter 13). Proven: entry edit → --check exit 1; regen → exit 0; verify-all now 7 stages. Post-edit hook auto-regenerates. Output timestamp-free so drift is real, not calendar noise.
-- [x] P3 /confirm-notes + seeded notes-review checklist — 634b49f (2026-07-09, iter 12). Proven: 36 AI-drafted entries enumerated (all on disk, 7 seeds excluded), curation-report reads 0/36, ticking advances the counter. Owner-facing action: run `/confirm-notes` to burn down the 36.
+- [x] P3 /confirm-notes + seeded notes-review checklist — 634b49f (2026-07-09, iter 12). Proven: 36 AI-drafted entries enumerated (all on disk, 7 seeds excluded), curation-report reads 0/36, ticking advances the counter. **Later retired and replaced by `/reception`** (reception-review.md) — the owner is a curator, not a hands-on user, so there was no firsthand experience to confirm; Reception's sourced third-party signal is the honest default.
 - [x] P3 rename-tag.mjs — 061873e (2026-07-09, iter 11). Proven: 3-entry atomic rename on a library copy with a diff of exactly the tags lines; dry-run on real data; --merge/guard-rail fixture tests.
 - [x] P2 curation-report.mjs — 258aacb (2026-07-09, iter 10). Proven: real-library run in 0.23s, swarm stale-but-covered, surfaced the github ~ github-actions judgment pair; 5 fixture tests. P2 tier complete.
 - [x] P2 search_repos v2 (filters + zero diagnostics) — 6cc4a6a (2026-07-09, iter 9). Proven: vectordb→0件+note names vector-db exactly (short-tag containment noise guarded); OR-tags union of 5 in non-increasing push order. Logic extracted to lib/search.js with 7 unit tests.
