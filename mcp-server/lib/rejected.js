@@ -12,6 +12,16 @@ import { today } from "./store.js";
 
 const OWNER_REPO_RE = /^[^/\s]+\/[^/\s]+$/;
 
+// Re-emitted verbatim on every write so the file keeps its self-description
+// (YAML.stringify drops comments). MUST byte-match data/master/rejected.yaml's
+// header so the first write doesn't churn the seeded file.
+const HEADER = `# Rejected candidates — repos evaluated during curation (via /scout or bulk
+# triage) and consciously NOT shelved, recorded so they don't resurface and get
+# re-judged every run. Managed by \`scripts/reject-candidate.mjs\`; read by
+# bulk-add's --from-stars triage and by /scout to dedup discovery.
+# Each entry: { full_name: owner/repo, date: YYYY-MM-DD, reason: one line }.
+`;
+
 function rejectedPath(dataDir) {
   return join(dataDir, "master", "rejected.yaml");
 }
@@ -58,6 +68,6 @@ export function addRejected(dataDir, fullName, reason, date = today()) {
   } else {
     list.push(rec);
   }
-  writeFileSync(rejectedPath(dataDir), YAML.stringify({ rejected: list }));
+  writeFileSync(rejectedPath(dataDir), HEADER + YAML.stringify({ rejected: list }));
   return existing ?? rec;
 }

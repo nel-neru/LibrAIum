@@ -404,7 +404,9 @@ server.registerTool(
       "deprecation, limitations), or 'adopter' (named production adopters). Returns matching " +
       "entries with the specific Reception bullets that matched — the evidence, not the whole " +
       "entry. At least one of query/signal is required. Use it to answer 'which shelved repos " +
-      "have a documented memory complaint?', 'who names adopter X?', 'what has migration signal?'.",
+      "have a documented memory complaint?', 'who names adopter X?', 'what has migration signal?'. " +
+      "Note: this scans Reception PROSE only — it does not reflect the structured `superseded_by` " +
+      "edges, so for 'what should I use instead of X?' prefer get_related.",
     inputSchema: {
       query: z.string().optional().describe("case-insensitive substring matched against Reception bullets"),
       signal: z.enum(["migration", "caution", "adopter"]).optional().describe("filter to bullets carrying this kind of signal"),
