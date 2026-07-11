@@ -26,6 +26,7 @@ import { compare, resolveSelector } from "./lib/compare.js";
 import { overview } from "./lib/overview.js";
 import { searchRepos } from "./lib/search.js";
 import { getRelated, resolveNames } from "./lib/related.js";
+import { findByReception } from "./lib/reception.js";
 
 const DATA_DIR = resolveDataDir();
 
@@ -386,6 +387,36 @@ server.registerTool(
           ),
         })),
       });
+    } catch (e) {
+      return jsonError(e.message);
+    }
+  }
+);
+
+server.registerTool(
+  "find_by_reception",
+  {
+    title: "Find repositories by their Reception signal",
+    description:
+      "Query the library's moat — the synthesized third-party Reception — across every entry. " +
+      "Match a free-text `query` (an adopter name, a technology, a complaint keyword) and/or a " +
+      "`signal`: 'migration' (what people move to/from), 'caution' (documented gotchas, " +
+      "deprecation, limitations), or 'adopter' (named production adopters). Returns matching " +
+      "entries with the specific Reception bullets that matched — the evidence, not the whole " +
+      "entry. At least one of query/signal is required. Use it to answer 'which shelved repos " +
+      "have a documented memory complaint?', 'who names adopter X?', 'what has migration signal?'.",
+    inputSchema: {
+      query: z.string().optional().describe("case-insensitive substring matched against Reception bullets"),
+      signal: z.enum(["migration", "caution", "adopter"]).optional().describe("filter to bullets carrying this kind of signal"),
+    },
+  },
+  async ({ query, signal }) => {
+    try {
+      if (!query?.trim() && !signal) {
+        return jsonError("provide a query and/or a signal (migration | caution | adopter)");
+      }
+      const results = findByReception(listEntries(DATA_DIR), { query, signal });
+      return json({ count: results.length, query: query ?? null, signal: signal ?? null, results });
     } catch (e) {
       return jsonError(e.message);
     }

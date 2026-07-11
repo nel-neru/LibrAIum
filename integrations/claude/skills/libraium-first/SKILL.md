@@ -63,4 +63,5 @@ production and what people abandon.
 | `search_repos` | A specific technology or filter is already named (query, category, tags, min_stars, status) |
 | `get_repo_details` | Full entry — complete Reception (and any Personal Notes) — before committing to an adoption |
 | `get_related` | "What should I use instead of X?" / "What pairs with X?" — authored succession (`superseded_by`/`supersedes`), pairings, and tag-heuristic alternatives; unshelved migration targets come back as `{full_name, shelved:false}` |
+| `find_by_reception` | Query the Reception moat across the library — a `query` (adopter/tech/complaint keyword) and/or a `signal` (`migration`\|`caution`\|`adopter`); returns matching entries with the evidence bullets. "Which shelved repos have a documented gotcha?" |
 | `add_repo` | Shelving a newly adopted repo (rule 5) — pass sourced `reception`; `personal_notes` only for genuine firsthand |
