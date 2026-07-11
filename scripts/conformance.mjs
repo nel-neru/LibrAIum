@@ -25,6 +25,7 @@ const BIN = join(SRC_TAURI, "target", "debug", "dump_entries");
 const { parseEntry, slugify, normalizeGithubUrl, computeStatus } = await import(
   join(ROOT, "mcp-server", "lib", "store.js")
 );
+const { alternativesFor } = await import(join(ROOT, "mcp-server", "lib", "suggest.js"));
 
 // ---------------------------------------------------------------------------
 // 1. Collect input files
@@ -310,6 +311,36 @@ if (existsSync(fnCorpusPath)) {
         mismatches++;
         console.log(
           `MISMATCH compute_status(${JSON.stringify(c)})\n    rust=${JSON.stringify(rustStatuses[i])} node=${JSON.stringify(node)}`
+        );
+      }
+    });
+  }
+
+  // suggest_alternatives: the authored-first ranking twins (Rust
+  // search::suggest_alternatives via --alternatives, Node alternativesFor). This
+  // ranking has no shared-format representation, so build Entry objects here the
+  // SAME way dump_entries does — id = category/slugify(full_name) — and compare
+  // the ordered result full_names. The only cross-impl guard on this surface.
+  if (Array.isArray(corpus.alternatives)) {
+    const rustAlts = JSON.parse(
+      execFileSync(BIN, ["--alternatives", JSON.stringify(corpus.alternatives)], { encoding: "utf8" })
+    );
+    corpus.alternatives.forEach((c, i) => {
+      const built = c.entries.map((m) => ({
+        id: `${m.category}/${slugify(m.full_name)}`,
+        slug: slugify(m.full_name),
+        path: "",
+        meta: m,
+        body: "",
+      }));
+      const target = built.find((e) => e.meta.full_name.toLowerCase() === c.target_full_name.toLowerCase());
+      const node = alternativesFor(built, target, c.max).map((e) => e.meta.full_name);
+      if (JSON.stringify(rustAlts[i]) === JSON.stringify(node)) {
+        fnAgreed++;
+      } else {
+        mismatches++;
+        console.log(
+          `MISMATCH suggest_alternatives(target=${JSON.stringify(c.target_full_name)})\n    rust=${JSON.stringify(rustAlts[i])} node=${JSON.stringify(node)}`
         );
       }
     });
