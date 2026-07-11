@@ -45,3 +45,14 @@ Ask the user which fixes to apply. For approved fixes:
 - Edit the entry files directly (metadata refreshes must use real GitHub API data — never fabricate stars or dates; set `last_checked` to today only when you actually refreshed).
 - Tag renames go through `node scripts/rename-tag.mjs <old> <new> [--merge]` so every carrier updates in one atomic run.
 - Re-run `node scripts/validate-data.mjs --data-dir data` after edits and show the final `git diff`. Do not commit.
+
+## 5. Record a health snapshot
+
+After applying (or even if nothing needed fixing), record the current metrics so the trend accumulates over reviews:
+
+```bash
+node scripts/curation-report.mjs --snapshot   # append one dated line to data/master/health-log.jsonl
+node scripts/curation-report.mjs --trend       # review the trend across snapshots
+```
+
+One snapshot per date (a same-day rerun replaces its line). The log answers "is the library's health improving?" — `thin_shelves`, `singleton_tags`, `near_synonyms`, and `succession_uncovered` trending **down** is the goal. Commit the health-log line with the review's fixes if you commit.
