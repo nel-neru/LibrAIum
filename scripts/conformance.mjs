@@ -16,16 +16,57 @@
 import { execSync, execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC_TAURI = join(ROOT, "src-tauri");
-const BIN = join(SRC_TAURI, "target", "debug", "dump_entries");
-
-const { parseEntry, slugify, normalizeGithubUrl, computeStatus } = await import(
-  join(ROOT, "mcp-server", "lib", "store.js")
+// The Rust binary is dump_entries.exe on Windows, dump_entries elsewhere;
+// execFileSync spawns the exact path and does not append .exe itself.
+const BIN = join(
+  SRC_TAURI,
+  "target",
+  "debug",
+  process.platform === "win32" ? "dump_entries.exe" : "dump_entries"
 );
-const { alternativesFor } = await import(join(ROOT, "mcp-server", "lib", "suggest.js"));
+
+// Dynamic import() requires a file:// URL, not a bare filesystem path: on Windows
+// a "C:\..." string throws ERR_UNSUPPORTED_ESM_URL_SCHEME because the drive letter
+// parses as a URL scheme. pathToFileURL().href is correct on every platform.
+const STORE_URL = pathToFileURL(join(ROOT, "mcp-server", "lib", "store.js")).href;
+const SUGGEST_URL = pathToFileURL(join(ROOT, "mcp-server", "lib", "suggest.js")).href;
+
+const { parseEntry, slugify, normalizeGithubUrl, computeStatus } = await import(STORE_URL);
+const { alternativesFor } = await import(SUGGEST_URL);
+
+// Windows caps a process command line at ~32 KB, so a single dump_entries call
+// whose JSON argument carries every entry (tens of KB) fails with ENAMETOOLONG;
+// macOS/Linux ARG_MAX is far larger, which is why this only bites on Windows.
+// Split the array into size-bounded chunks, invoke the bin per chunk, and
+// concatenate — every item is processed independently, so chunking is
+// transparent to the ordered result (out[i] still lines up with items[i]).
+function runBinJsonArray(flag, items, capChars = 8000) {
+  const out = [];
+  let batch = [];
+  let batchLen = 2; // the "[]" wrapper
+  const flush = () => {
+    if (batch.length === 0) return;
+    const raw = execFileSync(BIN, [flag, JSON.stringify(batch)], {
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    out.push(...JSON.parse(raw));
+    batch = [];
+    batchLen = 2;
+  };
+  for (const item of items) {
+    const itemLen = JSON.stringify(item).length + 1; // + separating comma
+    if (batch.length > 0 && batchLen + itemLen > capChars) flush();
+    batch.push(item);
+    batchLen += itemLen;
+  }
+  flush();
+  return out;
+}
 
 // ---------------------------------------------------------------------------
 // 1. Collect input files
@@ -78,9 +119,17 @@ if (allFiles.length === 0) {
 // 2. Rust side: build the dump_entries bin once, run it once over all files
 // ---------------------------------------------------------------------------
 
-execSync("export PATH=/opt/homebrew/bin:$PATH; cargo build --quiet --locked --bin dump_entries", {
+// cargo must be on PATH. On macOS it typically lives in Homebrew's bin, which a
+// non-login shell may omit; prepend it there. A shell `export` prefix is sh-only
+// and breaks on Windows cmd.exe, so augment PATH via the env option instead.
+const cargoEnv = { ...process.env };
+if (process.platform === "darwin") {
+  cargoEnv.PATH = `/opt/homebrew/bin:${cargoEnv.PATH ?? ""}`;
+}
+execSync("cargo build --quiet --locked --bin dump_entries", {
   cwd: SRC_TAURI,
   stdio: ["ignore", "inherit", "inherit"],
+  env: cargoEnv,
 });
 
 const rustRaw = execFileSync(BIN, ["--files", ...allFiles], {
@@ -213,14 +262,12 @@ for (const path of allFiles) {
 //     frontmatter::serialize; serializeEntry is the Node twin.
 // ---------------------------------------------------------------------------
 
-const { serializeEntry } = await import(join(ROOT, "mcp-server", "lib", "store.js"));
+const { serializeEntry } = await import(STORE_URL);
 let serializeAgreed = 0;
 if (serializeCases.length > 0) {
-  const rustSer = JSON.parse(
-    execFileSync(BIN, ["--serialize", JSON.stringify(serializeCases.map((c) => ({ meta: c.meta, body: c.body })))], {
-      encoding: "utf8",
-      maxBuffer: 64 * 1024 * 1024,
-    })
+  const rustSer = runBinJsonArray(
+    "--serialize",
+    serializeCases.map((c) => ({ meta: c.meta, body: c.body }))
   );
   serializeCases.forEach((c, i) => {
     const node = serializeEntry(c.meta, c.body);
@@ -300,9 +347,7 @@ if (existsSync(fnCorpusPath)) {
   // to Rust (github::compute_status via --compute-status) and Node computeStatus
   // with the SAME fixed `today`, and require identical status strings.
   if (Array.isArray(corpus.compute_status)) {
-    const rustStatuses = JSON.parse(
-      execFileSync(BIN, ["--compute-status", JSON.stringify(corpus.compute_status)], { encoding: "utf8" })
-    );
+    const rustStatuses = runBinJsonArray("--compute-status", corpus.compute_status);
     corpus.compute_status.forEach((c, i) => {
       const node = computeStatus(c.archived, c.push, c.stale_days, c.today);
       if (rustStatuses[i] === node) {
@@ -322,9 +367,7 @@ if (existsSync(fnCorpusPath)) {
   // SAME way dump_entries does — id = category/slugify(full_name) — and compare
   // the ordered result full_names. The only cross-impl guard on this surface.
   if (Array.isArray(corpus.alternatives)) {
-    const rustAlts = JSON.parse(
-      execFileSync(BIN, ["--alternatives", JSON.stringify(corpus.alternatives)], { encoding: "utf8" })
-    );
+    const rustAlts = runBinJsonArray("--alternatives", corpus.alternatives);
     corpus.alternatives.forEach((c, i) => {
       const built = c.entries.map((m) => ({
         id: `${m.category}/${slugify(m.full_name)}`,
