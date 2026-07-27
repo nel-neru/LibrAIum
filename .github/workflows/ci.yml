@@ -1,10 +1,14 @@
 name: CI
 
+# No branch filter, deliberately. `branches: [main]` on BOTH triggers meant CI stopped observing
+# anything the moment work moved to a work branch - and all of this repository's current work sits
+# on one, including the L1 provider and the G0 Windows-conformance fix. The platform is migrating to
+# Linux, and this is the repository most exposed to that move (Tauri/Rust needs system packages that
+# only exist on the CI image). A leg that only fires on a branch nobody works on proves nothing.
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   verify:
