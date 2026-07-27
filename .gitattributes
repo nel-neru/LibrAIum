@@ -1,3 +1,11 @@
+# Everything text is stored LF. Scoping this to `*.md` left every other file unmanaged, so a
+# Windows editor's CRLF rewrite landed in the stored blob unnoticed: on 2026-07-27 a four-line edit
+# to .github/workflows/ci.yml was committed as 160 insertions / 156 deletions, and
+# .codex/hooks/post-edit.mjs had been stored CRLF for some time. Neither is visible to any linter -
+# `ruff format --check` and friends read the working tree, and git treats CRLF and LF working trees
+# as equivalent. The INDEX is what gets published, and it is what this line fixes.
+* text=auto eol=lf
+
 # Markdown files are consumed by two parsers (Rust app + Node MCP server);
 # keep them LF in the repo so checkouts behave identically everywhere.
 *.md text eol=lf
