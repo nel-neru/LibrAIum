@@ -12,7 +12,7 @@
     "test": "node --test test/store.test.mjs test/suggest.test.mjs test/related.test.mjs test/reception.test.mjs test/rejected.test.mjs test/compare.test.mjs test/overview.test.mjs test/search.test.mjs && node test/smoke.test.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "yaml": "^2.5.0",
     "zod": "^4.4.3"
   }
